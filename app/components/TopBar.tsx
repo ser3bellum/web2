@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { DayPicker, type DateRange as DayPickerRange } from "react-day-picker";
 import { cn } from "@/lib/cn";
 
-type DateRange = {
+type UiDateRange = {
   from: Date;
   to: Date;
   label: string;
@@ -34,7 +34,7 @@ function addDays(base: Date, delta: number) {
   return d;
 }
 
-function preset(label: string, daysBackInclusive: number): DateRange {
+function preset(label: string, daysBackInclusive: number): UiDateRange {
   const to = startOfToday();
   const from = addDays(to, -daysBackInclusive);
   return { from, to, label };
@@ -48,9 +48,9 @@ function formatShort(d: Date) {
   }).format(d);
 }
 
-function formatRangeLabel(r: DayPickerRange) {
-  if (r.from && r.to) return `${formatShort(r.from)} – ${formatShort(r.to)}`;
-  if (r.from) return `${formatShort(r.from)} – …`;
+function formatRangeLabel(r: DayPickerRange | undefined) {
+  if (r?.from && r?.to) return `${formatShort(r.from)} – ${formatShort(r.to)}`;
+  if (r?.from) return `${formatShort(r.from)} – …`;
   return "Select dates";
 }
 
@@ -65,7 +65,7 @@ export function TopBar({ companyName = "Ser3bellum", rightSlot }: TopBarProps) {
   );
 
   // Initialize from URL if present, else default to Last 7 days
-  const initialRange = useMemo<DateRange>(() => {
+  const initialRange = useMemo<UiDateRange>(() => {
     const from = searchParams.get("from");
     const to = searchParams.get("to");
 
@@ -87,50 +87,51 @@ export function TopBar({ companyName = "Ser3bellum", rightSlot }: TopBarProps) {
   const [open, setOpen] = useState(false);
 
   // single source of truth for URL sync + preset matching
-  const [range, setRange] = useState<DateRange>(initialRange);
+  const [range, setRange] = useState<UiDateRange>(initialRange);
 
-  // selection state for DayPicker
-  const [selection, setSelection] = useState<DayPickerRange>({
+  // selection state for DayPicker (can be undefined / partial)
+  const [selection, setSelection] = useState<DayPickerRange | undefined>({
     from: initialRange.from,
     to: initialRange.to,
   });
 
   const popoverRef = useRef<HTMLDivElement | null>(null);
 
-  // Apply a DateRange to both states (preset or committed custom)
-  const applyRange = (next: DateRange) => {
+  // Apply a UiDateRange to both states (preset or committed custom)
+  const applyRange = (next: UiDateRange) => {
     setRange(next);
     setSelection({ from: next.from, to: next.to });
   };
-const todayPreset = presets[0];
 
-const resetToToday = () => {
-  applyRange(todayPreset);
-  setOpen(false);
-};
+  const todayPreset = presets[0];
 
-const closeWithoutCommit = () => {
-  // Revert any in-progress selection to the committed range
-  setSelection({ from: range.from, to: range.to });
-  setOpen(false);
-};
+  const resetToToday = () => {
+    applyRange(todayPreset);
+    setOpen(false);
+  };
 
-const commitSelection = () => {
-  if (!selection.from || !selection.to) return;
+  const closeWithoutCommit = () => {
+    // Revert any in-progress selection to the committed range
+    setSelection({ from: range.from, to: range.to });
+    setOpen(false);
+  };
 
-  const from = new Date(selection.from);
-  const to = new Date(selection.to);
-  from.setHours(0, 0, 0, 0);
-  to.setHours(0, 0, 0, 0);
+  const commitSelection = () => {
+    if (!selection?.from || !selection?.to) return;
 
-  const matched =
-    presets.find(
-      (p) => toISODate(p.from) === toISODate(from) && toISODate(p.to) === toISODate(to)
-    ) ?? null;
+    const from = new Date(selection.from);
+    const to = new Date(selection.to);
+    from.setHours(0, 0, 0, 0);
+    to.setHours(0, 0, 0, 0);
 
-  setRange({ from, to, label: matched?.label ?? "Custom range" });
-  setOpen(false);
-};
+    const matched =
+      presets.find(
+        (p) => toISODate(p.from) === toISODate(from) && toISODate(p.to) === toISODate(to)
+      ) ?? null;
+
+    setRange({ from, to, label: matched?.label ?? "Custom range" });
+    setOpen(false);
+  };
 
   // Sync URL when range changes
   useEffect(() => {
@@ -156,7 +157,7 @@ const commitSelection = () => {
   // Button label: show preset label unless custom, where we show actual dates
   const dateButtonLabel =
     range.label === "Custom range"
-      ? selection.from && selection.to
+      ? selection?.from && selection?.to
         ? formatRangeLabel(selection)
         : "Custom range"
       : range.label;
@@ -164,13 +165,12 @@ const commitSelection = () => {
   return (
     <>
       {/* ✅ Backdrop OUTSIDE the header so it can't interfere with popover clicks */}
-     {open && (
-      <div
-        aria-hidden
-        className="fixed inset-x-0 bottom-0 top-14 z-40 bg-white/10 backdrop-blur-md backdrop-saturate-150"
-        onPointerDown={closeWithoutCommit}
-
-      />
+      {open && (
+        <div
+          aria-hidden
+          className="fixed inset-x-0 bottom-0 top-14 z-40 bg-white/10 backdrop-blur-md backdrop-saturate-150"
+          onPointerDown={closeWithoutCommit}
+        />
       )}
 
       <header className="sticky top-0 z-50 w-full border-b border-white/40 bg-white/60 backdrop-blur">
@@ -208,20 +208,22 @@ const commitSelection = () => {
             </button>
 
             {open && (
-             <div
-              data-date-popover
-               onPointerDown={(e) => e.stopPropagation()}
-              className="absolute right-0 top-12 z-[150] hidden md:block rounded-2xl border border-zinc-200/60
+              <div
+                data-date-popover
+                onPointerDown={(e) => e.stopPropagation()}
+                className="absolute right-0 top-12 z-[150] hidden md:block rounded-2xl border border-zinc-200/60
               bg-gradient-to-b from-white/95 via-white/90 to-white/95 shadow-[0_16px_40px_-12px_rgba(0,0,0,0.2)] w-[760px] p-2"
-               >
+              >
                 <div className="flex justify-center">
                   <button
-                 type="button"
-                aria-label="Close"
-                onClick={resetToToday}
-              className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-lg
+                    type="button"
+                    aria-label="Close"
+                    onClick={resetToToday}
+                    className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-lg
                border border-black/10 bg-white/70 text-zinc-700 shadow-sm hover:bg-white"
-                > ✕</button>
+                  >
+                    ✕
+                  </button>
 
                   <div className="flex-row items-start gap-4">
                     {/* Presets (no bg) */}
@@ -250,7 +252,7 @@ const commitSelection = () => {
                         type="button"
                         onClick={() => {
                           setRange((r) => ({ ...r, label: "Custom range" }));
-                          setSelection({ from: undefined, to: undefined });
+                          setSelection(undefined);
                         }}
                         className={cn(
                           "w-full rounded-lg px-3 py-2 text-left text-md transition-colors",
@@ -277,48 +279,49 @@ const commitSelection = () => {
                         mode="range"
                         numberOfMonths={2}
                         selected={selection}
-                        defaultMonth={selection.from ?? new Date()}
+                        defaultMonth={selection?.from ?? new Date()}
                         weekStartsOn={1}
                         fixedWeeks
                         onSelect={(next) => {
-                       const nextSel: DayPickerRange | undefined = next ?? undefined;
-                       setSelection(nextSel);
+                          setSelection(next);
 
-                     // ✅ Only close once both dates exist
-                     if (nextSel?.from && nextSel?.to) {
-                     const from = new Date(nextSel.from);
-                     const to = new Date(nextSel.to);
-                     from.setHours(0, 0, 0, 0);
-                    to.setHours(0, 0, 0, 0);
+                          // ✅ Only close once both dates exist
+                          if (next?.from && next?.to) {
+                            const from = new Date(next.from);
+                            const to = new Date(next.to);
+                            from.setHours(0, 0, 0, 0);
+                            to.setHours(0, 0, 0, 0);
 
-                    const matched =
-                    presets.find(
-                  (p) => toISODate(p.from) === toISODate(from) && toISODate(p.to) === toISODate(to)
-                   ) ?? null;
+                            const matched =
+                              presets.find(
+                                (p) =>
+                                  toISODate(p.from) === toISODate(from) &&
+                                  toISODate(p.to) === toISODate(to)
+                              ) ?? null;
 
-                      setRange({ from, to, label: matched?.label ?? "Custom range" });
-                      setOpen(false);
-                     }
-                  }}
-
+                            setRange({ from, to, label: matched?.label ?? "Custom range" });
+                            setOpen(false);
+                          }
+                        }}
                       />
                     </div>
+
                     {/* done Button */}
                     <div className="mt-2 flex items-center justify-end gap-2 px-1 pb-1">
-                   <button type="button"
-                   onClick={commitSelection}
-                   disabled={!selection.from || !selection.to}
-                  className={cn( "h-9 rounded-lg border border-black/10 px-3 text-sm",
-                  !selection.from || !selection.to
-                  ? "bg-white/40 text-zinc-400 cursor-not-allowed"
-                  : "bg-white/70 text-zinc-700 hover:bg-white"
-                   )}
-                  >
-                  Done
-                  </button>
-
-                  </div>
-
+                      <button
+                        type="button"
+                        onClick={commitSelection}
+                        disabled={!selection?.from || !selection?.to}
+                        className={cn(
+                          "h-9 rounded-lg border border-black/10 px-3 text-sm",
+                          !selection?.from || !selection?.to
+                            ? "bg-white/40 text-zinc-400 cursor-not-allowed"
+                            : "bg-white/70 text-zinc-700 hover:bg-white"
+                        )}
+                      >
+                        Done
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
