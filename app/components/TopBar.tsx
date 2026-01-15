@@ -281,27 +281,26 @@ const commitSelection = () => {
                         weekStartsOn={1}
                         fixedWeeks
                         onSelect={(next) => {
-                          const nextSel = next ?? {};
-                          setSelection(nextSel);
+                       const nextSel: DayPickerRange | undefined = next ?? undefined;
+                       setSelection(nextSel);
 
-                          // ✅ Only close once both dates exist
-                          if (nextSel.from && nextSel.to) {
-                            const from = new Date(nextSel.from);
-                            const to = new Date(nextSel.to);
-                            from.setHours(0, 0, 0, 0);
-                            to.setHours(0, 0, 0, 0);
+                     // ✅ Only close once both dates exist
+                     if (nextSel?.from && nextSel?.to) {
+                     const from = new Date(nextSel.from);
+                     const to = new Date(nextSel.to);
+                     from.setHours(0, 0, 0, 0);
+                    to.setHours(0, 0, 0, 0);
 
-                            const matched =
-                              presets.find(
-                                (p) =>
-                                  toISODate(p.from) === toISODate(from) &&
-                                  toISODate(p.to) === toISODate(to)
-                              ) ?? null;
+                    const matched =
+                    presets.find(
+                  (p) => toISODate(p.from) === toISODate(from) && toISODate(p.to) === toISODate(to)
+                   ) ?? null;
 
-                            setRange({ from, to, label: matched?.label ?? "Custom range" });
-                            setOpen(false);
-                          }
-                        }}
+                      setRange({ from, to, label: matched?.label ?? "Custom range" });
+                      setOpen(false);
+                     }
+                  }}
+
                       />
                     </div>
                     {/* done Button */}
