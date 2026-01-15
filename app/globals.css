@@ -1,3 +1,4 @@
+@import "react-day-picker/style.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -33,6 +34,9 @@
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
+
+    --app-bg-start: #f0fafc;   /* soft mint-white */
+    --app-bg-end:   #aeb9d9; 
   }
 
   .dark {
@@ -67,10 +71,53 @@
 }
 
 @layer base {
-  * {
-    @apply border;
-  }
+  
   body {
     @apply bg-background text-foreground;
   }
 }
+
+.app-gradient {
+  background: linear-gradient(
+    165deg,
+    var(--app-bg-start) 0%,
+    var(--app-bg-end) 100%
+  );
+}
+/* Make react-day-picker transparent so the popover "glass" shows through */
+/* Glass popover material (fake glass, reliable everywhere) */
+.glass-popover {
+  padding: 0.5rem; /* matches p-2 */
+  border-radius: 1rem; /* rounded-2xl */
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.85),
+    rgba(255, 255, 255, 0.60)
+  );
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* A subtle “sheen” highlight to sell the glass */
+.glass-popover::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 1rem;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 20% 10%,
+    rgba(255, 255, 255, 0.75),
+    transparent 45%
+  );
+  opacity: 0.55;
+}
+
+/* Make DayPicker transparent so the glass material shows through */
+.rdp-glass .rdp,
+.rdp-glass .rdp-months,
+.rdp-glass .rdp-month,
+.rdp-glass .rdp-table {
+  background: transparent !important;
+}
+
