@@ -1,5 +1,5 @@
 // app/dashboard/dashboardKpis.ts
-import type { DashboardRange } from "@/lib/dateRange"; // adjust relative path
+import type { DashboardRange } from "@/app/(app)/lib/dateRange"; // adjust relative path
 
 export async function getDashboardKpis(
   range: DashboardRange

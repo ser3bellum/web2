@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Card } from "@/app/components/Card";
-import { toISODate } from "@/lib/dateRange";
+import { Card } from "@/app/(app)/components/Card";
+import { toISODate } from "@/app/(app)/lib/dateRange";
 
 type Props = { from: Date; to: Date };
 
