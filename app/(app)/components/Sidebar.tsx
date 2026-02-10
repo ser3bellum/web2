@@ -1,9 +1,12 @@
 "use client";
 
-import { cn } from "@/app/(app)/lib/cn";
+import { cn } from "app/(app)/lib/cn";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
+import { CustomizeDashboardModal } from "app/(app)/components/CustomizeDashboardModal";
+import { DASHBOARD_CARDS } from "app/(app)/components/DashboardCards";
+
 
 type NavItem = { label: string; href: string; icon: React.ReactNode };
 
@@ -21,9 +24,12 @@ const glassHover = "hover:bg-white/22 hover:border-white/45 hover:shadow-md";
 
 const glassActive = "bg-white/18 border-blue-400/35 ring-1 ring-blue-500/20";
 
+
+
 export function Sidebar() {
   const pathname = usePathname();
-
+  const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
+   
   const [appsOpen, setAppsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -37,7 +43,7 @@ export function Sidebar() {
   const appLinks: NavItem[] = useMemo(
     () => [
       { label: "Analytics", href: "/analytics", icon: <AnalyticsIcon /> },
-      { label: "Security", href: "/security", icon: <ShieldIcon /> },
+      { label: "Site Health ", href: "/site-health", icon: <ShieldIcon /> },
     ],
     []
   );
@@ -45,13 +51,8 @@ export function Sidebar() {
   const settingsLinks: NavItem[] = useMemo(
     () => [
       {
-        label: "Track new URL",
-        href: "/settings/track-url",
-        icon: <LinkIcon />,
-      },
-      {
-        label: "Manage API Keys",
-        href: "/settings/api-keys",
+        label: "Integrations",
+        href: "/settings/integrations",
         icon: <KeyIcon />,
       },
     ],
@@ -288,9 +289,7 @@ export function Sidebar() {
             </div>
 
             {/* Customize Dashboard button */}
-            <button
-              type="button"
-              onClick={() => alert("Customize Dashboard (modal later)")}
+            <button type="button" onClick={() => setIsCustomizeOpen(true)}
               className={cn(
                 "mt-2 flex h-14 w-full items-center justify-center gap-2 rounded-xl px-3",
                 "bg-gradient-to-br from-blue-600/80 via-blue-600/90 to-indigo-600/70 backdrop-blur-xl",
@@ -304,15 +303,22 @@ export function Sidebar() {
               <GridIcon />
               <span className="text-sm font-semibold">Customize Dashboard</span>
             </button>
+               
+             
           </div>
         </div>
+         <CustomizeDashboardModal
+                  open={isCustomizeOpen}
+                   onClose={() => setIsCustomizeOpen(false)}
+                   cards={DASHBOARD_CARDS}/>
+
       </div>
     </aside>
+    
+    
   );
 }
-
-/**
- * Dropdown header
+/** Dropdown header
  */
 function DropdownHeader({
   label,
@@ -475,22 +481,22 @@ function GridIcon() {
   );
 }
 
-function GearIcon() {
+function GearIcon({ className = "" }: { className?: string }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
       <path
-        d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z"
         stroke="currentColor"
-        strokeWidth="2"
-      />
-      <path
-        d="M19.4 15a7.9 7.9 0 00.1-2l2-1.2-2-3.4-2.2.6a8 8 0 00-1.7-1L15 5h-6l-.6 2.9a8 8 0 00-1.7 1l-2.2-.6-2 3.4 2 1.2a7.9 7.9 0 000 2l-2 1.2 2 3.4 2.2-.6a8 8 0 001.7 1L9 22h6l.6-2.9a8 8 0 001.7-1l2.2.6 2-3.4-2-1.2z"
-        stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="1.5"
+        strokeLinecap="round"
         strokeLinejoin="round"
+        d="M10.5 6h3m-4.5 6a3 3 0 1 0 6 0 3 3 0 0 0-6 0Zm10.94 1.5a8.96 8.96 0 0 0 0-3l-2.06-.6a7.94 7.94 0 0 0-.7-1.7l1.2-1.8a10.3 10.3 0 0 0-2.12-2.12l-1.8 1.2c-.54-.3-1.11-.54-1.7-.7L13.5 2.06a8.96 8.96 0 0 0-3 0l-.6 2.06c-.59.16-1.16.4-1.7.7l-1.8-1.2A10.3 10.3 0 0 0 4.28 5.74l1.2 1.8c-.3.54-.54 1.11-.7 1.7l-2.06.6a8.96 8.96 0 0 0 0 3l2.06.6c.16.59.4 1.16.7 1.7l-1.2 1.8a10.3 10.3 0 0 0 2.12 2.12l1.8-1.2c.54.3 1.11.54 1.7.7l.6 2.06a8.96 8.96 0 0 0 3 0l.6-2.06c.59-.16 1.16-.4 1.7-.7l1.8 1.2a10.3 10.3 0 0 0 2.12-2.12l-1.2-1.8c.3-.54.54-1.11.7-1.7l2.06-.6Z"
       />
-    </svg>
-  );
+    </svg>);
 }
 
 function AppsIcon() {
@@ -506,23 +512,22 @@ function AppsIcon() {
   );
 }
 
-function SettingsIcon() {
+export function SettingsIcon({ className = "" }: { className?: string }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z"
-        stroke="currentColor"
-        strokeWidth="2"
-      />
-      <path
-        d="M19.4 15a7.9 7.9 0 00.1-2l2-1.2-2-3.4-2.2.6a8 8 0 00-1.7-1L15 5h-6l-.6 2.9a8 8 0 00-1.7 1l-2.2-.6-2 3.4 2 1.2a7.9 7.9 0 000 2l-2 1.2 2 3.4 2.2-.6a8 8 0 001.7 1L9 22h6l.6-2.9a8 8 0 001.7-1l2.2.6 2-3.4-2-1.2z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" className={className} aria-hidden="true">
+      <path d="M4 21v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M4 10V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M12 21v-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M12 8V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M20 21v-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M20 12V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M2 14h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M10 12h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M18 16h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
     </svg>
   );
 }
+
 
 function RefreshIcon() {
   return (

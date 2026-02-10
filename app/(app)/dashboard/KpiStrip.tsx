@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Card } from "app/(app)/components/Card";
 import type { DashboardKpi } from "./dashboardKpis";
+import { BaseModal } from "app/(app)/components/ui/Modal";
 
 function toneClass(tone?: "up" | "down" | "neutral") {
   if (tone === "down") return "text-red-600";
@@ -41,7 +42,7 @@ export function KpiStrip({ kpis }: { kpis: DashboardKpi[] }) {
                   "transition-all",
                   "hover:-translate-y-[1px] hover:shadow-md",
                   "hover:ring-2 hover:ring-indigo-500/60",
-                  isActive ? "ring-2 ring-indigo-500 shadow-md" : ""
+                  isActive ? "ring-2 ring-indigo-500 shadow-md" : "",
                 ].join(" ")}
                 rightSlot={
                   kpi.delta ? (
@@ -51,7 +52,9 @@ export function KpiStrip({ kpis }: { kpis: DashboardKpi[] }) {
                   ) : null
                 }
               >
-                <div className="text-2xl font-semibold leading-none">{kpi.value}</div>
+                <div className="text-2xl font-semibold leading-none">
+                  {kpi.value}
+                </div>
               </Card>
             </button>
           );
@@ -60,72 +63,52 @@ export function KpiStrip({ kpis }: { kpis: DashboardKpi[] }) {
 
       {/* Modal */}
       {activeKpi ? (
-        <SimpleModal title={activeKpi.title} onClose={() => setActiveId(null)}>
+        <BaseModal
+          title={activeKpi.title}
+          onClose={() => setActiveId(null)}
+          size="xl"
+          footer={
+            <button
+              type="button"
+              onClick={() => setActiveId(null)}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+            >
+              Close
+            </button>
+          }
+        >
           <div className="grid gap-4">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-slate-600">
               Detailed activity for the selected period.
             </p>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="rounded-xl bg-secondary/60 p-4">
-                <div className="text-xs text-muted-foreground">Total for period</div>
-                <div className="text-2xl font-semibold">{activeKpi.value}</div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-xs text-slate-500">Total for period</div>
+                <div className="text-2xl font-semibold text-slate-900">
+                  {activeKpi.value}
+                </div>
               </div>
 
-              <div className="rounded-xl bg-secondary/60 p-4">
-                <div className="text-xs text-muted-foreground">Delta</div>
-                <div className={["text-2xl font-semibold", toneClass(activeKpi.delta?.tone)].join(" ")}>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-xs text-slate-500">Delta</div>
+                <div
+                  className={[
+                    "text-2xl font-semibold",
+                    toneClass(activeKpi.delta?.tone),
+                  ].join(" ")}
+                >
                   {activeKpi.delta?.value ?? "—"}
                 </div>
               </div>
             </div>
 
-            <div className="h-64 rounded-xl border bg-background/50 flex items-center justify-center text-sm text-muted-foreground">
+            <div className="flex h-64 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-500">
               Chart placeholder (next step)
             </div>
           </div>
-        </SimpleModal>
+        </BaseModal>
       ) : null}
     </>
-  );
-}
-
-/** Lightweight modal (no extra deps) */
-function SimpleModal({
-  title,
-  children,
-  onClose,
-}: {
-  title: string;
-  children: React.ReactNode;
-  onClose: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-50">
-      {/* overlay */}
-      <button
-        type="button"
-        aria-label="Close modal"
-        onClick={onClose}
-        className="absolute inset-0 bg-white/40 backdrop-blur-md backdrop-brightness-105"
-      />
-
-      {/* dialog */}
-      <div className="absolute left-1/2 top-1/2 w-[min(920px,92vw)] -translate-x-1/2 -translate-y-1/2">
-        <div className="relative rounded-2xl bg-background shadow-xl border p-6">
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute right-3 top-3 h-9 w-9 rounded-full border hover:bg-accent"
-            aria-label="Close"
-          >
-            ✕
-          </button>
-
-          <h2 className="text-xl font-semibold mb-4">{title}</h2>
-          {children}
-        </div>
-      </div>
-    </div>
   );
 }

@@ -2,13 +2,15 @@
 import type { ReactNode } from "react";
 import React from "react";
 
-import { TopBar } from "@/app/(app)/components/TopBar";
-import { Card } from "@/app/(app)/components/Card";
-import { DASHBOARD_CARDS } from "@/app/(app)/components/DashboardCards";
+import { Card } from "app/(app)/components/Card";
+import { DASHBOARD_CARDS } from "app/(app)/components/DashboardCards";
+import { SortableDashboardGrid } from "app/(app)/components/SortableDashboardGrid";
+import DashboardCardsGrid from "app/(app)/components/DashboardCardsGrid";
+
 
 import { KpiStrip } from "./KpiStrip";
-import { parseDashboardRange } from "@/app/(app)/lib/dateRange";
-import { getDashboardKpis } from "@/app/(app)/dashboard/dashboardKpis"; // or "./dashboardKpis" depending on your filename
+import { parseDashboardRange } from "app/(app)/lib/dateRange";
+import { getDashboardKpis } from "app/(app)/dashboard/dashboardKpis"; // or "./dashboardKpis" depending on your filename
 
 export default async function DashboardPage({
   searchParams,
@@ -23,28 +25,17 @@ export default async function DashboardPage({
 
   return (
     <div className="flex flex-col">
-      <TopBar companyName="Ser3bellum" />
+
 
       <div className="flex flex-col gap-6 px-4 pb-8 pt-6 lg:px-8">
         {/* KPI strip (interactive + modal) */}
         <KpiStrip kpis={kpis} />
 
         {/* 9-card grid */}
-        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {DASHBOARD_CARDS.map((c: any) => (
-            <Card
-              key={c.id ?? c.key ?? c.title}
-              title={c.title}
-              subtitle={c.subtitle}
-              rightSlot={renderIconSafe(c.icon)}
-              className="min-h-[220px]"
-            >
-              <div className="text-sm opacity-70">
-                {c.description ?? "Content coming next step…"}
-              </div>
-            </Card>
-          ))}
-        </section>
+        <section>
+  <DashboardCardsGrid />
+</section>
+
       </div>
     </div>
   );

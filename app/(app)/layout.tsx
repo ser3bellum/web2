@@ -1,18 +1,42 @@
-import { ReactNode } from "react";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { Sidebar } from "@/app/(app)/components/Sidebar";
+// app/(app)/layout.tsx
+import type { ReactNode } from 'react';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { adminAuth } from '@/lib/firebase/admin';
+
+import DailyReportModalController from '@/app/(app)/components/DailyReportModalController';
+import { Sidebar } from '@/app/(app)/components/Sidebar';
+import { TopBar } from '@/app/(app)/components/TopBar'; // keep your working import
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
-  const isAuthed = cookieStore.get("sb_auth")?.value === "1";
+  const session = cookieStore.get('sb_auth')?.value;
 
-  if (!isAuthed) redirect("/login");
+  if (!session) redirect('/login');
 
-  return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto app-gradient">{children}</main>
-    </div>
-  );
+  try {
+    await adminAuth.verifySessionCookie(session, true);
+  } catch {
+    redirect('/login');
+  }
+
+ return (
+  // app/(app)/layout.tsx (inside return)
+<div className="flex h-screen overflow-hidden">
+  <Sidebar />
+
+  <div className="flex min-w-0 flex-1 flex-col app-gradient">
+    <DailyReportModalController />
+
+    <TopBar companyName="Ser3bellum" />
+
+    {/* KEY PART: pull content under the header */}
+    <main className="flex-1 overflow-y-auto bg-transparent -mt-[72px] pt-[72px]">
+      {children}
+    </main>
+  </div>
+</div>
+
+);
+
 }

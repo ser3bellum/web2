@@ -3,8 +3,11 @@
 import type { ReactNode } from "react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { LogoutButton } from "app/(app)/components/LogoutButton";
+import { BaseModal } from "app/(app)/components/ui/Modal";
 import { DayPicker, type DateRange as DayPickerRange } from "react-day-picker";
-import { cn } from "@/app/(app)/lib/cn";
+import { cn } from "app/(app)/lib/cn";
+import Link from "next/link";
 
 type UiDateRange = {
   from: Date;
@@ -53,6 +56,34 @@ function formatRangeLabel(r: DayPickerRange | undefined) {
   if (r?.from) return `${formatShort(r.from)} – …`;
   return "Select dates";
 }
+function DashboardHomeLink({
+  companyId,
+  companyName,
+  from,
+  to,
+}: {
+  companyId?: string | null;
+  companyName: string;
+  from?: string | null;
+  to?: string | null;
+}) {
+  const params = new URLSearchParams();
+  if (companyId) params.set("company", companyId);
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+
+  const href = `/dashboard${params.toString() ? `?${params.toString()}` : ""}`;
+
+  return (
+    <Link
+      href={href}
+      title="Return to dashboard"
+      className="inline-flex items-center rounded-lg px-2 py-1 font-semibold text-slate-900 hover:bg-slate-100"
+    >
+      {companyName}
+    </Link>
+  );
+}
 
 export function TopBar({ companyName = "Ser3bellum", rightSlot }: TopBarProps) {
   const router = useRouter();
@@ -60,7 +91,8 @@ export function TopBar({ companyName = "Ser3bellum", rightSlot }: TopBarProps) {
   const searchParams = useSearchParams();
 
   const presets = useMemo(
-    () => [preset("Today", 0), preset("Last 7 days", 6), preset("Last 30 days", 29)],
+    () => [preset("Today", 0), preset("Last 7 days", 6), preset("Last 30 days", 29), preset("Last 60 days", 59),
+    preset("Last 90 days", 89),],
     []
   );
 
@@ -132,6 +164,9 @@ export function TopBar({ companyName = "Ser3bellum", rightSlot }: TopBarProps) {
     setRange({ from, to, label: matched?.label ?? "Custom range" });
     setOpen(false);
   };
+  const [mailOpen, setMailOpen] = useState(false);
+  const notifCount = 0;
+  const mailCount = 10;
 
   // Sync URL when range changes
   useEffect(() => {
@@ -174,9 +209,16 @@ export function TopBar({ companyName = "Ser3bellum", rightSlot }: TopBarProps) {
       )}
 
       <header className="sticky top-0 z-50 w-full border-b border-white/40 bg-white/60 backdrop-blur">
-        <div className="mx-auto flex h-14 w-full items-center gap-3 px-4">
-          {/* Left: Company */}
-          <div className="min-w-[180px] font-semibold tracking-tight">{companyName}</div>
+        <div className="mx-auto flex h-[72px] w-full items-center gap-3 px-4">
+
+        {/* Left: Company (clickable → dashboard) */}
+    <div className="min-w-[180px] font-semibold tracking-tight">
+     <DashboardHomeLink
+      companyId={searchParams.get("company")}
+      companyName={companyName}
+      from={searchParams.get("from")}
+      to={searchParams.get("to")}/>
+    </div>
 
           {/* Middle: Search */}
           <div className="flex flex-1 items-center">
@@ -247,7 +289,7 @@ export function TopBar({ companyName = "Ser3bellum", rightSlot }: TopBarProps) {
                       ))}
 
                       <div className="my-1 h-px bg-black/10" />
-
+                      {/* custom range button, you can reintroduce the button later the logic is already there, 
                       <button
                         type="button"
                         onClick={() => {
@@ -262,6 +304,7 @@ export function TopBar({ companyName = "Ser3bellum", rightSlot }: TopBarProps) {
                       >
                         Custom range…
                       </button>
+                      */}
 
                       {range.label === "Custom range" && (
                         <div className="px-3 pb-2 pt-1 text-xs text-zinc-600">
@@ -327,44 +370,111 @@ export function TopBar({ companyName = "Ser3bellum", rightSlot }: TopBarProps) {
               </div>
             )}
 
-            <IconButton label="Notifications">
+
+        <IconButton label="Messages"
+        count={mailCount}
+        showCheck
+        onClick={() => setMailOpen(true)}
+        className="no-print">
+        <MailIcon />
+        </IconButton>
+
+            <IconButton label="Notifications"
+            count={notifCount}
+            showCheck
+            onClick={() => {/* open notifications modal */}}>
               <BellIcon />
             </IconButton>
 
-            <IconButton label="Settings">
-              <GearIcon />
+            <IconButton label="Print report"
+               onClick={() => window.print()}
+              className="no-print"><PrinterIcon />
             </IconButton>
+
 
             <IconButton label="Help">
            <HelpIcon />
+          
           </IconButton>
 
             {/* Avatar */}
-            <button
-              aria-label="Account"
-              className="ml-1 h-9 w-9 rounded-full border border-white/50 bg-white/70 text-xs font-semibold text-zinc-500 shadow-[0_2px_4px_rgba(0,0,0,0.08)] hover:bg-white/60 transition-colors"
-            >
-              N
-            </button>
+            <div className="mt-auto p-3">
+            <LogoutButton />
+</div>
+
 
             {rightSlot}
           </div>
         </div>
       </header>
+      {mailOpen && (
+  <MailModal
+    onClose={() => setMailOpen(false)}
+    // Later you can pass provider + data here
+  />
+)}
+
     </>
   );
 }
 
-function IconButton({ label, children }: { label: string; children: React.ReactNode }) {
+type IconButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  label: string;
+  children: React.ReactNode;
+  count?: number;
+  showCheck?: boolean;
+};
+
+function IconButton({
+  label,
+  children,
+  className,
+  count = 0,
+  showCheck = false,
+  ...props
+}: IconButtonProps) {
+  const showBadge = count > 0;
+  const showCaughtUp = !showBadge && showCheck;
+
   return (
     <button
+      type="button"
       aria-label={label}
-      className="inline-flex h-10 w-10 items-center justify-center text-zinc-500 rounded-lg border border-white/50 bg-white/70 shadow-[0_2px_4px_rgba(0,0,0,0.08)] transition-colors hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-black/10"
+      className={cn(
+        // ⬇️ key change: relative + leading-none
+        "relative inline-flex h-10 w-10 items-center justify-center leading-none text-zinc-500 rounded-lg border border-white/50 bg-white/70 shadow-[0_2px_4px_rgba(0,0,0,0.08)] transition-colors hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-black/10",
+        className
+      )}
+      {...props}
     >
-      {children}
+      {/* Keep icon centred + avoid inline baseline weirdness */}
+      <span className="block h-5 w-5">
+        {children}
+      </span>
+
+      {/* Red count badge (absolute overlay, not in flow) */}
+      {showBadge && (
+        <span
+          aria-hidden
+          className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[11px] leading-[18px] text-center border border-white/80 shadow-sm"
+        >
+          {count > 99 ? "99+" : count}
+        </span>
+      )}
+
+      {/* Green caught-up check (absolute overlay, not in flow) */}
+      {showCaughtUp && (
+        <span
+          aria-hidden
+          className="absolute -top-1 -right-1 h-[18px] w-[18px] rounded-full bg-emerald-500 text-white border border-white/80 shadow-sm grid place-items-center"
+        >
+          <CheckIcon className="h-3.5 w-3.5 block" />
+        </span>
+      )}
     </button>
   );
 }
+
 
 /* Tiny inline icons */
 
@@ -415,13 +525,37 @@ function BellIcon() {
     </svg>
   );
 }
-
-function GearIcon() {
+function CheckIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z" stroke="currentColor" strokeWidth="2" />
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
-        d="M19.4 15a7.9 7.9 0 00.1-2l2-1.2-2-3.4-2.2.6a8 8 0 00-1.7-1L15 5h-6l-.6 2.9a8 8 0 00-1.7 1l-2.2-.6-2 3.4 2 1.2a7.9 7.9 0 000 2l-2 1.2 2 3.4 2.2-.6a8 8 0 001.7 1L9 22h6l.6-2.9a8 8 0 001.7-1l2.2.6 2-3.4-2-1.2z"
+        d="M20 6L9 17l-5-5"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function PrinterIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M7 8V3h10v5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M6 17H4a2 2 0 01-2-2v-4a2 2 0 012-2h16a2 2 0 012 2v4a2 2 0 01-2 2h-2"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M7 14h10v7H7v-7z"
         stroke="currentColor"
         strokeWidth="2"
         strokeLinejoin="round"
@@ -429,6 +563,7 @@ function GearIcon() {
     </svg>
   );
 }
+
 function HelpIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -440,4 +575,107 @@ function HelpIcon() {
     </svg>
   );
 }
+function MailIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M4 6h16v12H4V6z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M4 7l8 6 8-6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function MailModal({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <BaseModal
+      title="Messages"
+      onClose={onClose}
+      size="lg"
+      footer={
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+        >
+          Close
+        </button>
+      }
+    >
+      <div className="space-y-4">
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="text-sm font-medium text-slate-900">
+            Connect a provider
+          </div>
+          <div className="mt-1 text-sm text-slate-600">
+            Choose what you want Ser3bellum to plug into (Gmail, Outlook, IMAP,
+            Slack, etc.).
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {["Gmail", "Outlook", "IMAP", "Slack"].map((label) => (
+              <button
+                key={label}
+                type="button"
+                className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 hover:bg-slate-50"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="text-sm font-medium text-slate-900">
+            Inbox (preview)
+          </div>
+          <ul className="mt-2 space-y-2 text-sm">
+            <li className="rounded-lg border border-slate-200 bg-white p-3">
+              <div className="font-medium text-slate-900">
+                [Mock] Alert resolved
+              </div>
+              <div className="text-slate-600">
+                Uptime incident closed • 2h ago
+              </div>
+            </li>
+            <li className="rounded-lg border border-slate-200 bg-white p-3">
+              <div className="font-medium text-slate-900">
+                [Mock] Weekly summary
+              </div>
+              <div className="text-slate-600">
+                Performance & alerts • yesterday
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
+
+
+
 
