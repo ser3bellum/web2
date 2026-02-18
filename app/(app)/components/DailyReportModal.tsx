@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { BaseModal } from "./ui/Modal";
 
 type DailyReport = {
   date: string;
@@ -29,54 +28,57 @@ export default function DailyReportModal({
   }, [onClose]);
 
   return (
-    <BaseModal
-      title={report.headline}
-      subtitle={`Date: ${report.date}`}
-      onClose={onClose}
-      size="lg"
-      footer={
-        <>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Daily report"
+      className="modal-backdrop"
+      onMouseDown={(e) => {
+        // click outside closes
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="modal-card">
+        <div className="modal-header">
+          <h2>{report.headline}</h2>
+          <button className="icon-btn" onClick={onClose} aria-label="Close">
+            ✕
+          </button>
+        </div>
+
+        <p className="muted">Date: {report.date}</p>
+
+        <ul>
+          {report.bullets.map((b) => (
+            <li key={b}>{b}</li>
+          ))}
+        </ul>
+
+        <div className="modal-actions">
           <button
-            type="button"
             onClick={() => {
               onMarkSeen();
               window.open(`/reports/${report.reportId}/print`, "_blank");
             }}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
           >
             Print
           </button>
 
           <button
-            type="button"
             onClick={() => {
               onMarkSeen();
               // swap route when you have it
               window.location.href = `/reports/${report.reportId}`;
             }}
-            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 active:bg-slate-950"
           >
             View full report
           </button>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
-          >
+          <button className="secondary" onClick={onClose}>
             Close
           </button>
-        </>
-      }
-    >
-      <ul className="mt-2 space-y-2">
-        {report.bullets.map((b) => (
-          <li key={b} className="flex items-start gap-2 text-sm text-slate-700">
-            <span className="mt-2 inline-block h-1.5 w-1.5 rounded-full bg-slate-300" />
-            <span>{b}</span>
-          </li>
-        ))}
-      </ul>
-    </BaseModal>
+        </div>
+      </div>
+    </div>
   );
 }

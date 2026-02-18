@@ -1,0 +1,26 @@
+[debug] [2026-02-17T14:18:44.895Z] ----------------------------------------------------------------------
+[debug] [2026-02-17T14:18:44.901Z] Command:       /opt/homebrew/Cellar/node@22/22.22.0/bin/node /opt/homebrew/bin/firebase init
+[debug] [2026-02-17T14:18:44.901Z] CLI Version:   15.1.0
+[debug] [2026-02-17T14:18:44.901Z] Platform:      darwin
+[debug] [2026-02-17T14:18:44.901Z] Node Version:  v22.22.0
+[debug] [2026-02-17T14:18:44.902Z] Time:          Tue Feb 17 2026 15:18:44 GMT+0100 (Central European Standard Time)
+[debug] [2026-02-17T14:18:44.902Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-02-17T14:18:44.904Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /Users/nickee/ser3bellum-web2
+
+Before we get started, keep in mind:
+
+  * You are initializing within an existing Firebase project directory
+
+[debug] [2026-02-17T14:18:49.304Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-02-17T14:18:49.304Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}

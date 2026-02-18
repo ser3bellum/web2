@@ -1,5 +1,8 @@
+// app/api/auth/bootstrap/route.ts
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
-import { adminAuth } from "@/lib/firebase/admin";
+import { verifyIdToken } from "@/lib/firebase/admin";
 import { bootstrapUserAndWorkspace } from "@/lib/firebase/bootstrap";
 
 export async function POST(req: Request) {
@@ -7,25 +10,26 @@ export async function POST(req: Request) {
     const { idToken, name, companyName, companySize, country } = await req.json();
 
     if (!idToken) {
-      return NextResponse.json({ error: "Missing idToken" }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Missing idToken" }, { status: 400 });
     }
 
-    const decoded = await adminAuth.verifyIdToken(idToken);
-    const uid = decoded.uid;
-    const email = decoded.email ?? null;
+    const decoded = await verifyIdToken(idToken);
 
     const result = await bootstrapUserAndWorkspace({
-      uid,
-      email,
-      name: name ?? null,
-      companyName: companyName ?? null,
-      companySize: companySize ?? null,
-      country: country ?? null,
+      uid: decoded.uid,
+      email: decoded.email ?? null,
+      name,
+      companyName,
+      companySize,
+      country,
     });
 
     return NextResponse.json({ ok: true, ...result });
-  } catch (err) {
-    console.error("BOOTSTRAP ERROR", err);
-    return NextResponse.json({ error: "Failed to bootstrap user" }, { status: 500 });
+  } catch (err: any) {
+    console.error("BOOTSTRAP_ERROR:", err);
+    return NextResponse.json(
+      { ok: false, error: err?.message ?? "Bootstrap failed" },
+      { status: 500 }
+    );
   }
 }

@@ -105,7 +105,7 @@ export function AnalyticsMiniChart({ className }: { className?: string }) {
       </div>
 
       {/* Chart area */}
-      <div className="mt-3 h-[230px] overflow-hidden rounded-b-2xl">
+      <div className="mt-3 h-[23lm;l0px] overflow-hidden rounded-b-2xl">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={data}

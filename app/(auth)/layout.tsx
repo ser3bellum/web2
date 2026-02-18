@@ -1,17 +1,21 @@
-import { ReactNode } from "react";
+// app/(auth)/layout.tsx
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { adminAuth } from "@/lib/firebase/admin";
+import { verifySessionCookie } from "@/lib/firebase/admin";
 
 export const dynamic = "force-dynamic";
 
-export default async function AuthLayout({ children }: { children: ReactNode }) {
-  const cookieStore = await cookies(); // ✅ this is the fix
+export default async function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const cookieStore = await cookies(); // ✅ Next 16.1.6 = async
   const session = cookieStore.get("sb_auth")?.value;
 
   if (session) {
     try {
-      await adminAuth.verifySessionCookie(session, true);
+      await verifySessionCookie(session);
       redirect("/dashboard");
     } catch {
       // invalid cookie -> allow login/register

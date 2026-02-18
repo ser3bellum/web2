@@ -26,7 +26,15 @@ const glassActive = "bg-white/18 border-blue-400/35 ring-1 ring-blue-500/20";
 
 
 
-export function Sidebar() {
+type SidebarProps = {
+  companyName: string;
+  userEmail: string;
+  userName?: string;
+  avatarUrl?: string | null;
+};
+
+export function Sidebar({ companyName, userEmail, userName,avatarUrl }: SidebarProps) 
+ {
   const pathname = usePathname();
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
    
@@ -114,7 +122,7 @@ export function Sidebar() {
               <GridIcon />
             </span>
             <span className="text-sm font-semibold text-slate-700">
-              {activeCompany.name}
+              {companyName}
             </span>
           </span>
 
@@ -140,7 +148,7 @@ export function Sidebar() {
           <div className="overflow-hidden">
             <div className="mt-2 flex flex-col gap-1">
               {companies
-                .filter((c) => c.name !== activeCompany.name)
+                .filter((c) => c.name !== companyName)
                 .map((c) => (
                   <Link
                     key={c.name}
@@ -162,25 +170,55 @@ export function Sidebar() {
         </div>
 
         {/* User row + gear */}
-        <div className="mb-5 flex items-center gap-3">
-          <div className="h-11 w-11 rounded-full bg-zinc-200" />
-          <div className="min-w-0">
-            <div className="truncate text-sm font-semibold">
-              info@ser3bellum.com
-            </div>
-            <div className="text-xs text-zinc-500">
-              Monday, January 5, 2026 • 6:29 PM
-            </div>
-          </div>
+        {/* User row (single CTA) */}
+<Link
+  href="/user-settings"
+  aria-label="Open profile settings"
+  className={cn(
+    "group mb-5 flex w-full items-center gap-3 rounded-xl px-2 py-2 transition",
+    "hover:bg-slate-100/60 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+  )}
+>
+  {/* Avatar */}
+  <div className="relative h-11 w-11 overflow-hidden rounded-full bg-zinc-200">
+    {avatarUrl ? (
+      <img
+        src={avatarUrl}
+        alt=""
+        className="h-full w-full object-cover"
+        referrerPolicy="no-referrer"
+      />
+    ) : null}
 
-          <Link
-            href="/user-settings"
-            aria-label="User settings"
-            className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-zinc-100"
-          >
-            <GearIcon />
-          </Link>
-        </div>
+    {/* Hover overlay hint */}
+    <span className="pointer-events-none absolute inset-0 grid place-items-center bg-black/40 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
+      Edit
+    </span>
+  </div>
+
+  {/* Text */}
+  <div className="min-w-0 flex-1">
+    <div className="truncate text-sm font-semibold text-slate-800">
+      {userEmail || "—"}
+    </div>
+
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-zinc-500">
+        {userName ? userName : "Signed in"}
+      </span>
+
+      {/* CTA microcopy appears on hover */}
+      <span className="text-xs text-slate-400 opacity-0 transition group-hover:opacity-100">
+        • Edit profile
+      </span>
+    </div>
+  </div>
+
+  {/* optional: a subtle chevron instead of the cog */}
+  <span className="ml-auto text-slate-400 opacity-0 transition group-hover:opacity-100">
+    <ChevronIcon />
+  </span>
+</Link>
 
         <div className="mt-4 flex flex-col gap-2 px-2">
           {/* Apps dropdown (header) */}

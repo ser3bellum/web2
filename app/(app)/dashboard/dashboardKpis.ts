@@ -1,10 +1,13 @@
 // app/dashboard/dashboardKpis.ts
 import type { DashboardRange } from "@/app/(app)/lib/dateRange"; // adjust relative path
 
-export async function getDashboardKpis(
-  range: DashboardRange
-): Promise<DashboardKpi[]> {
-  // TODO: later use range.from / range.to
+export async function getDashboardKpis(params: {
+  companyId: string;
+  range: DashboardRange;
+}): Promise<DashboardKpi[]> {
+  const { companyId, range } = params;
+
+  // TODO: use companyId + range.from/range.to
   return DASHBOARD_KPIS;
 }
 

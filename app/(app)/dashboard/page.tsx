@@ -1,41 +1,53 @@
 // app/(app)/dashboard/page.tsx
 import type { ReactNode } from "react";
 import React from "react";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-import { Card } from "app/(app)/components/Card";
-import { DASHBOARD_CARDS } from "app/(app)/components/DashboardCards";
-import { SortableDashboardGrid } from "app/(app)/components/SortableDashboardGrid";
 import DashboardCardsGrid from "app/(app)/components/DashboardCardsGrid";
-
 
 import { KpiStrip } from "./KpiStrip";
 import { parseDashboardRange } from "app/(app)/lib/dateRange";
-import { getDashboardKpis } from "app/(app)/dashboard/dashboardKpis"; // or "./dashboardKpis" depending on your filename
+import { getDashboardKpis } from "app/(app)/dashboard/dashboardKpis";
+import { getUserCompanyContext } from "@/lib/data/getUserCompanyContext";
+
+type DashboardSearchParams = { from?: string; to?: string };
 
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string; to?: string }>;
+  // ✅ Works whether Next hands you an object OR a Promise (no more runtime errors)
+  searchParams?: DashboardSearchParams | Promise<DashboardSearchParams>;
 }) {
-  const sp = await searchParams;
-
+  // ✅ unwrap safely (handles undefined too)
+  const sp = searchParams ? await Promise.resolve(searchParams) : {};
   const range = parseDashboardRange(sp);
-  const kpis = await getDashboardKpis(range);
 
+  const session = (await cookies()).get("sb_auth")?.value;
+  if (!session) redirect("/login");
+
+  const { company } = await getUserCompanyContext(session);
+  if (!company?.id) {
+    return (
+      <div className="px-6 py-10">
+        <h1 className="text-xl font-semibold">Dashboard</h1>
+        <p className="mt-2 text-slate-600">No company linked to your account yet.</p>
+      </div>
+    );
+  }
+
+  const kpis = await getDashboardKpis({
+    range,
+    companyId: company.id,
+  });
 
   return (
     <div className="flex flex-col">
-
-
       <div className="flex flex-col gap-6 px-4 pb-8 pt-6 lg:px-8">
-        {/* KPI strip (interactive + modal) */}
         <KpiStrip kpis={kpis} />
-
-        {/* 9-card grid */}
         <section>
-  <DashboardCardsGrid />
-</section>
-
+          <DashboardCardsGrid />
+        </section>
       </div>
     </div>
   );
@@ -51,7 +63,11 @@ function renderIconSafe(icon: unknown): ReactNode {
   }
 
   if (typeof icon === "string") {
-    return <span className="rounded-md border px-2 py-1 text-xs opacity-70">{icon}</span>;
+    return (
+      <span className="rounded-md border px-2 py-1 text-xs opacity-70">
+        {icon}
+      </span>
+    );
   }
 
   return null;

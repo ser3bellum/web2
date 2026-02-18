@@ -16,7 +16,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "clsx": "^2.1.1",
     "firebase": "^12.8.0",
-    "firebase-admin": "^13.6.0",
+    "firebase-admin": "^13.6.1",
     "lodash": "^4.17.23",
     "next": "^16.1.1",
     "react": "^19.2.3",

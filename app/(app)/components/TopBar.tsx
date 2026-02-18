@@ -208,7 +208,7 @@ export function TopBar({ companyName = "Ser3bellum", rightSlot }: TopBarProps) {
         />
       )}
 
-      <header className="sticky top-0 z-50 w-full border-b border-white/40 bg-white/60 backdrop-blur">
+      <header className="sb-topbar sticky top-0 z-50 w-full border-b border-white/40 bg-white/60 backdrop-blur">
         <div className="mx-auto flex h-[72px] w-full items-center gap-3 px-4">
 
         {/* Left: Company (clickable → dashboard) */}
@@ -525,19 +525,28 @@ function BellIcon() {
     </svg>
   );
 }
-function CheckIcon() {
+type IconProps = React.SVGProps<SVGSVGElement>;
+
+function CheckIcon(props: IconProps) {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      className="block"
+      {...props}
+    >
       <path
         d="M20 6L9 17l-5-5"
         stroke="currentColor"
-        strokeWidth="3"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
     </svg>
   );
 }
+
 
 function PrinterIcon() {
   return (

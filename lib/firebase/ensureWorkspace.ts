@@ -1,29 +1,23 @@
-// lib/firebase/bootstrap.ts
+// lib/firebase/ensureWorkspace.ts
 import { adminDb } from "@/lib/firebase/admin";
 import { FieldValue } from "firebase-admin/firestore";
 
-export async function bootstrapUserAndWorkspace(params: {
+export async function ensureUserWorkspace(params: {
   uid: string;
-  email: string | null;
+  email?: string | null;
   name?: string | null;
-  companyName?: string | null;
 }) {
-  const { uid, email, name, companyName } = params;
+  const { uid, email, name } = params;
 
   const userRef = adminDb.collection("users").doc(uid);
-
-  // 1️⃣ Check if user already has a workspace
   const userSnap = await userRef.get();
-  const existingWorkspaceId = userSnap.exists
-    ? userSnap.data()?.lastWorkspaceId
-    : null;
 
+  const existingWorkspaceId = userSnap.data()?.lastWorkspaceId;
   if (existingWorkspaceId) {
-    // Already bootstrapped → nothing to do
-    return { workspaceId: existingWorkspaceId };
+    return existingWorkspaceId;
   }
 
-  // 2️⃣ Create first workspace
+  // Create first workspace (standard default)
   const workspaceRef = adminDb.collection("workspaces").doc();
   const workspaceId = workspaceRef.id;
 
@@ -44,9 +38,8 @@ export async function bootstrapUserAndWorkspace(params: {
 
   batch.set(workspaceRef, {
     workspaceId,
-    name: (companyName ?? "").trim() || "My company",
+    name: "My company",
     ownerUid: uid,
-    plan: "free",
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   });
@@ -57,14 +50,16 @@ export async function bootstrapUserAndWorkspace(params: {
     joinedAt: FieldValue.serverTimestamp(),
   });
 
-  // 3️⃣ Membership index (fast workspace listing)
-  batch.set(adminDb.collection("users").doc(uid).collection("workspaces").doc(workspaceId), {
-    workspaceId,
-    role: "owner",
-    createdAt: FieldValue.serverTimestamp(),
-  });
+  batch.set(
+    userRef.collection("workspaces").doc(workspaceId),
+    {
+      workspaceId,
+      role: "owner",
+      createdAt: FieldValue.serverTimestamp(),
+    }
+  );
 
   await batch.commit();
 
-  return { workspaceId };
+  return workspaceId;
 }
