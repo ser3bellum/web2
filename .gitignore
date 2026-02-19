@@ -7,3 +7,4 @@ node_modules/
 .DS_Store
 .env.local
 .secrets/
+firebase-debug.log
