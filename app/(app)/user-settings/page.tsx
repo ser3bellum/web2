@@ -18,8 +18,17 @@ export default async function UserSettingsPage() {
         id: user.id,
         email: user.email ?? "",
         name: user.name ?? "",
-        companyName: company?.name ?? user.companyName ?? "",
-        companyId: user.companyId ?? null,
+        avatarUrl: user.avatarUrl ?? null,
+        jobTitle: user.jobTitle ?? "",
+      }}
+      company={{
+        id: company?.id ?? null,
+        name: company?.name ?? "",
+        website: company?.website ?? "",
+        companySize: company?.companySize ?? "",
+        activity: company?.activity ?? "",
+        vatId: company?.vatId ?? "",
+        country: company?.country ?? "",
       }}
     />
   );

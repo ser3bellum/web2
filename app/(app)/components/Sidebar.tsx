@@ -175,26 +175,32 @@ export function Sidebar({ companyName, userEmail, userName,avatarUrl }: SidebarP
   href="/user-settings"
   aria-label="Open profile settings"
   className={cn(
-    "group mb-5 flex w-full items-center gap-3 rounded-xl px-2 py-2 transition",
-    "hover:bg-slate-100/60 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+     "group mb-5 flex w-full items-center gap-3 rounded-xl px-3 py-2.5",
+  "border border-white/25 bg-white/10 backdrop-blur-xl ring-1 ring-white/10 shadow-sm transition-colors",
+  "hover:bg-white/22 hover:border-white/45 hover:shadow-md",
+  "focus:outline-none focus:ring-2 focus:ring-blue-500/30"
   )}
 >
   {/* Avatar */}
-  <div className="relative h-11 w-11 overflow-hidden rounded-full bg-zinc-200">
-    {avatarUrl ? (
-      <img
-        src={avatarUrl}
-        alt=""
-        className="h-full w-full object-cover"
-        referrerPolicy="no-referrer"
-      />
-    ) : null}
-
-    {/* Hover overlay hint */}
-    <span className="pointer-events-none absolute inset-0 grid place-items-center bg-black/40 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
-      Edit
+  <div className="relative grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-zinc-200">
+  {avatarUrl ? (
+    <img
+      src={avatarUrl}
+      alt=""
+      className="h-full w-full object-cover"
+      referrerPolicy="no-referrer"
+    />
+  ) : (
+    <span className="text-xs font-semibold text-slate-600">
+      {(userEmail?.[0] ?? "U").toUpperCase()}
     </span>
-  </div>
+  )}
+
+  <span className="pointer-events-none absolute inset-0 grid place-items-center bg-black/40 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
+    Edit
+  </span>
+</div>
+
 
   {/* Text */}
   <div className="min-w-0 flex-1">
@@ -519,23 +525,7 @@ function GridIcon() {
   );
 }
 
-function GearIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      aria-hidden="true"
-    >
-      <path
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M10.5 6h3m-4.5 6a3 3 0 1 0 6 0 3 3 0 0 0-6 0Zm10.94 1.5a8.96 8.96 0 0 0 0-3l-2.06-.6a7.94 7.94 0 0 0-.7-1.7l1.2-1.8a10.3 10.3 0 0 0-2.12-2.12l-1.8 1.2c-.54-.3-1.11-.54-1.7-.7L13.5 2.06a8.96 8.96 0 0 0-3 0l-.6 2.06c-.59.16-1.16.4-1.7.7l-1.8-1.2A10.3 10.3 0 0 0 4.28 5.74l1.2 1.8c-.3.54-.54 1.11-.7 1.7l-2.06.6a8.96 8.96 0 0 0 0 3l2.06.6c.16.59.4 1.16.7 1.7l-1.2 1.8a10.3 10.3 0 0 0 2.12 2.12l1.8-1.2c.54.3 1.11.54 1.7.7l.6 2.06a8.96 8.96 0 0 0 3 0l.6-2.06c.59-.16 1.16-.4 1.7-.7l1.8 1.2a10.3 10.3 0 0 0 2.12-2.12l-1.2-1.8c.3-.54.54-1.11.7-1.7l2.06-.6Z"
-      />
-    </svg>);
-}
+
 
 function AppsIcon() {
   return (

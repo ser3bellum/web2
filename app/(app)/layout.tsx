@@ -26,10 +26,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar
-        companyName={company?.name ?? user?.companyName ?? "Company"}
-        userEmail={user?.email ?? ""}
-        userName={user?.name ?? ""}
-      />
+  companyName={company?.name ?? user?.companyName ?? "Company"}
+  userEmail={user?.email ?? ""}
+  userName={user?.name ?? ""}
+   avatarUrl={user?.avatarUrl ?? null}
+/>
+
 
       <div className="flex min-w-0 flex-1 flex-col app-gradient">
         <DailyReportModalController />
