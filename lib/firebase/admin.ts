@@ -32,7 +32,8 @@ export const adminAuth = admin.auth();
 
 // Named Firestore database (keep if intentional)
 export const adminDb = getFirestore(admin.app(), "ser3bellum");
-
+// Add this alias so imports expecting `db` work
+export const db = adminDb;
 export default admin;
 
 export function verifyIdToken(idToken: string) {

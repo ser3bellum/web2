@@ -2,11 +2,22 @@
 import { adminDb } from "@/lib/firebase/admin";
 import { FieldValue } from "firebase-admin/firestore";
 
+export type BootstrapInput = {
+  uid: string;
+  email: string | null;
+  name?: string | null;
+  companyName?: string | null;
+  companySize?: string | null; // or number | null depending on your form
+  country?: string | null;
+};
+
 export async function bootstrapUserAndWorkspace(params: {
   uid: string;
   email: string | null;
   name?: string | null;
   companyName?: string | null;
+  companySize?: string | null; // or number | null depending on your form
+  country?: string | null;
 }) {
   const { uid, email, name, companyName } = params;
 
