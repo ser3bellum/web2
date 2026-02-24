@@ -4,113 +4,112 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+	:root {
+		--background: 0 0% 100%;
+		--foreground: 222.2 84% 4.9%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+		--card: 0 0% 100%;
+		--card-foreground: 222.2 84% 4.9%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+		--popover: 0 0% 100%;
+		--popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+		--primary: 222.2 47.4% 11.2%;
+		--primary-foreground: 210 40% 98%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+		--secondary: 210 40% 96.1%;
+		--secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+		--muted: 210 40% 96.1%;
+		--muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+		--accent: 210 40% 96.1%;
+		--accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+		--destructive: 0 84.2% 60.2%;
+		--destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+		--border: 214.3 31.8% 91.4%;
+		--input: 214.3 31.8% 91.4%;
+		--ring: 222.2 84% 4.9%;
 
-    --radius: 0.5rem;
+		--radius: 0.5rem;
 
-    --app-bg-start: #f3f8f7;   /* soft mint-white */
-    --app-bg-end:   #bbc1eb; 
-  }
+		--app-bg-start: #f3f8f7; /* soft mint-white */
+		--app-bg-end: #bbc1eb;
+	}
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+	.dark {
+		--background: 222.2 84% 4.9%;
+		--foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+		--card: 222.2 84% 4.9%;
+		--card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+		--popover: 222.2 84% 4.9%;
+		--popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+		--primary: 210 40% 98%;
+		--primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+		--secondary: 217.2 32.6% 17.5%;
+		--secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+		--muted: 217.2 32.6% 17.5%;
+		--muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+		--accent: 217.2 32.6% 17.5%;
+		--accent-foreground: 210 40% 98%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+		--destructive: 0 62.8% 30.6%;
+		--destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-  }
+		--border: 217.2 32.6% 17.5%;
+		--input: 217.2 32.6% 17.5%;
+		--ring: 212.7 26.8% 83.9%;
+	}
 }
 
 @layer base {
-  
-  body {
-    @apply bg-background text-foreground;
-  }
+	body {
+		@apply bg-background text-foreground;
+	}
 }
 
 .app-gradient {
-  background: linear-gradient(
-    165deg,
-    var(--app-bg-start) 0%,
-    var(--app-bg-end) 100%
-  );
+	background: linear-gradient(
+		165deg,
+		var(--app-bg-start) 0%,
+		var(--app-bg-end) 100%
+	);
 }
 /* Make react-day-picker transparent so the popover "glass" shows through */
 /* Glass popover material (fake glass, reliable everywhere) */
 .glass-popover {
-  padding: 0.5rem; /* matches p-2 */
-  border-radius: 1rem; /* rounded-2xl */
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.85),
-    rgba(255, 255, 255, 0.60)
-  );
-  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.25);
+	padding: 0.5rem; /* matches p-2 */
+	border-radius: 1rem; /* rounded-2xl */
+	border: 1px solid rgba(255, 255, 255, 0.45);
+	background: linear-gradient(
+		180deg,
+		rgba(255, 255, 255, 0.85),
+		rgba(255, 255, 255, 0.6)
+	);
+	box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
 /* A subtle “sheen” highlight to sell the glass */
 .glass-popover::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 1rem;
-  pointer-events: none;
-  background: radial-gradient(
-    circle at 20% 10%,
-    rgba(255, 255, 255, 0.75),
-    transparent 45%
-  );
-  opacity: 0.55;
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: 1rem;
+	pointer-events: none;
+	background: radial-gradient(
+		circle at 20% 10%,
+		rgba(255, 255, 255, 0.75),
+		transparent 45%
+	);
+	opacity: 0.55;
 }
 
 /* Make DayPicker transparent so the glass material shows through */
@@ -118,88 +117,96 @@
 .rdp-glass .rdp-months,
 .rdp-glass .rdp-month,
 .rdp-glass .rdp-table {
-  background: transparent !important;
+	background: transparent;
 }
-.modal-backdrop{
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  z-index: 9999;
-}
-
-.modal-card{
-  width: min(720px, 100%);
-  background: white;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 12px 40px rgba(0,0,0,.25);
+.modal-backdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.45);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	z-index: 9999;
 }
 
-.modal-header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap: 12px;
+.modal-card {
+	width: min(720px, 100%);
+	background: white;
+	border-radius: 12px;
+	padding: 16px;
+	box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
 }
 
-.modal-actions{
-  display:flex;
-  gap: 10px;
-  justify-content:flex-end;
-  margin-top: 16px;
-  flex-wrap: wrap;
+.modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
 }
 
-.muted{ opacity:.7; }
-
-.icon-btn{
-  background: transparent;
-  border: 0;
-  font-size: 18px;
-  cursor: pointer;
+.modal-actions {
+	display: flex;
+	gap: 10px;
+	justify-content: flex-end;
+	margin-top: 16px;
+	flex-wrap: wrap;
 }
-.secondary{
-  opacity: .85;
+
+.muted {
+	opacity: 0.7;
+}
+
+.icon-btn {
+	background: transparent;
+	border: 0;
+	font-size: 18px;
+	cursor: pointer;
+}
+.secondary {
+	opacity: 0.85;
 }
 
 @media print {
-  /* hide UI chrome */
-  .no-print {
-    display: none !important;
-  }
+	/* hide UI chrome */
+	.no-print {
+		display: none;
+	}
 
-  /* sidebar safety: your Sidebar probably renders <aside> or nav */
-  aside, nav {
-    display: none !important;
-  }
+	/* sidebar safety: your Sidebar probably renders <aside> or nav */
+	aside,
+	nav {
+		display: none;
+	}
 
-  /* ensure main goes full width */
-  main {
-    overflow: visible !important;
-  }
+	/* ensure main goes full width */
+	main {
+		overflow: visible;
+	}
 
-  /* remove backgrounds that waste ink */
-  .app-gradient {
-    background: #fff !important;
-  }
+	/* remove backgrounds that waste ink */
+	.app-gradient {
+		background: #fff;
+	}
 
-  html, body {
-    background: #fff !important;
-    color: #000 !important;
-  }
+	html,
+	body {
+		background: #fff;
+		color: #000;
+	}
 
-  /* nicer print spacing */
-  @page {
-    margin: 12mm;
-  }
+	/* nicer print spacing */
+	@page {
+		margin: 12mm;
+	}
 
-  /* avoid awkward splits */
-  h1, h2, h3, p, li {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
+	/* avoid awkward splits */
+	h1,
+	h2,
+	h3,
+	p,
+	li {
+		break-inside: avoid;
+		page-break-inside: avoid;
+	}
 }
