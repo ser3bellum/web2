@@ -6,21 +6,21 @@ import { verifySessionCookie } from "@/lib/firebase/admin";
 export const dynamic = "force-dynamic";
 
 export default async function AuthLayout({
-  children,
+	children,
 }: {
-  children: React.ReactNode;
+	children: React.ReactNode;
 }) {
-  const cookieStore = await cookies(); // ✅ Next 16.1.6 = async
-  const session = cookieStore.get("sb_auth")?.value;
+	const cookieStore = await cookies(); // ✅ Next 16.1.6 = async
+	const session = cookieStore.get("sb_auth")?.value;
 
-  if (session) {
-    try {
-      await verifySessionCookie(session);
-      redirect("/dashboard");
-    } catch {
-      // invalid cookie -> allow login/register
-    }
-  }
+	if (session) {
+		try {
+			await verifySessionCookie(session);
+			redirect("/dashboard");
+		} catch {
+			// invalid cookie -> allow login/register
+		}
+	}
 
-  return <>{children}</>;
+	return <>{children}</>;
 }
