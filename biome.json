@@ -1,0 +1,64 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.4/schema.json",
+
+  "assist": {
+    "enabled": true,
+    "actions": { "source": { "organizeImports": "on" } }
+  },
+
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+
+      "a11y": {
+        "useButtonType": "error",
+        "noLabelWithoutControl": "error",
+        "useAriaPropsSupportedByRole": "error",
+        "useHtmlLang": "error",
+        "noSvgWithoutTitle": "off"
+      },
+
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noArrayIndexKey": "off",
+        "useIterableCallbackReturn": "off"
+      },
+
+      "style": {
+        "noNonNullAssertion": "off"
+      },
+
+      "correctness": {
+        "noUnusedVariables": "warn"
+      },
+
+      "performance": {
+        "noImgElement": "off"
+      }
+    }
+  },
+
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+
+  "overrides": [
+    {
+      "includes": ["**/*.css"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noUnknownAtRules": "off"
+          }
+        }
+      }
+    }
+  ],
+
+  "files": {
+    "includes": ["**", "!**/node_modules", "!**/.next"]
+  }
+}
