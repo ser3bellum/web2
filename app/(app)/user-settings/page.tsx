@@ -6,30 +6,30 @@ import { getUserCompanyContext } from "@/lib/data/getUserCompanyContext";
 import UserSettingsClient from "./UserSettingsClient";
 
 export default async function UserSettingsPage() {
-  const session = (await cookies()).get("sb_auth")?.value;
-  if (!session) redirect("/login");
+	const session = (await cookies()).get("sb_auth")?.value;
+	if (!session) redirect("/login");
 
-  const { user, company } = await getUserCompanyContext(session);
-  if (!user) redirect("/login");
+	const { user, company } = await getUserCompanyContext(session);
+	if (!user) redirect("/login");
 
-  return (
-    <UserSettingsClient
-      user={{
-        id: user.id,
-        email: user.email ?? "",
-        name: user.name ?? "",
-        avatarUrl: user.avatarUrl ?? null,
-        jobTitle: user.jobTitle ?? "",
-      }}
-      company={{
-        id: company?.id ?? null,
-        name: company?.name ?? "",
-        website: company?.website ?? "",
-        companySize: company?.companySize ?? "",
-        activity: company?.activity ?? "",
-        vatId: company?.vatId ?? "",
-        country: company?.country ?? "",
-      }}
-    />
-  );
+	return (
+		<UserSettingsClient
+			user={{
+				id: user.id,
+				email: user.email ?? "",
+				name: user.name ?? "",
+				avatarUrl: user.avatarUrl ?? null,
+				jobTitle: user.jobTitle ?? "",
+			}}
+			company={{
+				id: company?.id ?? null,
+				name: company?.name ?? "",
+				website: company?.website ?? "",
+				companySize: company?.companySize ?? "",
+				activity: company?.activity ?? "",
+				vatId: company?.vatId ?? "",
+				country: company?.country ?? "",
+			}}
+		/>
+	);
 }

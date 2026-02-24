@@ -2,61 +2,60 @@
 import type { DashboardRange } from "@/app/(app)/lib/dateRange"; // adjust relative path
 
 export async function getDashboardKpis(params: {
-  companyId: string;
-  range: DashboardRange;
+	companyId: string;
+	range: DashboardRange;
 }): Promise<DashboardKpi[]> {
-  const { companyId, range } = params;
+	const { companyId: _companyId, range: _range } = params;
 
-  // TODO: use companyId + range.from/range.to
-  return DASHBOARD_KPIS;
+	// TODO: use companyId + range.from/range.to
+	return DASHBOARD_KPIS;
 }
 
 export type DashboardKpi = {
-  id: string;
-  title: string;
-  value: string;
-  subtitle?: string;
-  delta?: {
-    value: string; // e.g. "+2.4%" or "-1.1%"
-    tone?: "up" | "down" | "neutral";
-  };
+	id: string;
+	title: string;
+	value: string;
+	subtitle?: string;
+	delta?: {
+		value: string; // e.g. "+2.4%" or "-1.1%"
+		tone?: "up" | "down" | "neutral";
+	};
 };
 
 export const DASHBOARD_KPIS: DashboardKpi[] = [
-  {
-    id: "kpi-uptime",
-    title: "Uptime",
-    value: "99.94%",
-    subtitle: "Last 7 days",
-    delta: { value: "+0.12%", tone: "up" },
-  },
-  {
-    id: "kpi-incidents",
-    title: "Incidents",
-    value: "2",
-    subtitle: "Open",
-    delta: { value: "-1", tone: "up" },
-  },
-  {
-    id: "kpi-latency",
-    title: "Latency",
-    value: "312ms",
-    subtitle: "P95",
-    delta: { value: "-18ms", tone: "up" },
-  },
-  {
-    id: "kpi-errors",
-    title: "Errors",
-    value: "0.7%",
-    subtitle: "Rate",
-    delta: { value: "-0.2%", tone: "up" },
-  },
-  {
-    id: "kpi-alerts",
-    title: "Alerts",
-    value: "14",
-    subtitle: "Last 24h",
-    delta: { value: "+3", tone: "down" },
-  },
+	{
+		id: "kpi-uptime",
+		title: "Uptime",
+		value: "99.94%",
+		subtitle: "Last 7 days",
+		delta: { value: "+0.12%", tone: "up" },
+	},
+	{
+		id: "kpi-incidents",
+		title: "Incidents",
+		value: "2",
+		subtitle: "Open",
+		delta: { value: "-1", tone: "up" },
+	},
+	{
+		id: "kpi-latency",
+		title: "Latency",
+		value: "312ms",
+		subtitle: "P95",
+		delta: { value: "-18ms", tone: "up" },
+	},
+	{
+		id: "kpi-errors",
+		title: "Errors",
+		value: "0.7%",
+		subtitle: "Rate",
+		delta: { value: "-0.2%", tone: "up" },
+	},
+	{
+		id: "kpi-alerts",
+		title: "Alerts",
+		value: "14",
+		subtitle: "Last 24h",
+		delta: { value: "+3", tone: "down" },
+	},
 ];
-
