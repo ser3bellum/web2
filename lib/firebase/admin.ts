@@ -18,9 +18,7 @@ function loadServiceAccount() {
   return JSON.parse(fs.readFileSync(absPath, "utf8"));
 }
 
-// ✅ IMPORTANT: your Firestore is a NAMED database (not "(default)")
-// Set FIRESTORE_DATABASE_ID=ser3bellum in App Hosting env vars (staging + prod)
-// Fallback stays "ser3bellum" so it works immediately.
+// ✅ named Firestore database id
 const FIRESTORE_DATABASE_ID = process.env.FIRESTORE_DATABASE_ID || "ser3bellum";
 
 if (!admin.apps.length) {
@@ -32,18 +30,14 @@ if (!admin.apps.length) {
       projectId: serviceAccount.project_id,
     });
   } else {
-    // Firebase App Hosting / Cloud Run: use ADC (runtime service account)
     admin.initializeApp();
   }
 }
 
 export const adminAuth = admin.auth();
 
-// ✅ THIS is the fix: point Admin SDK at the named database
+// ✅ critical fix: use the named database
 export const adminDb = getFirestore(admin.app(), FIRESTORE_DATABASE_ID);
-
-// Optional but helpful
-adminDb.settings({ ignoreUndefinedProperties: true });
 
 export const db = adminDb;
 export default admin;
