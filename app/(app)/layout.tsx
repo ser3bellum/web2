@@ -10,39 +10,42 @@ import { getUserCompanyContext } from "@/lib/data/getUserCompanyContext";
 import { adminAuth } from "@/lib/firebase/admin";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-	const cookieStore = await cookies();
-	const session = cookieStore.get("__Host-__Host-__Host-__Host-__Host-__Host-__Host-__Host-__Host-__Host-sb_auth")?.value;
+  const cookieStore = await cookies();
 
-	if (!session) redirect("/login");
+  // ✅ correct cookie name + temporary fallback (remove fallback later)
+  const session =
+    cookieStore.get("__Host-sb_auth")?.value ??
+    cookieStore.get("sb_auth")?.value;
 
-	try {
-		await adminAuth.verifySessionCookie(session, true);
-	} catch {
-		redirect("/login");
-	}
+  if (!session) redirect("/login");
 
-	const { user, company } = await getUserCompanyContext(session);
+  try {
+    // ✅ most likely correct call shape
+    await adminAuth.verifySessionCookie(session, true);
+  } catch {
+    redirect("/login");
+  }
 
-	return (
-		<div className="flex h-screen overflow-hidden">
-			<Sidebar
-				companyName={company?.name ?? user?.companyName ?? "Company"}
-				userEmail={user?.email ?? ""}
-				userName={user?.name ?? ""}
-				avatarUrl={user?.avatarUrl ?? null}
-			/>
+  const { user, company } = await getUserCompanyContext(session);
 
-			<div className="flex min-w-0 flex-1 flex-col app-gradient">
-				<DailyReportModalController />
+  return (
+    <div className="flex h-screen overflow-hidden">
+      <Sidebar
+        companyName={company?.name ?? user?.companyName ?? "Company"}
+        userEmail={user?.email ?? ""}
+        userName={user?.name ?? ""}
+        avatarUrl={user?.avatarUrl ?? null}
+      />
 
-				<TopBar
-					companyName={company?.name ?? user?.companyName ?? "Ser3bellum"}
-				/>
+      <div className="flex min-w-0 flex-1 flex-col app-gradient">
+        <DailyReportModalController />
 
-				<main className="flex-1 overflow-y-auto bg-transparent -mt-[72px] pt-[72px]">
-					{children}
-				</main>
-			</div>
-		</div>
-	);
+        <TopBar companyName={company?.name ?? user?.companyName ?? "Ser3bellum"} />
+
+        <main className="flex-1 overflow-y-auto bg-transparent -mt-[72px] pt-[72px]">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
 }

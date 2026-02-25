@@ -11,10 +11,7 @@ function cleanString(v: unknown) {
   return s.length ? s : undefined;
 }
 
-function isLikelyBot(req: Request) {
-  const ua = req.headers.get("user-agent") ?? "";
-  return /\bGoogle\b|\bGooglebot\b|\bAdsBot\b|\bAPIs-Google\b/i.test(ua);
-}
+
 
 async function safeJson(req: Request) {
   const ct = req.headers.get("content-type") ?? "";
@@ -31,9 +28,7 @@ async function safeJson(req: Request) {
 
 export async function POST(req: Request) {
   // 1) Kill bot noise & bad requests up front (no more 500s from crawlers)
-  if (isLikelyBot(req)) {
-    return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
-  }
+  
 
   const parsed = await safeJson(req);
   if (!parsed.ok) {
