@@ -1,10 +1,15 @@
 // app/api/auth/session/route.ts
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
-import { adminDb, createSessionCookie, verifyIdToken } from "@/lib/firebase/admin";
+import {
+  adminDb,
+  createSessionCookie,
+  verifyIdToken,
+} from "@/lib/firebase/admin";
+
+/* -------------------------------- helpers -------------------------------- */
 
 function cleanString(v: unknown) {
   if (typeof v !== "string") return undefined;
@@ -12,66 +17,80 @@ function cleanString(v: unknown) {
   return s.length ? s : undefined;
 }
 
-async function readJson(req: Request) {
-  // Prefer JSON, but tolerate missing/wrong content-type
+async function safeJson(req: Request) {
+  const ct = req.headers.get("content-type") ?? "";
+  if (!ct.includes("application/json")) {
+    return {
+      ok: false as const,
+      status: 415 as const,
+      error: "Expected application/json",
+      body: null,
+    };
+  }
+
   try {
-    return await req.json();
+    const body = await req.json();
+    return { ok: true as const, status: 200 as const, body, error: null };
   } catch {
-    const text = await req.text();
-    if (!text) return null;
-    try {
-      return JSON.parse(text);
-    } catch {
-      return null;
-    }
+    return {
+      ok: false as const,
+      status: 400 as const,
+      error: "Invalid JSON body",
+      body: null,
+    };
   }
 }
 
+/* -------------------------------- handler -------------------------------- */
+
 export async function POST(req: Request) {
-  const body = await readJson(req);
-  if (!body) {
-    return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
+  // 1) Reject bad / bot requests early
+  const parsed = await safeJson(req);
+  if (!parsed.ok) {
+    return NextResponse.json(
+      { ok: false, error: parsed.error },
+      { status: parsed.status },
+    );
   }
 
-  const { idToken, profile } = body ?? {};
+  const { idToken, profile } = parsed.body ?? {};
   const token = typeof idToken === "string" ? idToken.trim() : "";
 
   if (!token) {
-    return NextResponse.json({ ok: false, error: "Missing idToken" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Missing idToken" },
+      { status: 400 },
+    );
   }
 
   try {
-    // 1) Verify token
+    // 2) Verify Firebase ID token
     const decoded = await verifyIdToken(token);
     const uid = decoded.uid;
     const email = decoded.email ?? null;
     const tokenName = decoded.name ?? null;
 
-    // 2) Create session cookie first
+    // 3) Create session cookie FIRST
     const expiresIn = 14 * 24 * 60 * 60 * 1000; // 14 days
     const sessionCookie = await createSessionCookie(token, expiresIn);
 
-    // 3) Build response and SET COOKIE on this exact response
     const res = NextResponse.json({ ok: true });
-    res.headers.set("Cache-Control", "no-store");
 
+    // ✅ SINGLE, CANONICAL COOKIE
     res.cookies.set("__Host-sb_auth", sessionCookie, {
       httpOnly: true,
-      secure: true,
+      secure: true, // required for __Host-
       sameSite: "lax",
-      path: "/",
+      path: "/",    // required for __Host-
       maxAge: Math.floor(expiresIn / 1000),
     });
 
-    // 4) Firestore updates are best-effort; never break login
+    // 4) Firestore writes are best-effort
     try {
       const userRef = adminDb.collection("users").doc(uid);
-
-      const userSnap = await userRef.get();
-      const isNewUser = !userSnap.exists;
-
-      const existingUser = userSnap.exists ? (userSnap.data() as any) : null;
-      const existingCompanyId: string | undefined = existingUser?.companyId;
+      const snap = await userRef.get();
+      const isNewUser = !snap.exists;
+      const existingUser = snap.exists ? (snap.data() as any) : null;
 
       const baseUpdate: Record<string, any> = {
         email,
@@ -83,57 +102,50 @@ export async function POST(req: Request) {
         baseUpdate.onboardingStatus = "registered";
       }
 
-      const hasProfile = profile && typeof profile === "object";
-
-      if (hasProfile) {
+      if (profile && typeof profile === "object") {
         const p = profile as Record<string, unknown>;
-        const profileUpdate: Record<string, any> = {};
+        const update: Record<string, any> = {};
 
         const name = cleanString(p.name) ?? cleanString(tokenName);
-        if (name) profileUpdate.name = name;
+        if (name) update.name = name;
 
         const companyName = cleanString(p.companyName);
-        if (companyName) profileUpdate.companyName = companyName;
+        if (companyName) update.companyName = companyName;
 
         const companySize = cleanString(p.companySize);
-        if (companySize) profileUpdate.companySize = companySize;
+        if (companySize) update.companySize = companySize;
 
         const country = cleanString(p.country);
-        if (country) profileUpdate.country = country;
+        if (country) update.country = country;
 
-        // Create + link company if missing companyId and companyName exists
-        if (!existingCompanyId && companyName) {
+        if (!existingUser?.companyId && companyName) {
           const companyRef = adminDb.collection("companies").doc();
-          await companyRef.set(
-            {
-              name: companyName,
-              ownerUid: uid,
-              createdAt: FieldValue.serverTimestamp(),
-            },
-            { merge: true }
-          );
-          profileUpdate.companyId = companyRef.id;
+          await companyRef.set({
+            name: companyName,
+            ownerUid: uid,
+            createdAt: FieldValue.serverTimestamp(),
+          });
+          update.companyId = companyRef.id;
         }
 
-        await userRef.set({ ...baseUpdate, ...profileUpdate }, { merge: true });
+        await userRef.set({ ...baseUpdate, ...update }, { merge: true });
       } else {
         await userRef.set(baseUpdate, { merge: true });
       }
     } catch (e) {
       console.error("SESSION_PROFILE_WRITE_FAILED:", e);
+      // login must still succeed
     }
 
     return res;
   } catch (err: any) {
-    console.error("SESSION_ERROR:", err?.message, err?.stack, err);
+    console.error("SESSION_ERROR:", err);
     return NextResponse.json(
       {
         ok: false,
         error: err?.message ?? "Failed to create session",
-        code: err?.code ?? null,
-        name: err?.name ?? null,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
