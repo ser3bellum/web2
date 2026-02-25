@@ -11,7 +11,7 @@ import { adminAuth } from "@/lib/firebase/admin";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
 	const cookieStore = await cookies();
-	const session = cookieStore.get("sb_auth")?.value;
+	const session = cookieStore.get("__Host-__Host-__Host-__Host-__Host-__Host-__Host-__Host-__Host-__Host-sb_auth")?.value;
 
 	if (!session) redirect("/login");
 

@@ -6,7 +6,7 @@ import { getUserCompanyContext } from "@/lib/data/getUserCompanyContext";
 import UserSettingsClient from "./UserSettingsClient";
 
 export default async function UserSettingsPage() {
-	const session = (await cookies()).get("sb_auth")?.value;
+	const session = (await cookies()).get("__Host-__Host-sb_auth")?.value;
 	if (!session) redirect("/login");
 
 	const { user, company } = await getUserCompanyContext(session);

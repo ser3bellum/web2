@@ -1,133 +1,147 @@
 // app/api/auth/session/route.ts
 export const runtime = "nodejs";
 
-import { FieldValue } from "firebase-admin/firestore";
 import { NextResponse } from "next/server";
-import {
-	adminDb,
-	createSessionCookie,
-	verifyIdToken,
-} from "@/lib/firebase/admin";
+import { FieldValue } from "firebase-admin/firestore";
+import { adminDb, createSessionCookie, verifyIdToken } from "@/lib/firebase/admin";
 
 function cleanString(v: unknown) {
-	if (typeof v !== "string") return undefined;
-	const s = v.trim();
-	return s.length ? s : undefined;
+  if (typeof v !== "string") return undefined;
+  const s = v.trim();
+  return s.length ? s : undefined;
+}
+
+function isLikelyBot(req: Request) {
+  const ua = req.headers.get("user-agent") ?? "";
+  return /\bGoogle\b|\bGooglebot\b|\bAdsBot\b|\bAPIs-Google\b/i.test(ua);
+}
+
+async function safeJson(req: Request) {
+  const ct = req.headers.get("content-type") ?? "";
+  if (!ct.includes("application/json")) {
+    return { ok: false as const, status: 415 as const, body: null, error: "Expected application/json" };
+  }
+  try {
+    const body = await req.json();
+    return { ok: true as const, status: 200 as const, body, error: null };
+  } catch {
+    return { ok: false as const, status: 400 as const, body: null, error: "Invalid JSON body" };
+  }
 }
 
 export async function POST(req: Request) {
-	try {
-		const body = await req.json();
-		const { idToken, profile } = body ?? {};
+  // 1) Kill bot noise & bad requests up front (no more 500s from crawlers)
+  if (isLikelyBot(req)) {
+    return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
+  }
 
-		if (!idToken) {
-			return NextResponse.json(
-				{ ok: false, error: "Missing idToken" },
-				{ status: 400 },
-			);
-		}
+  const parsed = await safeJson(req);
+  if (!parsed.ok) {
+    return NextResponse.json({ ok: false, error: parsed.error }, { status: parsed.status });
+  }
 
-		const decoded = await verifyIdToken(idToken);
-		const uid = decoded.uid;
-		const email = decoded.email ?? null;
-		const tokenName = decoded.name ?? null;
+  const { idToken, profile } = parsed.body ?? {};
+  const token = typeof idToken === "string" ? idToken.trim() : "";
 
-		const userRef = adminDb.collection("users").doc(uid);
+  if (!token) {
+    return NextResponse.json({ ok: false, error: "Missing idToken" }, { status: 400 });
+  }
 
-		// Fetch existing user doc so we can:
-		// - keep createdAt stable
-		// - avoid overwriting profile on login
-		// - avoid creating duplicate companies
-		const userSnap = await userRef.get();
-		const isNewUser = !userSnap.exists;
+  try {
+    // 2) Verify token (auth correctness)
+    const decoded = await verifyIdToken(token);
+    const uid = decoded.uid;
+    const email = decoded.email ?? null;
+    const tokenName = decoded.name ?? null;
 
-		const existingUser = userSnap.exists ? (userSnap.data() as any) : null;
-		const existingCompanyId: string | undefined = existingUser?.companyId;
+    // 3) Create session cookie FIRST (so login works even if Firestore write fails)
+    const expiresIn = 14 * 24 * 60 * 60 * 1000; // 14 days
+    const sessionCookie = await createSessionCookie(token, expiresIn);
 
-		// Always update lastLoginAt (safe)
-		const baseUpdate: Record<string, any> = {
-			email,
-			lastLoginAt: FieldValue.serverTimestamp(),
-		};
+    const res = NextResponse.json({ ok: true });
 
-		// Only set createdAt once
-		if (isNewUser) {
-			baseUpdate.createdAt = FieldValue.serverTimestamp();
-			baseUpdate.onboardingStatus = "registered";
-		}
+    // Force secure on hosted.app / Cloud Run (HTTPS). Don't rely on NODE_ENV.
+    res.cookies.set("__Host-__Host-sb_auth", sessionCookie, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: Math.floor(expiresIn / 1000),
+    });
 
-		// If profile is provided (signup flow), merge in profile fields WITHOUT writing nulls
-		const hasProfile = profile && typeof profile === "object";
+    // 4) Firestore updates are BEST EFFORT — do not break login if they fail
+    try {
+      const userRef = adminDb.collection("users").doc(uid);
 
-		if (hasProfile) {
-			const p = profile as Record<string, unknown>;
-			const profileUpdate: Record<string, any> = {};
+      const userSnap = await userRef.get();
+      const isNewUser = !userSnap.exists;
 
-			const name = cleanString(p.name) ?? cleanString(tokenName);
-			if (name) profileUpdate.name = name;
+      const existingUser = userSnap.exists ? (userSnap.data() as any) : null;
+      const existingCompanyId: string | undefined = existingUser?.companyId;
 
-			const companyName = cleanString(p.companyName);
-			if (companyName) profileUpdate.companyName = companyName;
+      const baseUpdate: Record<string, any> = {
+        email,
+        lastLoginAt: FieldValue.serverTimestamp(),
+      };
 
-			const companySize = cleanString(p.companySize);
-			if (companySize) profileUpdate.companySize = companySize;
+      if (isNewUser) {
+        baseUpdate.createdAt = FieldValue.serverTimestamp();
+        baseUpdate.onboardingStatus = "registered";
+      }
 
-			const country = cleanString(p.country);
-			if (country) profileUpdate.country = country;
+      const hasProfile = profile && typeof profile === "object";
 
-			// ✅ NEW: Create + link company if missing companyId
-			// Only do this if we have a companyName (otherwise we can't create a meaningful company doc)
-			if (!existingCompanyId && companyName) {
-				const companyRef = adminDb.collection("companies").doc(); // auto id
-				await companyRef.set(
-					{
-						name: companyName,
-						ownerUid: uid,
-						createdAt: FieldValue.serverTimestamp(),
-					},
-					{ merge: true },
-				);
+      if (hasProfile) {
+        const p = profile as Record<string, unknown>;
+        const profileUpdate: Record<string, any> = {};
 
-				profileUpdate.companyId = companyRef.id; // link user -> company
-			}
+        const name = cleanString(p.name) ?? cleanString(tokenName);
+        if (name) profileUpdate.name = name;
 
-			await userRef.set(
-				{
-					...baseUpdate,
-					...profileUpdate,
-				},
-				{ merge: true },
-			);
-		} else {
-			// Login flow: do NOT touch profile fields
-			await userRef.set(baseUpdate, { merge: true });
-		}
+        const companyName = cleanString(p.companyName);
+        if (companyName) profileUpdate.companyName = companyName;
 
-		// Session cookie
-		const expiresIn = 14 * 24 * 60 * 60 * 1000;
-		const sessionCookie = await createSessionCookie(idToken, expiresIn);
+        const companySize = cleanString(p.companySize);
+        if (companySize) profileUpdate.companySize = companySize;
 
-		const res = NextResponse.json({ ok: true });
+        const country = cleanString(p.country);
+        if (country) profileUpdate.country = country;
 
-		res.cookies.set("sb_auth", sessionCookie, {
-			httpOnly: true,
-			secure: process.env.NODE_ENV === "production",
-			sameSite: "lax",
-			path: "/",
-			maxAge: Math.floor(expiresIn / 1000),
-		});
+        // Create + link company if missing companyId and companyName exists
+        if (!existingCompanyId && companyName) {
+          const companyRef = adminDb.collection("companies").doc();
+          await companyRef.set(
+            {
+              name: companyName,
+              ownerUid: uid,
+              createdAt: FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
 
-		return res;
-	} catch (err: any) {
-		console.error("SESSION_ERROR:", err);
-		return NextResponse.json(
-			{
-      ok: false,
-      error: err?.message ?? "Failed to create session",
-      code: err?.code ?? null,
-      name: err?.name ?? null,
-    },
-    { status: 500 },
-		);
-	}
+          profileUpdate.companyId = companyRef.id;
+        }
+
+        await userRef.set({ ...baseUpdate, ...profileUpdate }, { merge: true });
+      } else {
+        await userRef.set(baseUpdate, { merge: true });
+      }
+    } catch (e) {
+      console.error("SESSION_PROFILE_WRITE_FAILED:", e);
+      // still return ok:true with cookie already set
+    }
+
+    return res;
+  } catch (err: any) {
+    console.error("SESSION_ERROR:", err?.message, err?.stack, err);
+    return NextResponse.json(
+      {
+        ok: false,
+        error: err?.message ?? "Failed to create session",
+        code: err?.code ?? null,
+        name: err?.name ?? null,
+      },
+      { status: 500 }
+    );
+  }
 }

@@ -5,7 +5,7 @@ import LoginForm from "./LoginForm";
 
 export default async function LoginPage() {
 	const cookieStore = await cookies();
-	const session = cookieStore.get("sb_auth")?.value;
+	const session = cookieStore.get("__Host-__Host-sb_auth")?.value;
 
 	if (session) {
 		try {

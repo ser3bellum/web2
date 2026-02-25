@@ -6,7 +6,7 @@ import RegisterClient from "./RegisterClient";
 
 export default async function RegisterPage() {
 	const cookieStore = await cookies(); // ✅ in your Next version, this is correct
-	const session = cookieStore.get("sb_auth")?.value;
+	const session = cookieStore.get("__Host-__Host-sb_auth")?.value;
 
 	if (session) {
 		try {

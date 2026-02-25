@@ -11,7 +11,7 @@ export default async function AuthLayout({
 	children: React.ReactNode;
 }) {
 	const cookieStore = await cookies(); // ✅ Next 16.1.6 = async
-	const session = cookieStore.get("sb_auth")?.value;
+	const session = cookieStore.get("__Host-sb_auth")?.value;
 
 	if (session) {
 		try {

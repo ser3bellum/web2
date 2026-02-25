@@ -64,7 +64,7 @@ export default function RegisterClient() {
 
 			const idToken = await cred.user.getIdToken(true);
 
-			// 1) Create session cookie (httpOnly sb_auth) + send profile ON SIGNUP
+			// 1) Create session cookie (httpOnly __Host-__Host-sb_auth) + send profile ON SIGNUP
 			const sessionRes = await fetch("/api/auth/session", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },

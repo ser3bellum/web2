@@ -9,7 +9,7 @@ import { bootstrapUserAndWorkspace } from "@/lib/firebase/bootstrap";
 export async function POST(req: Request) {
 	try {
 		const cookieStore = await cookies();
-		const session = cookieStore.get("sb_auth")?.value;
+		const session = cookieStore.get("__Host-__Host-sb_auth")?.value;
 
 		if (!session) {
 			return NextResponse.json(

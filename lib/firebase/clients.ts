@@ -13,14 +13,15 @@ type WebAppConfig = {
 };
 
 function readWebConfig(): WebAppConfig {
-  // Firebase App Hosting injects this (stringified JSON)
-  const fromAppHosting = process.env.FIREBASE_WEBAPP_CONFIG;
-  if (fromAppHosting) {
-    const parsed = JSON.parse(fromAppHosting) as WebAppConfig;
+  // ✅ Client-safe: Next will inline this at build time
+  const raw = process.env.NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG;
+
+  if (raw) {
+    const parsed = JSON.parse(raw) as WebAppConfig;
     if (parsed?.apiKey && parsed?.authDomain && parsed?.projectId && parsed?.appId) return parsed;
   }
 
-  // Local dev fallback (.env.local)
+  // ✅ Local dev fallback (.env.local)
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
   const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
@@ -28,7 +29,7 @@ function readWebConfig(): WebAppConfig {
 
   if (!apiKey || !authDomain || !projectId || !appId) {
     throw new Error(
-      "Missing Firebase web config: set FIREBASE_WEBAPP_CONFIG (App Hosting) or NEXT_PUBLIC_FIREBASE_* (local)."
+      "Missing Firebase web config. Set NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG (recommended) or NEXT_PUBLIC_FIREBASE_*."
     );
   }
 

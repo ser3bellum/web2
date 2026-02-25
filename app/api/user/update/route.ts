@@ -12,7 +12,7 @@ function cleanString(v: unknown, max = 120) {
 }
 
 export async function POST(req: Request) {
-	const sessionCookie = (await cookies()).get("sb_auth")?.value;
+	const sessionCookie = (await cookies()).get("__Host-__Host-sb_auth")?.value;
 	if (!sessionCookie) {
 		return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 	}
