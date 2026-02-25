@@ -1,4 +1,6 @@
 // app/(app)/layout.tsx
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -12,17 +14,15 @@ import { adminAuth } from "@/lib/firebase/admin";
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
 
-  // ✅ correct cookie name + temporary fallback (remove fallback later)
-  const session =
-    cookieStore.get("")?.value ??
-    cookieStore.get("sb_auth")?.value;
+  // ✅ single canonical cookie
+  const session = cookieStore.get("__Host-sb_auth")?.value;
 
   if (!session) redirect("/login");
 
   try {
-    // ✅ most likely correct call shape
     await adminAuth.verifySessionCookie(session, true);
-  } catch {
+  } catch (e) {
+    console.error("APP_LAYOUT_SESSION_REJECTED:", e);
     redirect("/login");
   }
 
