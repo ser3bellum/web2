@@ -28,7 +28,7 @@ async function safeJson(req: Request) {
 
 export async function POST(req: Request) {
   // 1) Kill bot noise & bad requests up front (no more 500s from crawlers)
-  
+
 
   const parsed = await safeJson(req);
   if (!parsed.ok) {
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
     const res = NextResponse.json({ ok: true });
 
     // Force secure on hosted.app / Cloud Run (HTTPS). Don't rely on NODE_ENV.
-    res.cookies.set("__Host-__Host-sb_auth", sessionCookie, {
+    res.cookies.set("__Host-sb_auth", sessionCookie, {
       httpOnly: true,
       secure: true,
       sameSite: "lax",

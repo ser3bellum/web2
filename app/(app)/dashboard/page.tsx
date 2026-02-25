@@ -22,7 +22,7 @@ export default async function DashboardPage({
 	const sp = searchParams ? await Promise.resolve(searchParams) : {};
 	const range = parseDashboardRange(sp);
 
-	const session = (await cookies()).get("__Host-__Host-__Host-sb_auth")?.value;
+	const session = (await cookies()).get("__Host-sb_auth")?.value;
 	if (!session) redirect("/login");
 
 	const { company } = await getUserCompanyContext(session);

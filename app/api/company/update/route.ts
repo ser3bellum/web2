@@ -52,7 +52,7 @@ function encryptSecret(plaintext: string) {
 
 export async function POST(req: Request) {
 	// 1) Auth via session cookie
-	const sessionCookie = (await cookies()).get("__Host-__Host-sb_auth")?.value;
+	const sessionCookie = (await cookies()).get("__Host-sb_auth")?.value;
 	if (!sessionCookie) {
 		return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 	}

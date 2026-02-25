@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
 	try {
 		// Auth
-		const sessionCookie = (await cookies()).get("__Host-__Host-sb_auth")?.value;
+		const sessionCookie = (await cookies()).get("__Host-sb_auth")?.value;
 		if (!sessionCookie) {
 			console.log("[avatar] 401 no cookie");
 			return jsonError("Not authenticated", 401);

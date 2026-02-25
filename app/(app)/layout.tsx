@@ -14,7 +14,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   // ✅ correct cookie name + temporary fallback (remove fallback later)
   const session =
-    cookieStore.get("__Host-sb_auth")?.value ??
+    cookieStore.get("")?.value ??
     cookieStore.get("sb_auth")?.value;
 
   if (!session) redirect("/login");
