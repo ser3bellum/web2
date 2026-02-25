@@ -8,7 +8,9 @@ import { SortableDashboardGrid } from "app/(app)/components/SortableDashboardGri
 // If renderIconSafe is in the page file, you have 2 options:
 // 1) move it here, or
 // 2) temporarily remove rightSlot until we wire it cleanly.
-function renderIconSafe(icon: any) {
+import type { ReactNode } from "react";
+
+function renderIconSafe(icon: ReactNode) {
 	if (!icon) return null;
 	return icon;
 }

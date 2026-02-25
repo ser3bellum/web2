@@ -1,5 +1,6 @@
 // app/api/auth/session/route.ts
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
@@ -11,31 +12,28 @@ function cleanString(v: unknown) {
   return s.length ? s : undefined;
 }
 
-
-
-async function safeJson(req: Request) {
-  const ct = req.headers.get("content-type") ?? "";
-  if (!ct.includes("application/json")) {
-    return { ok: false as const, status: 415 as const, body: null, error: "Expected application/json" };
-  }
+async function readJson(req: Request) {
+  // Prefer JSON, but tolerate missing/wrong content-type
   try {
-    const body = await req.json();
-    return { ok: true as const, status: 200 as const, body, error: null };
+    return await req.json();
   } catch {
-    return { ok: false as const, status: 400 as const, body: null, error: "Invalid JSON body" };
+    const text = await req.text();
+    if (!text) return null;
+    try {
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
   }
 }
 
 export async function POST(req: Request) {
-  // 1) Kill bot noise & bad requests up front (no more 500s from crawlers)
-
-
-  const parsed = await safeJson(req);
-  if (!parsed.ok) {
-    return NextResponse.json({ ok: false, error: parsed.error }, { status: parsed.status });
+  const body = await readJson(req);
+  if (!body) {
+    return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { idToken, profile } = parsed.body ?? {};
+  const { idToken, profile } = body ?? {};
   const token = typeof idToken === "string" ? idToken.trim() : "";
 
   if (!token) {
@@ -43,19 +41,20 @@ export async function POST(req: Request) {
   }
 
   try {
-    // 2) Verify token (auth correctness)
+    // 1) Verify token
     const decoded = await verifyIdToken(token);
     const uid = decoded.uid;
     const email = decoded.email ?? null;
     const tokenName = decoded.name ?? null;
 
-    // 3) Create session cookie FIRST (so login works even if Firestore write fails)
+    // 2) Create session cookie first
     const expiresIn = 14 * 24 * 60 * 60 * 1000; // 14 days
     const sessionCookie = await createSessionCookie(token, expiresIn);
 
+    // 3) Build response and SET COOKIE on this exact response
     const res = NextResponse.json({ ok: true });
+    res.headers.set("Cache-Control", "no-store");
 
-    // Force secure on hosted.app / Cloud Run (HTTPS). Don't rely on NODE_ENV.
     res.cookies.set("__Host-sb_auth", sessionCookie, {
       httpOnly: true,
       secure: true,
@@ -64,7 +63,7 @@ export async function POST(req: Request) {
       maxAge: Math.floor(expiresIn / 1000),
     });
 
-    // 4) Firestore updates are BEST EFFORT — do not break login if they fail
+    // 4) Firestore updates are best-effort; never break login
     try {
       const userRef = adminDb.collection("users").doc(uid);
 
@@ -113,7 +112,6 @@ export async function POST(req: Request) {
             },
             { merge: true }
           );
-
           profileUpdate.companyId = companyRef.id;
         }
 
@@ -123,7 +121,6 @@ export async function POST(req: Request) {
       }
     } catch (e) {
       console.error("SESSION_PROFILE_WRITE_FAILED:", e);
-      // still return ok:true with cookie already set
     }
 
     return res;
