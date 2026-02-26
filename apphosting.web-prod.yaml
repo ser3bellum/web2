@@ -1,3 +1,7 @@
 env:
+  - variable: NANGO_SECRET_KEY
+    secret: NANGO_SECRET_KEY_PROD
+  - variable: NANGO_ENV
+    value: prod
   - variable: APP_BASE_URL
     value: https://web-prod--ser3bellum-v2.europe-west4.hosted.app
