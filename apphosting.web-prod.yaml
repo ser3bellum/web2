@@ -1,0 +1,3 @@
+env:
+  - variable: APP_BASE_URL
+    value: https://web-prod--ser3bellum-v2.europe-west4.hosted.app
