@@ -9,6 +9,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getUserCompanyContext } from "@/lib/data/getUserCompanyContext";
 import { KpiStrip } from "./KpiStrip";
+import { getDashboardHydration } from "app/(app)/dashboard/getDashboardHydration";
 
 type DashboardSearchParams = { from?: string; to?: string };
 
@@ -39,18 +40,34 @@ export default async function DashboardPage({
       companyId: company.id,
     });
 
+    // ✅ Hydration: integration-aware dashboard data (GA connection, later GA metrics)
+    // For now this matches what you're using in Integrations page.
+    const hydration = await getDashboardHydration({
+      from: range.from,
+      to: range.to,
+      endUserId: "dev-user-1",
+    });
+
     return (
       <div className="flex flex-col">
         <div className="flex flex-col gap-6 px-4 pb-8 pt-6 lg:px-8">
           <KpiStrip kpis={kpis} />
+
           <section>
-            <DashboardCardsGrid />
+           <DashboardCardsGrid hydrationCards={hydration.cards} />
+          </section>
+
+          {/* ✅ Temporary: prove hydration is working (remove later) */}
+          <section className="rounded-2xl border bg-white p-4">
+            <div className="text-sm font-semibold text-slate-800">Hydration (debug)</div>
+            <pre className="mt-2 overflow-auto text-xs text-slate-700">
+              {JSON.stringify(hydration, null, 2)}
+            </pre>
           </section>
         </div>
       </div>
     );
   } catch (e: any) {
-    // ✅ THIS is what will show the real error in Cloud Run logs
     console.error("DASHBOARD_SSR_CRASH:", e?.message, e?.stack, e);
     throw e;
   }

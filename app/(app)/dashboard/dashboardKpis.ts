@@ -1,5 +1,5 @@
 // app/dashboard/dashboardKpis.ts
-import type { DashboardRange } from "@/app/(app)/lib/dateRange"; // adjust relative path
+import type { DashboardRange } from "@/app/(app)/lib/dateRange";
 
 export async function getDashboardKpis(params: {
 	companyId: string;
@@ -17,45 +17,45 @@ export type DashboardKpi = {
 	value: string;
 	subtitle?: string;
 	delta?: {
-		value: string; // e.g. "+2.4%" or "-1.1%"
+		value: string;
 		tone?: "up" | "down" | "neutral";
 	};
 };
 
 export const DASHBOARD_KPIS: DashboardKpi[] = [
 	{
-		id: "kpi-uptime",
-		title: "Uptime",
-		value: "99.94%",
-		subtitle: "Last 7 days",
-		delta: { value: "+0.12%", tone: "up" },
+		id: "kpi-analytics",
+		title: "Analytics",
+		value: "12.4k",
+		subtitle: "Visitors",
+		delta: { value: "+8.2%", tone: "up" },
 	},
 	{
-		id: "kpi-incidents",
-		title: "Incidents",
-		value: "2",
-		subtitle: "Open",
-		delta: { value: "-1", tone: "up" },
+		id: "kpi-sales",
+		title: "Sales",
+		value: "£4,280",
+		subtitle: "This month",
+		delta: { value: "+5.4%", tone: "up" },
 	},
 	{
-		id: "kpi-latency",
-		title: "Latency",
-		value: "312ms",
-		subtitle: "P95",
-		delta: { value: "-18ms", tone: "up" },
+		id: "kpi-marketing",
+		title: "Marketing",
+		value: "1.8k",
+		subtitle: "Campaign visits",
+		delta: { value: "+12.3%", tone: "up" },
 	},
 	{
-		id: "kpi-errors",
-		title: "Errors",
-		value: "0.7%",
-		subtitle: "Rate",
-		delta: { value: "-0.2%", tone: "up" },
+		id: "kpi-downtime",
+		title: "Downtime",
+		value: "12 min",
+		subtitle: "Last 30 days",
+		delta: { value: "-35%", tone: "up" },
 	},
 	{
-		id: "kpi-alerts",
-		title: "Alerts",
-		value: "14",
-		subtitle: "Last 24h",
-		delta: { value: "+3", tone: "down" },
+		id: "kpi-cpu-usage",
+		title: "CPU Usage",
+		value: "68%",
+		subtitle: "Current average",
+		delta: { value: "-4%", tone: "up" },
 	},
 ];

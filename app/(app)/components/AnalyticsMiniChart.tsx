@@ -70,7 +70,7 @@ export function AnalyticsMiniChart({ className }: { className?: string }) {
 	const liveLabel = hover?.label ?? "Today";
 
 	return (
-		<div className={cn("flex h-full flex-col", className)}>
+		<div className={cn("flex h-full min-w-0 flex-col overflow-hidden", className)}>
 			<div className="flex items-start justify-between gap-3">
 				<div>
 					<div className="text-xs uppercase tracking-wide text-zinc-500">
@@ -108,11 +108,11 @@ export function AnalyticsMiniChart({ className }: { className?: string }) {
 				</div>
 			</div>
 
-			<div className="mt-3 h-[230px] overflow-hidden rounded-b-2xl">
+			<div className="mt-3 h-[190px] min-w-0 overflow-hidden rounded-xl">
 				<ResponsiveContainer width="100%" height="100%">
 					<AreaChart
 						data={data}
-						margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+						margin={{ top: 8, right: 0, left: -8, bottom: 0 }}
 						onMouseMove={(state: unknown) => {
 							const s = state as
 								| { activePayload?: Array<{ payload?: Point }> }
@@ -122,25 +122,33 @@ export function AnalyticsMiniChart({ className }: { className?: string }) {
 						}}
 						onMouseLeave={() => setHover(null)}
 					>
+						<defs>
+						<linearGradient id="analyticsGradient" x1="0" y1="0" x2="0" y2="1">
+						<stop offset="5%" stopColor="currentColor" stopOpacity={0.18} />
+						<stop offset="60%" stopColor="currentColor" stopOpacity={0.08} />
+						<stop offset="100%" stopColor="currentColor" stopOpacity={0} />
+						</linearGradient>
+						</defs>
+
 						<XAxis
 							dataKey="label"
 							tick={{ fontSize: 11 }}
 							tickLine={false}
 							axisLine={false}
 							interval={Math.max(0, Math.floor(data.length / 6))}
+							minTickGap={24}
 						/>
 						<YAxis hide domain={["dataMin - 50", "dataMax + 50"]} />
 						<Tooltip content={<TooltipBox />} cursor={{ stroke: "rgba(39, 1, 154, 0.15)" }} />
 						<Area
-							type="monotone"
-							dataKey="value"
-							stroke="currentColor"
-							fill="currentColor"
-							fillOpacity={0.1}
-							strokeWidth={2}
-							dot={false}
-							activeDot={{ r: 4 }}
-							className="text-zinc-900"
+						type="monotone"
+						dataKey="value"
+						stroke="currentColor"
+						fill="url(#analyticsGradient)"
+						strokeWidth={2}
+						dot={false}
+						activeDot={{ r: 4 }}
+						className="text-zinc-900"
 						/>
 					</AreaChart>
 				</ResponsiveContainer>

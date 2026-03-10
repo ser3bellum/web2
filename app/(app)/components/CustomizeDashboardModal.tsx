@@ -8,25 +8,13 @@ import { Modal } from "app/(app)/components/Modal";
 import { cn } from "app/(app)/lib/cn";
 import { useEffect, useMemo, useState } from "react";
 
-const KEY_MVP = "sb.dashboard.mvp.v1"; // exactly 5
-const KEY_ENABLED = "sb.dashboard.enabled.v1"; // up to 9
+import {
+  DASHBOARD_MVP_KEY,
+  DASHBOARD_ENABLED_KEY,
+  loadJson,
+  saveJson,
+} from "app/(app)/components/dashboardPreferences";
 
-function loadJson<T>(key: string): T | null {
-	try {
-		const raw = localStorage.getItem(key);
-		if (!raw) return null;
-		return JSON.parse(raw) as T;
-	} catch {
-		return null;
-	}
-}
-function saveJson<T>(key: string, value: T) {
-	try {
-		localStorage.setItem(key, JSON.stringify(value));
-	} catch {
-		// ignore
-	}
-}
 
 type Props = {
 	open: boolean;
@@ -67,8 +55,8 @@ export function CustomizeDashboardModal({
 	useEffect(() => {
 		if (!open) return;
 
-		const savedMvp = loadJson<DashboardCardId[]>(KEY_MVP);
-		const savedEnabled = loadJson<DashboardCardId[]>(KEY_ENABLED);
+		const savedMvp = loadJson<DashboardCardId[]>(DASHBOARD_MVP_KEY);
+		const savedEnabled = loadJson<DashboardCardId[]>(DASHBOARD_ENABLED_KEY);
 
 		const clean = (arr: DashboardCardId[] | null) =>
 			(arr ?? []).filter((id) => allIds.includes(id));
@@ -110,16 +98,17 @@ export function CustomizeDashboardModal({
 	};
 
 	const done = () => {
-		// if user didn’t pick exactly 5 MVP, we fall back to defaults (per your “if user decides not…” logic)
-		const finalMvp = mvp.length === 5 ? mvp : defaultMvp;
-		const finalEnabled = enabled.length ? enabled : defaultEnabled9;
+	const finalMvp = mvp.length === 5 ? mvp : defaultMvp;
+	const finalEnabled = enabled.length ? enabled : defaultEnabled9;
 
-		saveJson(KEY_MVP, finalMvp);
-		saveJson(KEY_ENABLED, finalEnabled);
+	saveJson(DASHBOARD_MVP_KEY, finalMvp);
+	saveJson(DASHBOARD_ENABLED_KEY, finalEnabled);
 
-		onSaved?.({ mvp: finalMvp, enabled: finalEnabled });
-		onClose();
-	};
+	window.dispatchEvent(new Event("sb-dashboard-preferences-updated"));
+
+	onSaved?.({ mvp: finalMvp, enabled: finalEnabled });
+	onClose();
+};
 
 	if (!open) return null;
 

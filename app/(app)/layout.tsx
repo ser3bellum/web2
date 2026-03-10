@@ -10,11 +10,11 @@ import { Sidebar } from "@/app/(app)/components/Sidebar";
 import { TopBar } from "@/app/(app)/components/TopBar";
 import { getUserCompanyContext } from "@/lib/data/getUserCompanyContext";
 import { adminAuth } from "@/lib/firebase/admin";
+import { findNangoConnectionId } from "@/lib/nango/findConnectionId";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
 
-  // ✅ single canonical cookie
   const session = cookieStore.get("__Host-sb_auth")?.value;
 
   if (!session) redirect("/login");
@@ -28,14 +28,45 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   const { user, company } = await getUserCompanyContext(session);
 
+  const endUserId = user?.id ?? user?.id ?? null;
+
+  let slackConnected = false;
+  let googleAnalyticsConnected = false;
+
+  if (endUserId) {
+    try {
+      await findNangoConnectionId({
+        providerConfigKey:
+          process.env.NANGO_SLACK_PROVIDER_CONFIG_KEY || "slack",
+        endUserId,
+      });
+      slackConnected = true;
+    } catch {
+      slackConnected = false;
+    }
+
+    try {
+      await findNangoConnectionId({
+        providerConfigKey:
+          process.env.NANGO_GOOGLE_ANALYTICS_PROVIDER_CONFIG_KEY ||
+          "google-analytics",
+        endUserId,
+      });
+      googleAnalyticsConnected = true;
+    } catch {
+      googleAnalyticsConnected = false;
+    }
+  }
+
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar
-        companyName={company?.name ?? user?.companyName ?? "Company"}
-        userEmail={user?.email ?? ""}
-        userName={user?.name ?? ""}
-        avatarUrl={user?.avatarUrl ?? null}
-      />
+     <Sidebar
+	companyName={company?.name ?? user?.companyName ?? "Company"}
+	userEmail={user?.email ?? ""}
+	userName={user?.name ?? ""}
+	avatarUrl={user?.avatarUrl ?? null}
+	endUserId={"dev-user-1"}
+/>
 
       <div className="flex min-w-0 flex-1 flex-col app-gradient">
         <DailyReportModalController />

@@ -5,9 +5,10 @@ import { DASHBOARD_CARDS } from "app/(app)/components/DashboardCards";
 import { cn } from "app/(app)/lib/cn";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type NavItem = { label: string; href: string; icon: React.ReactNode };
+type AppId = "slack" | "google-analytics";
 
 /**
  * Glass system
@@ -20,7 +21,6 @@ const glassBase =
 	"ring-1 ring-white/10 shadow-sm transition-colors";
 
 const glassHover = "hover:bg-white/22 hover:border-white/45 hover:shadow-md";
-
 const glassActive = "bg-white/18 border-blue-400/35 ring-1 ring-blue-500/20";
 
 type SidebarProps = {
@@ -28,6 +28,12 @@ type SidebarProps = {
 	userEmail: string;
 	userName?: string;
 	avatarUrl?: string | null;
+	endUserId: string;
+};
+
+type ConnectionState = {
+	slack: boolean;
+	googleAnalytics: boolean;
 };
 
 export function Sidebar({
@@ -35,20 +41,108 @@ export function Sidebar({
 	userEmail,
 	userName,
 	avatarUrl,
+	endUserId,
 }: SidebarProps) {
 	const pathname = usePathname();
 	const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
-
 	const [appsOpen, setAppsOpen] = useState(false);
 	const [settingsOpen, setSettingsOpen] = useState(false);
+	const [companyOpen, setCompanyOpen] = useState(false);
 
-	const connectedApps = useMemo(
-		() => ["App 1", "App 2", "App 3", "App 4", "App 5"],
-		[],
-	);
-	const [activeApp, setActiveApp] = useState<string | null>("App 1");
+	const [connections, setConnections] = useState<ConnectionState>({
+		slack: false,
+		googleAnalytics: false,
+	});
 
-	// ✅ Refresh Data removed from nav links (it is an action, not routing)
+	useEffect(() => {
+		let cancelled = false;
+
+		async function loadConnections() {
+			try {
+				const res = await fetch("/api/nango/connection-status", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						endUserId,
+						providerConfigKeys: [
+							process.env.NEXT_PUBLIC_NANGO_SLACK_PROVIDER_CONFIG_KEY || "slack",
+							process.env.NEXT_PUBLIC_NANGO_GOOGLE_ANALYTICS_PROVIDER_CONFIG_KEY ||
+								"google-analytics",
+						],
+					}),
+				});
+
+				const data = await res.json();
+
+				if (cancelled || !Array.isArray(data?.results)) return;
+
+				const slackKey =
+					process.env.NEXT_PUBLIC_NANGO_SLACK_PROVIDER_CONFIG_KEY || "slack";
+				const gaKey =
+					process.env.NEXT_PUBLIC_NANGO_GOOGLE_ANALYTICS_PROVIDER_CONFIG_KEY ||
+					"google-analytics";
+
+				setConnections({
+					slack: Boolean(
+						data.results.find(
+							(item: { providerConfigKey: string; connected: boolean }) =>
+								item.providerConfigKey === slackKey && item.connected,
+						),
+					),
+					googleAnalytics: Boolean(
+						data.results.find(
+							(item: { providerConfigKey: string; connected: boolean }) =>
+								item.providerConfigKey === gaKey && item.connected,
+						),
+					),
+				});
+			} catch (error) {
+				console.error("SIDEBAR_CONNECTION_STATUS_FAILED", error);
+			}
+		}
+
+		if (endUserId) {
+			loadConnections();
+		}
+
+		return () => {
+			cancelled = true;
+		};
+	}, [endUserId]);
+
+	const connectedApps = useMemo<AppId[]>(() => {
+		const apps: AppId[] = [];
+
+		if (connections.slack) {
+			apps.push("slack");
+		}
+
+		if (connections.googleAnalytics) {
+			apps.push("google-analytics");
+		}
+
+		return apps;
+	}, [connections]);
+
+	const [activeApp, setActiveApp] = useState<AppId | null>(null);
+
+	useEffect(() => {
+		if (!activeApp && connectedApps.length > 0) {
+			setActiveApp(connectedApps[0]);
+		}
+
+		if (activeApp && !connectedApps.includes(activeApp)) {
+			setActiveApp(connectedApps[0] ?? null);
+		}
+	}, [connectedApps, activeApp]);
+
+	const appLabels: Record<AppId, string> = {
+		slack: "Slack",
+		"google-analytics": "Google Analytics",
+	};
+
 	const appLinks: NavItem[] = useMemo(
 		() => [
 			{ label: "Analytics", href: "/analytics", icon: <AnalyticsIcon /> },
@@ -67,8 +161,6 @@ export function Sidebar({
 		],
 		[],
 	);
-
-	const [companyOpen, setCompanyOpen] = useState(false);
 
 	const companies = useMemo(
 		() => [
@@ -96,7 +188,6 @@ export function Sidebar({
 	return (
 		<aside className="z-50 h-full w-72 border-r border-white/40 bg-white/80 backdrop-blur-xl shadow-[0_2px_4px_rgba(0,0,0,0.08)]">
 			<div className="flex h-screen flex-col px-6 py-6">
-				{/* Logo */}
 				<div className="mb-6 flex h-20 items-center justify-center">
 					<img
 						src="/brand/ser3bellum-logo-final.svg"
@@ -106,7 +197,6 @@ export function Sidebar({
 					/>
 				</div>
 
-				{/* Company selector */}
 				<button
 					type="button"
 					onClick={toggleCompany}
@@ -138,7 +228,6 @@ export function Sidebar({
 					</span>
 				</button>
 
-				{/* Company dropdown */}
 				<div
 					className={cn(
 						"mb-3 grid transition-[grid-template-rows,opacity] duration-200 ease-out",
@@ -171,8 +260,6 @@ export function Sidebar({
 					</div>
 				</div>
 
-				{/* User row + gear */}
-				{/* User row (single CTA) */}
 				<Link
 					href="/user-settings"
 					aria-label="Open profile settings"
@@ -183,7 +270,6 @@ export function Sidebar({
 						"focus:outline-none focus:ring-2 focus:ring-blue-500/30",
 					)}
 				>
-					{/* Avatar */}
 					<div className="relative grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-zinc-200">
 						{avatarUrl ? (
 							<img
@@ -203,7 +289,6 @@ export function Sidebar({
 						</span>
 					</div>
 
-					{/* Text */}
 					<div className="min-w-0 flex-1">
 						<div className="truncate text-sm font-semibold text-slate-800">
 							{userEmail || "—"}
@@ -214,21 +299,18 @@ export function Sidebar({
 								{userName ? userName : "Signed in"}
 							</span>
 
-							{/* CTA microcopy appears on hover */}
 							<span className="text-xs text-slate-400 opacity-0 transition group-hover:opacity-100">
 								• Edit profile
 							</span>
 						</div>
 					</div>
 
-					{/* optional: a subtle chevron instead of the cog */}
 					<span className="ml-auto text-slate-400 opacity-0 transition group-hover:opacity-100">
 						<ChevronIcon />
 					</span>
 				</Link>
 
 				<div className="mt-4 flex flex-col gap-2 px-2">
-					{/* Apps dropdown (header) */}
 					<DropdownHeader
 						label="Apps"
 						open={appsOpen}
@@ -243,7 +325,6 @@ export function Sidebar({
 						icon={<AppsIcon />}
 					/>
 
-					{/* Apps dropdown content */}
 					<div
 						className={cn(
 							"grid transition-[grid-template-rows,opacity] duration-200 ease-out",
@@ -254,34 +335,39 @@ export function Sidebar({
 					>
 						<div className="overflow-hidden">
 							<div className="mt-2 mb-2 flex flex-col gap-1">
-								{connectedApps.map((name) => (
-									<button type="button"
-										key={name}
-										onClick={() => setActiveApp(name)}
-										className={cn(
-											"relative w-full rounded-lg px-3 py-2 text-left text-sm transition-colors",
-											"text-slate-500 hover:bg-slate-100/60",
-											activeApp === name && "text-slate-700",
-										)}
-									>
-										{activeApp === name && (
-											<span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-blue-500" />
-										)}
-										<span className="pl-3">{name}</span>
-									</button>
-								))}
+								{connectedApps.length > 0 ? (
+									connectedApps.map((app) => (
+										<button
+											type="button"
+											key={app}
+											onClick={() => setActiveApp(app)}
+											className={cn(
+												"relative w-full rounded-lg px-3 py-2 text-left text-sm transition-colors",
+												"text-slate-500 hover:bg-slate-100/60",
+												activeApp === app && "text-slate-700",
+											)}
+										>
+											{activeApp === app && (
+												<span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-blue-500" />
+											)}
+											<span className="pl-3">{appLabels[app]}</span>
+										</button>
+									))
+								) : (
+									<div className="px-3 py-2 text-sm text-slate-400">
+										No apps connected
+									</div>
+								)}
 							</div>
 						</div>
 					</div>
 
-					{/* ✅ Actions (visually identical to nav rows) */}
 					<ActionRow
 						label="Refresh Data"
 						icon={<RefreshIcon />}
 						onClick={() => console.log("Trigger dashboard refresh")}
 					/>
 
-					{/* Main navigation */}
 					<nav className="mt-2 flex flex-col gap-1">
 						{appLinks.map((item) => (
 							<NavRow
@@ -292,9 +378,7 @@ export function Sidebar({
 						))}
 					</nav>
 
-					{/* Bottom area */}
 					<div className="mt-auto pt-6">
-						{/* Settings dropdown */}
 						<DropdownHeader
 							label="Settings"
 							open={settingsOpen}
@@ -332,7 +416,6 @@ export function Sidebar({
 							</div>
 						</div>
 
-						{/* Customize Dashboard button */}
 						<button
 							type="button"
 							onClick={() => setIsCustomizeOpen(true)}
@@ -351,6 +434,7 @@ export function Sidebar({
 						</button>
 					</div>
 				</div>
+
 				<CustomizeDashboardModal
 					open={isCustomizeOpen}
 					onClose={() => setIsCustomizeOpen(false)}
@@ -360,8 +444,7 @@ export function Sidebar({
 		</aside>
 	);
 }
-/** Dropdown header
- */
+
 function DropdownHeader({
 	label,
 	open,
@@ -402,9 +485,6 @@ function DropdownHeader({
 	);
 }
 
-/**
- * Shared row shell so ActionRow and NavRow never drift visually.
- */
 function RowShell({
 	active,
 	children,
@@ -415,7 +495,7 @@ function RowShell({
 	className?: string;
 }) {
 	return (
-		<div className={cn("relative", active && "", className)}>
+		<div className={cn("relative", className)}>
 			{active && (
 				<span className="absolute left-0 top-2 bottom-2 w-1 rounded-r bg-blue-600" />
 			)}
@@ -459,9 +539,6 @@ function ActionRow({
 	);
 }
 
-/**
- * Nav rows
- */
 function NavRow({ item, active }: { item: NavItem; active: boolean }) {
 	return (
 		<RowShell active={active}>
@@ -489,8 +566,6 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
 		</RowShell>
 	);
 }
-
-/* Inline icons */
 
 function ChevronIcon({ className }: { className?: string }) {
 	return (
