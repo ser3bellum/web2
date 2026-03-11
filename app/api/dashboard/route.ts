@@ -29,7 +29,7 @@ export async function GET(req: Request) {
   const to = searchParams.get("to") ?? "";
 
   // TODO: replace with real user id from auth (Firebase UID later)
-  const endUserId = "dev-user-1";
+  const endUserId = "test_nicole_tshumba";
 
   // IMPORTANT: this must match the Nango Integration ID you used in Connect
   const providerConfigKey = "google-analytics";

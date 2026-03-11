@@ -65,7 +65,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 	userEmail={user?.email ?? ""}
 	userName={user?.name ?? ""}
 	avatarUrl={user?.avatarUrl ?? null}
-	endUserId={"dev-user-1"}
+	endUserId={"test_nicole_tshumba"}
 />
 
       <div className="flex min-w-0 flex-1 flex-col app-gradient">

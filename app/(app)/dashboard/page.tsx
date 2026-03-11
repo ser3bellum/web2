@@ -45,7 +45,7 @@ export default async function DashboardPage({
     const hydration = await getDashboardHydration({
       from: range.from,
       to: range.to,
-      endUserId: "dev-user-1",
+      endUserId: "test_nicole_tshumba",
     });
 
     return (

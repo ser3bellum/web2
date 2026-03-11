@@ -8,7 +8,7 @@ export async function GET() {
 
     const connectionId = await findNangoConnectionId({
       providerConfigKey: "slack",
-      endUserId: "dev-user-1",
+      endUserId: "test_nicole_tshumba",
     });
 
     const result = await nango.get({

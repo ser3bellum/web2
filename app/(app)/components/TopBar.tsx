@@ -200,7 +200,7 @@ export function TopBar({ companyName = "Ser3bellum", rightSlot }: TopBarProps) {
 			"Content-Type": "application/json",
 			},
 			body: JSON.stringify({
-			endUserId: "dev-user-1",
+			endUserId: "test_nicole_tshumba",
 			}),
 				});
 			const data = await res.json();

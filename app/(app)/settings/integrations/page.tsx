@@ -273,8 +273,8 @@ export default function IntegrationsPage() {
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
     allowedIntegrations: [integrationId],
-    endUserId: "dev-user-1",
-    endUserEmail: "dev@ser3bellum.com",
+    endUserId: "test_nicole_tshumba",
+    endUserEmail: "nicoletshumba@ser3bellum.com",
   }),
 });
 
