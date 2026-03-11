@@ -4,11 +4,6 @@ import { findNangoConnectionId } from "@/lib/nango/findConnectionId";
 
 export const dynamic = "force-dynamic";
 
-const nango = new Nango({
-	secretKey: process.env.NANGO_SECRET_KEY || "",
-	...(process.env.NANGO_HOST ? { host: process.env.NANGO_HOST } : {}),
-});
-
 const providerConfigKey =
 	process.env.NANGO_SLACK_PROVIDER_CONFIG_KEY || "slack";
 
@@ -51,6 +46,19 @@ type MailMessage = {
 	timeLabel: string;
 	unread?: boolean;
 };
+
+function getNango() {
+	const secretKey = process.env.NANGO_SECRET_KEY;
+
+	if (!secretKey) {
+		throw new Error("NANGO_SECRET_KEY is missing");
+	}
+
+	return new Nango({
+		secretKey,
+		...(process.env.NANGO_HOST ? { host: process.env.NANGO_HOST } : {}),
+	});
+}
 
 function toRelativeTimeLabel(ts?: string) {
 	if (!ts) return "now";
@@ -96,6 +104,7 @@ export async function POST(req: Request) {
 			);
 		}
 
+		const nango = getNango();
 		const endUserId = String(body.endUserId);
 
 		const connectionId = await findNangoConnectionId({
@@ -114,7 +123,6 @@ export async function POST(req: Request) {
 		});
 
 		const channelsData = channelsRes.data as SlackListResponse;
-		console.log("SLACK_CHANNELS_DATA", JSON.stringify(channelsData, null, 2));
 
 		if (!channelsData.ok) {
 			return NextResponse.json(
@@ -127,79 +135,42 @@ export async function POST(req: Request) {
 		}
 
 		const channels = Array.isArray(channelsData.channels)
-	? channelsData.channels
-	: [];
+			? channelsData.channels
+			: [];
 
-console.log("SLACK_CHANNELS_COUNT", channels.length);
-console.log(
-	"SLACK_CHANNELS_SAMPLE",
-	channels.slice(0, 5).map((channel) => ({
-		id: channel.id,
-		name: channel.name,
-		is_im: channel.is_im,
-		is_mpim: channel.is_mpim,
-		is_private: channel.is_private,
-		is_member: channel.is_member,
-	})),
-);
+		const readableChannels = channels.filter(
+			(channel) => Boolean(channel.is_im || channel.is_mpim || channel.is_member),
+		);
 
-const readableChannels = channels.filter(
-	(channel) => Boolean(channel.is_im || channel.is_mpim || channel.is_member),
-);
+		const historyResults = await Promise.all(
+			readableChannels.slice(0, 10).map(async (channel) => {
+				try {
+					const historyRes = await nango.proxy({
+						method: "GET",
+						baseUrlOverride: "https://slack.com/api",
+						endpoint: `/conversations.history?channel=${encodeURIComponent(
+							channel.id,
+						)}&limit=5`,
+						providerConfigKey,
+						connectionId,
+						retries: 2,
+					});
 
-console.log(
-	"SLACK_READABLE_CHANNELS",
-	readableChannels.map((channel) => ({
-		id: channel.id,
-		name: channel.name,
-		is_im: channel.is_im,
-		is_mpim: channel.is_mpim,
-		is_member: channel.is_member,
-	})),
-);
-
-const historyResults = await Promise.all(
-	readableChannels.slice(0, 10).map(async (channel) => {
-		try {
-			const historyRes = await nango.proxy({
-				method: "GET",
-				baseUrlOverride: "https://slack.com/api",
-				endpoint: `/conversations.history?channel=${encodeURIComponent(
-					channel.id,
-				)}&limit=5`,
-				providerConfigKey,
-				connectionId,
-				retries: 2,
-			});
-
-			return {
-				channel,
-				data: historyRes.data as SlackHistoryResponse,
-			};
-		} catch (error) {
-			console.error("SLACK_HISTORY_FETCH_FAILED", channel.id, error);
-			return {
-				channel,
-				data: {
-					ok: false,
-					messages: [],
-					error: "history_fetch_failed",
-				} as SlackHistoryResponse,
-			};
-		}
-	}),
-);
-
-		console.log(
-			"SLACK_HISTORY_RESULTS",
-			historyResults.map(({ channel, data }) => ({
-				channelId: channel.id,
-				channelName: channel.name,
-				ok: data.ok,
-				error: data.error,
-				messageCount: Array.isArray(data.messages) ? data.messages.length : 0,
-				sample: Array.isArray(data.messages) ? data.messages.slice(0, 2) : [],
-			})),
+					return {
+						channel,
+						data: historyRes.data as SlackHistoryResponse,
+					};
+				} catch {
+					return {
+						channel,
+						data: {
+							ok: false,
+							messages: [],
+							error: "history_fetch_failed",
+						} as SlackHistoryResponse,
+					};
+				}
+			}),
 		);
 
 		const messages: MailMessage[] = historyResults
@@ -208,7 +179,15 @@ const historyResults = await Promise.all(
 				const items = Array.isArray(data.messages) ? data.messages : [];
 
 				return items
-					.filter((item) => item.text && item.subtype !== "channel_join")
+					.filter((item) => {
+						const text = cleanPreview(item.text);
+						if (!text) return false;
+						if (item.subtype === "channel_join") return false;
+						if (text.toLowerCase().includes("added an integration to this channel")) {
+							return false;
+						}
+						return true;
+					})
 					.map((item) => ({
 						id: `${channel.id}:${item.ts}`,
 						provider: "slack" as const,
@@ -218,16 +197,12 @@ const historyResults = await Promise.all(
 						unread: false,
 					}));
 			})
-			.filter((item) => item.preview.length > 0)
 			.sort((a, b) => {
 				const aTs = Number(a.id.split(":").pop()?.split(".")[0] || 0);
 				const bTs = Number(b.id.split(":").pop()?.split(".")[0] || 0);
 				return bTs - aTs;
 			})
 			.slice(0, 20);
-
-		console.log("SLACK_MESSAGES_RESULT_COUNT", messages.length);
-		console.log("SLACK_MESSAGES_RESULT", JSON.stringify(messages, null, 2));
 
 		return NextResponse.json({ messages });
 	} catch (error) {
