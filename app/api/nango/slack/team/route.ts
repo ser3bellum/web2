@@ -3,6 +3,13 @@ import { getNango } from "@/lib/nango/server";
 import { findNangoConnectionId } from "@/lib/nango/findConnectionId";
 
 export async function GET() {
+  return NextResponse.json({
+    debug: true,
+    nangoEnv: process.env.NANGO_ENV ?? null,
+    hasSecret: !!process.env.NANGO_SECRET_KEY,
+    providerConfigKey: process.env.NANGO_SLACK_PROVIDER_CONFIG_KEY ?? null,
+  });
+
   try {
     const nango = getNango();
 
@@ -14,7 +21,7 @@ export async function GET() {
     const result = await nango.get({
       providerConfigKey: "slack",
       connectionId,
-      endpoint: "/team.info", // ✅ IMPORTANT: no "/api" prefix
+      endpoint: "/team.info",
     });
 
     return NextResponse.json(result.data);
