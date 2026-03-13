@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Nango } from "@nangohq/node";
 import { findNangoConnectionId } from "@/lib/nango/findConnectionId";
+import { getNango } from "@/lib/nango/server";
 
 export const dynamic = "force-dynamic";
 
@@ -47,18 +48,6 @@ type MailMessage = {
 	unread?: boolean;
 };
 
-function getNango() {
-	const secretKey = process.env.NANGO_SECRET_KEY;
-
-	if (!secretKey) {
-		throw new Error("NANGO_SECRET_KEY is missing");
-	}
-
-	return new Nango({
-		secretKey,
-		...(process.env.NANGO_HOST ? { host: process.env.NANGO_HOST } : {}),
-	});
-}
 
 function toRelativeTimeLabel(ts?: string) {
 	if (!ts) return "now";
@@ -213,3 +202,4 @@ export async function POST(req: Request) {
 		);
 	}
 }
+

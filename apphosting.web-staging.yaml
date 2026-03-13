@@ -3,5 +3,8 @@ env:
     secret: NANGO_SECRET_KEY_PROD
   - variable: NANGO_ENV
     value: prod
+  - variable: NANGO_SLACK_PROVIDER_CONFIG_KEY
+    value: slack
   - variable: APP_BASE_URL
     value: https://web-staging--ser3bellum-v2.europe-west4.hosted.app
+    

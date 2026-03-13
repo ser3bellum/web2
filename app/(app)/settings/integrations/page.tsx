@@ -191,9 +191,9 @@ export default function IntegrationsPage() {
       },
       {
         key: "google",
-        name: "Google",
+        name: "Google Analytics",
         subtitle: "Auto-track on",
-        userIdLabel: "Project",
+        userIdLabel: "Project ID",
         userIdValue: "—",
         lastUpdate: "—",
         createdOn: "—",
@@ -236,7 +236,7 @@ export default function IntegrationsPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        endUserId: "dev-user-1",
+        endUserId: "test_nicole_tshumba",
         providerConfigKeys,
       }),
     });
