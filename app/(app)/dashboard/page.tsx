@@ -13,6 +13,8 @@ import { getDashboardHydration } from "app/(app)/dashboard/getDashboardHydration
 
 type DashboardSearchParams = { from?: string; to?: string };
 
+const isDev = process.env.NODE_ENV === "development";
+
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -40,8 +42,6 @@ export default async function DashboardPage({
       companyId: company.id,
     });
 
-    // ✅ Hydration: integration-aware dashboard data (GA connection, later GA metrics)
-    // For now this matches what you're using in Integrations page.
     const hydration = await getDashboardHydration({
       from: range.from,
       to: range.to,
@@ -54,16 +54,19 @@ export default async function DashboardPage({
           <KpiStrip kpis={kpis} />
 
           <section>
-           <DashboardCardsGrid hydrationCards={hydration.cards} />
+            <DashboardCardsGrid hydrationCards={hydration.cards} />
           </section>
 
-          {/* ✅ Temporary: prove hydration is working (remove later) */}
-          <section className="rounded-2xl border bg-white p-4">
-            <div className="text-sm font-semibold text-slate-800">Hydration (debug)</div>
-            <pre className="mt-2 overflow-auto text-xs text-slate-700">
-              {JSON.stringify(hydration, null, 2)}
-            </pre>
-          </section>
+          {isDev && (
+            <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <div className="text-sm font-semibold text-slate-800">
+                Hydration (debug)
+              </div>
+              <pre className="mt-2 overflow-auto text-xs text-slate-700">
+                {JSON.stringify(hydration, null, 2)}
+              </pre>
+            </section>
+          )}
         </div>
       </div>
     );

@@ -80,9 +80,9 @@ function DashboardHomeLink({
 		<Link
 			href={href}
 			title="Return to dashboard"
-			className="inline-flex items-center rounded-lg px-2 py-1 font-semibold text-slate-900 hover:bg-slate-100"
+			className="inline-flex items-center rounded-lg px-2 py-1 text-2xl font-semibold tracking-tight text-slate-900 hover:bg-slate-100"
 		>
-			{companyName}
+			{companyName.charAt(0).toUpperCase() + companyName.slice(1)}
 		</Link>
 	);
 }
@@ -313,7 +313,7 @@ const notifCount = notifications.filter((item) => item.unread).length;
 					<div className="min-w-[180px] font-semibold tracking-tight">
 						<DashboardHomeLink
 							companyId={searchParams.get("company")}
-							companyName={companyName}
+							companyName={companyName.charAt(0).toUpperCase() + companyName.slice(1)}
 							from={searchParams.get("from")}
 							to={searchParams.get("to")}
 						/>

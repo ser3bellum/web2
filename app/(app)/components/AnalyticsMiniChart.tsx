@@ -124,9 +124,9 @@ export function AnalyticsMiniChart({ className }: { className?: string }) {
 					>
 						<defs>
 						<linearGradient id="analyticsGradient" x1="0" y1="0" x2="0" y2="1">
-						<stop offset="5%" stopColor="currentColor" stopOpacity={0.18} />
-						<stop offset="60%" stopColor="currentColor" stopOpacity={0.08} />
-						<stop offset="100%" stopColor="currentColor" stopOpacity={0} />
+  							<stop offset="0%" stopColor="#416bd7" stopOpacity={0.35} />
+ 							 <stop offset="60%" stopColor="#416bd7" stopOpacity={0.15} />
+ 							 <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
 						</linearGradient>
 						</defs>
 
@@ -139,11 +139,11 @@ export function AnalyticsMiniChart({ className }: { className?: string }) {
 							minTickGap={24}
 						/>
 						<YAxis hide domain={["dataMin - 50", "dataMax + 50"]} />
-						<Tooltip content={<TooltipBox />} cursor={{ stroke: "rgba(39, 1, 154, 0.15)" }} />
+						<Tooltip content={<TooltipBox />} cursor={{ stroke:"#416bd7" }} />
 						<Area
 						type="monotone"
 						dataKey="value"
-						stroke="currentColor"
+						stroke="#416bd7"
 						fill="url(#analyticsGradient)"
 						strokeWidth={2}
 						dot={false}

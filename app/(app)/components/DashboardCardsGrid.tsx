@@ -133,11 +133,13 @@ export default function DashboardCardsGrid({
                   {(c as any).description ??
                     "No data yet. Connect a service to start tracking activity."}
                   <br />
+                  
                   <a
                     href="/settings/integrations"
-                    className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700"
-                  >
-                    Connect provider →
+                      className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-100"
+>
+                    Connect provider 
+                     <span aria-hidden>→</span>
                   </a>
                 </div>
               )}

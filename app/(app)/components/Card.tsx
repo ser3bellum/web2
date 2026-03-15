@@ -28,7 +28,7 @@ export function Card({
 				<header className="mb-3 flex items-start justify-between gap-3">
 					<div className="min-w-0">
 						{title && (
-							<h3 className="text-lg font-semibold leading-6 text-slate-900">
+							<h3 className="text-lg leading-6 text-slate-900">
 								{title}
 							</h3>
 						)}
