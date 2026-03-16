@@ -10,6 +10,7 @@ import { redirect } from "next/navigation";
 import { getUserCompanyContext } from "@/lib/data/getUserCompanyContext";
 import { KpiStrip } from "./KpiStrip";
 import { getDashboardHydration } from "app/(app)/dashboard/getDashboardHydration";
+import { DashboardOnboardingEmptyState } from "./DashboardOnboardingEmptyState";
 
 type DashboardSearchParams = { from?: string; to?: string };
 
@@ -30,11 +31,11 @@ export default async function DashboardPage({
     const { company } = await getUserCompanyContext(session);
     if (!company?.id) {
       return (
-        <div className="px-6 py-10">
-          <h1 className="text-xl font-semibold">Dashboard</h1>
-          <p className="mt-2 text-slate-600">No company linked to your account yet.</p>
-        </div>
-      );
+    <div className="px-4 pb-8 pt-6 lg:px-8">
+      <DashboardOnboardingEmptyState />
+    </div>
+     );
+
     }
 
     const kpis = await getDashboardKpis({
