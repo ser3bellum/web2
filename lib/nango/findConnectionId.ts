@@ -13,17 +13,19 @@ export async function findNangoConnectionId(params: {
 }): Promise<string> {
   const { providerConfigKey, endUserId } = params;
 
-  const secret = process.env.NANGO_SECRET_KEY;
-  if (!secret) throw new Error("Missing NANGO_SECRET_KEY");
+  const secret =
+    process.env.NANGO_SECRET_KEY ?? process.env.NANGO_SECRET_KEY_PROD;
+
+  if (!secret) {
+    throw new Error("Missing NANGO_SECRET_KEY / NANGO_SECRET_KEY_PROD");
+  }
 
   const url = new URL("https://api.nango.dev/connections");
   url.searchParams.set("limit", "100");
-  // tags[end_user_id]=... is the recommended way (endUserId query param is deprecated)
   url.searchParams.set("tags[end_user_id]", endUserId);
 
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${secret}` },
-    // prevent Next caching this call
     cache: "no-store",
   });
 
@@ -33,7 +35,9 @@ export async function findNangoConnectionId(params: {
   }
 
   const data = (await res.json()) as { connections: NangoConnection[] };
-  const match = data.connections.find((c) => c.provider_config_key === providerConfigKey);
+  const match = data.connections.find(
+    (c) => c.provider_config_key === providerConfigKey
+  );
 
   if (!match) {
     throw new Error(

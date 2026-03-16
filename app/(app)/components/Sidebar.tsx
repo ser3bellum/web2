@@ -187,7 +187,7 @@ export function Sidebar({
 
 	return (
 		<aside className="z-50 h-full w-72 border-r border-white/40 bg-white/80 backdrop-blur-xl shadow-[0_2px_4px_rgba(0,0,0,0.08)]">
-			<div className="flex h-screen flex-col px-6 py-6">
+			<div className="flex h-screen flex-col px-6 pt-5 pb-3">
 				<div className="mb-6 flex h-20 items-center justify-center">
 					<img
 						src="/brand/ser3bellum-logo-final.svg"
@@ -201,7 +201,7 @@ export function Sidebar({
 					type="button"
 					onClick={toggleCompany}
 					className={cn(
-						"mb-2 mt-4 flex w-full items-center justify-between rounded-lg px-3 py-2",
+						"mb-2 mt-4 flex w-full items-center justify-between rounded-lg px-3 py-2.5",
 						"bg-gradient-to-br from-violet-50 via-indigo-50 to-blue-100",
 						"border border-indigo-300/40",
 						"transition-all duration-200",
@@ -291,17 +291,15 @@ export function Sidebar({
 
 					<div className="min-w-0 flex-1">
 						<div className="truncate text-sm font-semibold text-slate-800">
-							{userEmail || "—"}
+						{userName || "User"}
 						</div>
 
 						<div className="flex items-center gap-2">
-							<span className="text-xs text-zinc-500">
-								{userName ? userName : "Signed in"}
-							</span>
+						
 
-							<span className="text-xs text-slate-400 opacity-0 transition group-hover:opacity-100">
-								• Edit profile
-							</span>
+						<span className="text-xs text-slate-400 opacity-0 transition group-hover:opacity-100">
+						• Edit profile
+						</span>
 						</div>
 					</div>
 
@@ -310,7 +308,7 @@ export function Sidebar({
 					</span>
 				</Link>
 
-				<div className="mt-4 flex flex-col gap-2 px-2">
+				<div className="mt-3 flex min-h-0 flex-1 flex-col gap-1 px-1">
 					<DropdownHeader
 						label="Apps"
 						open={appsOpen}
@@ -368,7 +366,7 @@ export function Sidebar({
 						onClick={() => console.log("Trigger dashboard refresh")}
 					/>
 
-					<nav className="mt-2 flex flex-col gap-1">
+					<nav className="mt-2 flex flex-col gap-2">
 						{appLinks.map((item) => (
 							<NavRow
 								key={item.href}
@@ -378,63 +376,63 @@ export function Sidebar({
 						))}
 					</nav>
 
-					<div className="mt-auto pt-6">
-						<DropdownHeader
-							label="Settings"
-							open={settingsOpen}
-							onToggle={() => {
-								setSettingsOpen((v) => {
-									const next = !v;
-									if (next) setAppsOpen(false);
-									if (next) setCompanyOpen(false);
-									return next;
-								});
-							}}
-							icon={<SettingsIcon />}
-						/>
+					<div className="pt-2">
+	<DropdownHeader
+		label="Settings"
+		open={settingsOpen}
+		onToggle={() => {
+			setSettingsOpen((v) => {
+				const next = !v;
+				if (next) setAppsOpen(false);
+				if (next) setCompanyOpen(false);
+				return next;
+			});
+		}}
+		icon={<SettingsIcon />}
+	/>
 
-						<div
-							className={cn(
-								"grid transition-[grid-template-rows,opacity] duration-200 ease-out",
-								settingsOpen
-									? "grid-rows-[1fr] opacity-100"
-									: "grid-rows-[0fr] opacity-0 pointer-events-none",
-							)}
-						>
-							<div className="overflow-hidden">
-								<div className="mt-3">
-									<nav className="flex flex-col gap-1">
-										{settingsLinks.map((item) => (
-											<NavRow
-												key={item.href}
-												item={item}
-												active={pathname === item.href}
-											/>
-										))}
-									</nav>
-								</div>
-							</div>
-						</div>
-
-						<button
-							type="button"
-							onClick={() => setIsCustomizeOpen(true)}
-							className={cn(
-								"mt-2 flex h-14 w-full items-center justify-center gap-2 rounded-xl px-3",
-								"bg-gradient-to-br from-blue-600/80 via-blue-600/90 to-indigo-600/70 backdrop-blur-xl",
-								"border border-white/20 text-white",
-								"transition-all duration-200",
-								"hover:bg-blue-600/90 hover:shadow-md hover:shadow-blue-700/20",
-								"active:translate-y-[1px]",
-								"focus:outline-none focus:ring-2 focus:ring-blue-400/30",
-							)}
-						>
-							<GridIcon />
-							<span className="text-sm font-semibold">Customize Dashboard</span>
-						</button>
+	<div
+		className={cn(
+			"grid transition-[grid-template-rows,opacity] duration-200 ease-out",
+			settingsOpen
+				? "grid-rows-[1fr] opacity-100"
+				: "grid-rows-[0fr] opacity-0 pointer-events-none",
+				)}
+				>
+				<div className="overflow-hidden">
+					<div className="mt-3">
+					<nav className="flex flex-col gap-1">
+					{settingsLinks.map((item) => (
+						<NavRow
+							key={item.href}
+							item={item}
+							active={pathname === item.href}
+							/>
+							))}
+						</nav>
 					</div>
 				</div>
-
+				</div>
+			</div>
+				</div>
+							<div className="mt-auto pt-4">
+	<button
+		type="button"
+		onClick={() => setIsCustomizeOpen(true)}
+		className={cn(
+			"flex h-14 w-full items-center justify-center gap-2 rounded-xl px-3",
+			"bg-gradient-to-br from-blue-600/80 via-blue-600/90 to-indigo-600/70 backdrop-blur-xl",
+			"border border-white/20 text-white",
+			"transition-all duration-200",
+			"hover:bg-blue-600/90 hover:shadow-md hover:shadow-blue-700/20",
+			"active:translate-y-[1px]",
+			"focus:outline-none focus:ring-2 focus:ring-blue-400/30",
+		)}
+	>
+		<GridIcon />
+		<span className="text-sm">Customize Dashboard</span>
+	</button>
+</div>
 				<CustomizeDashboardModal
 					open={isCustomizeOpen}
 					onClose={() => setIsCustomizeOpen(false)}
@@ -462,7 +460,7 @@ function DropdownHeader({
 			onClick={onToggle}
 			className={cn(glassBase, glassHover, open && glassActive)}
 		>
-			<span className="inline-flex items-center gap-3 text-sm font-medium text-slate-600">
+			<span className="inline-flex items-center gap-2 text-sm text-slate-600">
 				<span
 					className={cn(
 						"inline-flex h-8 w-8 items-center justify-center rounded-lg",
@@ -533,7 +531,7 @@ function ActionRow({
 				>
 					{icon}
 				</span>
-				<span className="font-medium text-slate-600">{label}</span>
+				<span className="text-sm text-slate-600">{label}</span>
 			</button>
 		</RowShell>
 	);
@@ -561,7 +559,7 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
 					{item.icon}
 				</span>
 
-				<span className="font-medium text-slate-600">{item.label}</span>
+				<span className="text-sm text-slate-600">{item.label}</span>
 			</Link>
 		</RowShell>
 	);

@@ -49,7 +49,7 @@ export function DashboardOnboardingEmptyState() {
               key={step.id}
               className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
             >
-              <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">
+              <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-400 text-sm font-semibold text-white">
                 {index + 1}
               </div>
 
@@ -66,14 +66,14 @@ export function DashboardOnboardingEmptyState() {
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link
-            href="/settings"
-            className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-slate-800"
+            href="/user-settings"
+            className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-medium text-white bg-gradient-to-br from-blue-600/80 via-blue-600/90 to-indigo-600/70 hover:bg-slate-800"
           >
             Create company
           </Link>
 
           <Link
-            href="/apps"
+            href="settings/integrations"
             className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
           >
             Connect a provider

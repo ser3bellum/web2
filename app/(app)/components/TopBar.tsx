@@ -9,6 +9,7 @@ import type React from "react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DayPicker, type DateRange as DayPickerRange } from "react-day-picker";
+import { Home } from "lucide-react";
 
 type UiDateRange = {
 	from: Date;
@@ -65,29 +66,31 @@ function DashboardHomeLink({
 	to,
 }: {
 	companyId?: string | null;
-	companyName: string;
+	companyName?: string | null;
 	from?: string | null;
 	to?: string | null;
 }) {
 	const params = new URLSearchParams();
+
 	if (companyId) params.set("company", companyId);
 	if (from) params.set("from", from);
 	if (to) params.set("to", to);
 
 	const href = `/dashboard${params.toString() ? `?${params.toString()}` : ""}`;
+	const hasCompanyName = !!companyName?.trim();
 
 	return (
 		<Link
 			href={href}
 			title="Return to dashboard"
-			className="inline-flex items-center rounded-lg px-2 py-1 text-2xl font-semibold tracking-tight text-slate-900 hover:bg-slate-100"
+			className="inline-flex max-w-[260px] items-center gap-2.5 rounded-lg px-2 py-1 text-2xl font-semibold tracking-tight text-slate-900 transition hover:bg-slate-100 hover:text-blue-600"
 		>
-			{companyName.charAt(0).toUpperCase() + companyName.slice(1)}
+			<Home size={22} className="shrink-0 text-slate-500" />
+			{hasCompanyName && <span className="truncate">{companyName}</span>}
 		</Link>
 	);
 }
-
-export function TopBar({ companyName = "Ser3bellum", rightSlot }: TopBarProps) {
+	export function TopBar({ companyName, rightSlot }: TopBarProps) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
@@ -309,19 +312,21 @@ const notifCount = notifications.filter((item) => item.unread).length;
 
 			<header className="sb-topbar sticky top-0 z-50 w-full border-b border-white/40 bg-white/60 backdrop-blur">
 				<div className="mx-auto flex h-[72px] w-full items-center gap-3 px-4">
+					
 					{/* Left: Company (clickable → dashboard) */}
-					<div className="min-w-[180px] font-semibold tracking-tight">
-						<DashboardHomeLink
-							companyId={searchParams.get("company")}
-							companyName={companyName.charAt(0).toUpperCase() + companyName.slice(1)}
-							from={searchParams.get("from")}
-							to={searchParams.get("to")}
+
+					<div className="min-w-[180px]">
+					<DashboardHomeLink
+						companyId={searchParams.get("company")}
+						companyName={companyName}
+						from={searchParams.get("from")}
+						to={searchParams.get("to")}
 						/>
 					</div>
 
 					{/* Middle: Search */}
 					<div className="flex flex-1 items-center">
-						<div className="relative w-full max-w-xl">
+						<div className="relative w-full max-w-md">
 							<span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 opacity-60">
 								<SearchIcon />
 							</span>
