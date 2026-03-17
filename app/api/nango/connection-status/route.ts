@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { findNangoConnectionId } from "@/lib/nango/findConnectionId";
-
+import { upsertNangoConnection } from "@/lib/firestore/nangoConnections";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     endUserId: string;
     providerConfigKeys: string[];
   };
-
+  console.log("🔥 connection-status route HIT");  
   if (!body?.endUserId || !Array.isArray(body.providerConfigKeys)) {
     return NextResponse.json(
       { error: "endUserId and providerConfigKeys required" },
@@ -25,6 +25,12 @@ export async function POST(req: Request) {
           providerConfigKey,
           endUserId,
         });
+       await upsertNangoConnection({
+       userId: endUserId,
+       providerConfigKey,
+       connectionId,
+       provider: providerConfigKey
+      });
         return { providerConfigKey, connected: true, connectionId };
       } catch {
         return { providerConfigKey, connected: false };
