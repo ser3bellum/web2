@@ -28,45 +28,45 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   const { user, company } = await getUserCompanyContext(session);
 
-  const endUserId = user?.id ?? user?.id ?? null;
+  if (!user?.id) redirect("/login");
+
+  const endUserId = user.id;
 
   let slackConnected = false;
   let googleAnalyticsConnected = false;
 
-  if (endUserId) {
-    try {
-      await findNangoConnectionId({
-        providerConfigKey:
-          process.env.NANGO_SLACK_PROVIDER_CONFIG_KEY || "slack",
-        endUserId,
-      });
-      slackConnected = true;
-    } catch {
-      slackConnected = false;
-    }
+  try {
+    await findNangoConnectionId({
+      providerConfigKey:
+        process.env.NANGO_SLACK_PROVIDER_CONFIG_KEY || "slack",
+      endUserId,
+    });
+    slackConnected = true;
+  } catch {
+    slackConnected = false;
+  }
 
-    try {
-      await findNangoConnectionId({
-        providerConfigKey:
-          process.env.NANGO_GOOGLE_ANALYTICS_PROVIDER_CONFIG_KEY ||
-          "google-analytics",
-        endUserId,
-      });
-      googleAnalyticsConnected = true;
-    } catch {
-      googleAnalyticsConnected = false;
-    }
+  try {
+    await findNangoConnectionId({
+      providerConfigKey:
+        process.env.NANGO_GOOGLE_ANALYTICS_PROVIDER_CONFIG_KEY ||
+        "google-analytics",
+      endUserId,
+    });
+    googleAnalyticsConnected = true;
+  } catch {
+    googleAnalyticsConnected = false;
   }
 
   return (
     <div className="flex h-screen overflow-hidden">
-     <Sidebar
-	companyName={company?.name ?? user?.companyName ?? "Company"}
-	userEmail={user?.email ?? ""}
-	userName={user?.name ?? ""}
-	avatarUrl={user?.avatarUrl ?? null}
-	endUserId={"test_nicole_tshumba"}
-/>
+      <Sidebar
+        companyName={company?.name ?? user?.companyName ?? "Company"}
+        userEmail={user?.email ?? ""}
+        userName={user?.name ?? ""}
+        avatarUrl={user?.avatarUrl ?? null}
+        endUserId={endUserId}
+      />
 
       <div className="flex min-w-0 flex-1 flex-col app-gradient">
         <DailyReportModalController />

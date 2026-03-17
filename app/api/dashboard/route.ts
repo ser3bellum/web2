@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
-import { getNango } from "@/lib/nango/server";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { getUserCompanyContext } from "@/lib/data/getUserCompanyContext";
+import { adminAuth } from "@/lib/firebase/admin";
 import { findNangoConnectionId } from "@/lib/nango/findConnectionId";
 
-// Optional: ensures this isn't cached in unexpected ways while you're iterating
 export const dynamic = "force-dynamic";
 
 type DashboardResponse = {
   range: { from: string; to: string };
   integrations: Array<{
-    key: string;               // e.g. "google"
-    providerConfigKey: string; // e.g. "google-analytics"
+    key: string;
+    providerConfigKey: string;
     connected: boolean;
     connectionId?: string;
   }>;
@@ -28,10 +30,27 @@ export async function GET(req: Request) {
   const from = searchParams.get("from") ?? "";
   const to = searchParams.get("to") ?? "";
 
-  // TODO: replace with real user id from auth (Firebase UID later)
-  const endUserId = "test_nicole_tshumba";
+  const cookieStore = await cookies();
+  const session = cookieStore.get("__Host-sb_auth")?.value;
 
-  // IMPORTANT: this must match the Nango Integration ID you used in Connect
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    await adminAuth.verifySessionCookie(session, true);
+  } catch (e) {
+    console.error("DASHBOARD_ROUTE_SESSION_REJECTED:", e);
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { user } = await getUserCompanyContext(session);
+
+  if (!user?.id) {
+    return NextResponse.json({ error: "Missing user id" }, { status: 401 });
+  }
+
+  const endUserId = user.id;
   const providerConfigKey = "google-analytics";
 
   let gaConnected = false;
@@ -47,7 +66,6 @@ export async function GET(req: Request) {
     gaConnected = false;
   }
 
-  // You can start hydrating the dashboard immediately with "connection-aware" UI
   const response: DashboardResponse = {
     range: { from, to },
     integrations: [

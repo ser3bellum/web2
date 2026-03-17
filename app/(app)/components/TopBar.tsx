@@ -2,6 +2,7 @@
 
 import { LogoutButton } from "app/(app)/components/LogoutButton";
 import { BaseModal } from "app/(app)/components/ui/Modal";
+import { auth } from "app/(app)/lib/firebase";
 import { cn } from "app/(app)/lib/cn";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -191,45 +192,56 @@ function DashboardHomeLink({
 	const [messagesLoading, setMessagesLoading] = useState(false);
 
 	useEffect(() => {
-	let cancelled = false;
+  let cancelled = false;
 
-	async function loadSlackMessages() {
-		try {
-			setMessagesLoading(true);
+  async function loadSlackMessages() {
+    try {
+      const endUserId = auth.currentUser?.uid;
 
-			const res = await fetch("/api/messages/slack", {
-			method: "POST",
-			headers: {
-			"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-			endUserId: "test_nicole_tshumba",
-			}),
-				});
-			const data = await res.json();
+      if (!endUserId) {
+        if (!cancelled) {
+          setMessages([]);
+          setMessagesLoading(false);
+        }
+        return;
+      }
 
-			console.log("SLACK_MESSAGES_API_RESPONSE", data);
+      setMessagesLoading(true);
 
-			if (!cancelled) {
-				setMessages(Array.isArray(data.messages) ? data.messages : []);
-			}
-		} catch (error) {
-			console.error("SLACK_MESSAGES_FETCH_FAILED", error);
-			if (!cancelled) {
-				setMessages([]);
-			}
-		} finally {
-			if (!cancelled) {
-				setMessagesLoading(false);
-			}
-		}
-	}
+      const res = await fetch("/api/messages/slack", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          endUserId,
+        }),
+      });
 
-	loadSlackMessages();
+      const data = await res.json();
 
-	return () => {
-		cancelled = true;
-	};
+      console.log("SLACK_MESSAGES_API_RESPONSE", data);
+
+      if (!cancelled) {
+        setMessages(Array.isArray(data.messages) ? data.messages : []);
+      }
+    } catch (error) {
+      console.error("SLACK_MESSAGES_FETCH_FAILED", error);
+      if (!cancelled) {
+        setMessages([]);
+      }
+    } finally {
+      if (!cancelled) {
+        setMessagesLoading(false);
+      }
+    }
+ 	 }
+
+ 	 loadSlackMessages();
+
+  return () => {
+    cancelled = true;
+  };
 }, []);
 
 	const notifications: NotificationItem[] = [

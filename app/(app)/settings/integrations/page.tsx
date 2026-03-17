@@ -150,12 +150,15 @@ function IntegrationCard({
 }
 
 export default function IntegrationsPage() {
-  // ✅ Create the Nango client ONCE with public key
   const nango = useMemo(
     () => new Nango({ publicKey: process.env.NEXT_PUBLIC_NANGO_PUBLIC_KEY! }),
     []
   );
-  
+
+  const [authUser, setAuthUser] = useState<{
+    endUserId: string;
+    email: string | null;
+  } | null>(null);
 
   const initial = useMemo<Integration[]>(
     () => [
@@ -228,15 +231,48 @@ export default function IntegrationsPage() {
   type ConnectTarget = IntegrationKey | "picker" | null;
   const [connectOpen, setConnectOpen] = useState<ConnectTarget>(null);
 
-  // ✅ Backend truth: load connection status for all integrations
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadMe() {
+      try {
+        const res = await fetch("/api/auth/me", { cache: "no-store" });
+
+        if (!res.ok) {
+          console.error("Failed to load authenticated user");
+          return;
+        }
+
+        const data = await res.json();
+
+        if (!cancelled) {
+          setAuthUser({
+            endUserId: data.endUserId,
+            email: data.email ?? null,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load authenticated user", error);
+      }
+    }
+
+    loadMe();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const loadStatus = async () => {
+    if (!authUser?.endUserId) return;
+
     const providerConfigKeys = Object.values(NANGO_INTEGRATION_ID);
 
     const res = await fetch("/api/nango/connection-status", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        endUserId: "test_nicole_tshumba",
+        endUserId: authUser.endUserId,
         providerConfigKeys,
       }),
     });
@@ -255,74 +291,81 @@ export default function IntegrationsPage() {
     setIntegrations((prev) =>
       prev.map((i) => {
         const providerConfigKey = NANGO_INTEGRATION_ID[i.key];
-        return { ...i, connected: connectedMap.get(providerConfigKey) ?? false };
+        return {
+          ...i,
+          connected: connectedMap.get(providerConfigKey) ?? false,
+        };
       })
     );
   };
 
   useEffect(() => {
+    if (!authUser?.endUserId) return;
     loadStatus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [authUser?.endUserId]);
 
   async function connect(key: IntegrationKey) {
+    if (!authUser?.endUserId) {
+      alert("No authenticated user found.");
+      return;
+    }
+
     const integrationId = NANGO_INTEGRATION_ID[key];
 
     const res = await fetch("/api/nango/connect-session", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    allowedIntegrations: [integrationId],
-    endUserId: "test_nicole_tshumba",
-    endUserEmail: "nicoletshumba@ser3bellum.com",
-  }),
-});
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        allowedIntegrations: [integrationId],
+        endUserId: authUser.endUserId,
+        endUserEmail: authUser.email ?? undefined,
+      }),
+    });
 
-const payload: any = await res.json().catch(() => ({}));
+    const payload: any = await res.json().catch(() => ({}));
 
-if (!res.ok) {
-  console.error("connect-session failed", payload);
-  alert("Could not start connection. Check logs.");
-  return;
-}
+    if (!res.ok) {
+      console.error("connect-session failed", payload);
+      alert("Could not start connection. Check logs.");
+      return;
+    }
 
-if (payload?.alreadyConnected) {
-  await loadStatus();
-  return;
-}
-
-const sessionToken = payload?.sessionToken;
-
-if (typeof sessionToken !== "string" || sessionToken.length === 0) {
-  console.error("Missing/invalid sessionToken", payload);
-  alert("Missing session token. Check logs.");
-  return;
-}
-
-nango.openConnectUI({
-  sessionToken,
-  onEvent: async (event: any) => {
-    console.log("Nango event", event);
-
-    // Different versions emit slightly different event shapes,
-    // so we match a few common ones safely.
-    const type = event?.type ?? event?.event ?? event?.name;
-
-    if (
-      type === "connect" ||
-      type === "connected" ||
-      type === "connection_created" ||
-      type === "auth.success"
-    ) {
+    if (payload?.alreadyConnected) {
       await loadStatus();
+      return;
     }
 
-    if (type === "error" || type === "auth.error") {
-      console.error("Nango connect error event", event);
+    const sessionToken = payload?.sessionToken;
+
+    if (typeof sessionToken !== "string" || sessionToken.length === 0) {
+      console.error("Missing/invalid sessionToken", payload);
+      alert("Missing session token. Check logs.");
+      return;
     }
-  },
-});
-}
+
+    nango.openConnectUI({
+      sessionToken,
+      onEvent: async (event: any) => {
+        console.log("Nango event", event);
+
+        const type = event?.type ?? event?.event ?? event?.name;
+
+        if (
+          type === "connect" ||
+          type === "connected" ||
+          type === "connection_created" ||
+          type === "auth.success"
+        ) {
+          await loadStatus();
+        }
+
+        if (type === "error" || type === "auth.error") {
+          console.error("Nango connect error event", event);
+        }
+      },
+    });
+  }
+
   return (
     <PageShell className="p-8" contained>
       <section className="rounded-3xl border border-white/60 bg-white/50 p-7 shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur">
