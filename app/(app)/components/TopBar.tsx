@@ -2,7 +2,7 @@
 
 import { LogoutButton } from "app/(app)/components/LogoutButton";
 import { BaseModal } from "app/(app)/components/ui/Modal";
-import { auth } from "app/(app)/lib/firebase";
+import { auth } from "@/lib/firebase/clients";
 import { cn } from "app/(app)/lib/cn";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
