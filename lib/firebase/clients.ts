@@ -13,15 +13,18 @@ type WebAppConfig = {
 };
 
 function readWebConfig(): WebAppConfig {
-  // ✅ Client-safe: Next will inline this at build time
-  const raw = process.env.NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG;
+  const raw =
+    process.env.FIREBASE_WEBAPP_CONFIG ||
+    process.env.NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG;
 
   if (raw) {
     const parsed = JSON.parse(raw) as WebAppConfig;
-    if (parsed?.apiKey && parsed?.authDomain && parsed?.projectId && parsed?.appId) return parsed;
+    if (parsed?.apiKey && parsed?.authDomain && parsed?.projectId && parsed?.appId) {
+      return parsed;
+    }
+    throw new Error("Invalid Firebase web config JSON.");
   }
 
-  // ✅ Local dev fallback (.env.local)
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
   const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
@@ -29,7 +32,7 @@ function readWebConfig(): WebAppConfig {
 
   if (!apiKey || !authDomain || !projectId || !appId) {
     throw new Error(
-      "Missing Firebase web config. Set NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG (recommended) or NEXT_PUBLIC_FIREBASE_*."
+      "Missing Firebase web config. Set FIREBASE_WEBAPP_CONFIG / NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG or NEXT_PUBLIC_FIREBASE_*."
     );
   }
 
