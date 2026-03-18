@@ -4,7 +4,7 @@ type NangoConnection = {
   provider: string;
   created: string;
   tags?: Record<string, string>;
-  errors?: any[];
+  errors?: unknown[];
 };
 
 export async function findNangoConnectionId(params: {
@@ -34,15 +34,30 @@ export async function findNangoConnectionId(params: {
     throw new Error(`Nango list connections failed (${res.status}): ${text}`);
   }
 
-  const data = (await res.json()) as { connections: NangoConnection[] };
-  const match = data.connections.find(
+  const data = (await res.json()) as { connections?: NangoConnection[] };
+
+  const connections = data.connections ?? [];
+
+  // 🔍 DEBUG LOG
+  console.log("🔍 Nango connections lookup", {
+    endUserId,
+    providerConfigKey,
+    count: connections.length,
+    connections: connections.map((c) => ({
+      connection_id: c.connection_id,
+      provider_config_key: c.provider_config_key,
+      provider: c.provider,
+      tags: c.tags,
+    })),
+  });
+
+  const match = connections.find(
     (c) => c.provider_config_key === providerConfigKey
   );
 
   if (!match) {
     throw new Error(
-      `No Nango connection found for providerConfigKey="${providerConfigKey}" and endUserId="${endUserId}". ` +
-        `Make sure you completed the OAuth flow and check Nango → Connections.`
+      `No Nango connection found for providerConfigKey="${providerConfigKey}" and endUserId="${endUserId}".`
     );
   }
 
