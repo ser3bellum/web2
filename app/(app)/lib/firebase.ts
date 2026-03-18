@@ -11,19 +11,17 @@ type WebAppConfig = {
 };
 
 function getWebAppConfig(): WebAppConfig {
-  // Preferred in Firebase App Hosting
-  const raw = process.env.FIREBASE_WEBAPP_CONFIG;
+  const raw = process.env.NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG;
 
   if (raw) {
     const parsed = JSON.parse(raw) as Partial<WebAppConfig>;
-    if (!parsed.apiKey) throw new Error("FIREBASE_WEBAPP_CONFIG missing apiKey");
-    if (!parsed.authDomain) throw new Error("FIREBASE_WEBAPP_CONFIG missing authDomain");
-    if (!parsed.projectId) throw new Error("FIREBASE_WEBAPP_CONFIG missing projectId");
-    if (!parsed.appId) throw new Error("FIREBASE_WEBAPP_CONFIG missing appId");
+    if (!parsed.apiKey) throw new Error("NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG missing apiKey");
+    if (!parsed.authDomain) throw new Error("NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG missing authDomain");
+    if (!parsed.projectId) throw new Error("NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG missing projectId");
+    if (!parsed.appId) throw new Error("NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG missing appId");
     return parsed as WebAppConfig;
   }
 
-  // Fallback for local dev (env.local)
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
   const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
@@ -31,16 +29,20 @@ function getWebAppConfig(): WebAppConfig {
 
   if (!apiKey || !authDomain || !projectId || !appId) {
     throw new Error(
-      "Firebase web config missing. Set FIREBASE_WEBAPP_CONFIG (App Hosting) or NEXT_PUBLIC_FIREBASE_* (local).",
+      "Firebase web config missing. Set NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG or NEXT_PUBLIC_FIREBASE_*."
     );
   }
 
-  return { apiKey, authDomain, projectId, appId };
+  return {
+    apiKey,
+    authDomain,
+    projectId,
+    appId,
+  };
 }
 
 const firebaseConfig = getWebAppConfig();
 
-// Prevent re-initialization on hot reload
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
 export const auth = getAuth(app);
