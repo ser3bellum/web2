@@ -13,20 +13,14 @@ type WebAppConfig = {
 };
 
 function readWebConfig(): WebAppConfig {
-  const raw =
-    process.env.FIREBASE_WEBAPP_CONFIG ||
-    process.env.NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG;
+  const raw = process.env.NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG;
 
   if (raw) {
-    try {
-      const parsed = JSON.parse(raw) as WebAppConfig;
-      if (parsed?.apiKey && parsed?.authDomain && parsed?.projectId && parsed?.appId) {
-        return parsed;
-      }
-      throw new Error("Invalid Firebase web config JSON: missing required fields.");
-    } catch (error) {
-      throw new Error("Invalid FIREBASE_WEBAPP_CONFIG JSON.");
+    const parsed = JSON.parse(raw) as WebAppConfig;
+    if (parsed?.apiKey && parsed?.authDomain && parsed?.projectId && parsed?.appId) {
+      return parsed;
     }
+    throw new Error("Invalid NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG JSON.");
   }
 
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
@@ -35,16 +29,16 @@ function readWebConfig(): WebAppConfig {
   const appId = process.env.NEXT_PUBLIC_FIREBASE_APP_ID;
 
   console.log("firebase env debug", {
+    hasRawConfig: !!raw,
     hasApiKey: !!apiKey,
     hasAuthDomain: !!authDomain,
     hasProjectId: !!projectId,
     hasAppId: !!appId,
-    hasRawConfig: !!raw,
   });
 
   if (!apiKey || !authDomain || !projectId || !appId) {
     throw new Error(
-      "Missing Firebase web config. Set FIREBASE_WEBAPP_CONFIG / NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG or NEXT_PUBLIC_FIREBASE_*."
+      "Missing Firebase web config. Set NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG or NEXT_PUBLIC_FIREBASE_*."
     );
   }
 
