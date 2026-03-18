@@ -1,4 +1,6 @@
 env:
+  - variable: NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG
+    secret: NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG
   - variable: NANGO_SECRET_KEY
     secret: NANGO_SECRET_KEY_PROD
   - variable: NANGO_ENV
@@ -7,4 +9,6 @@ env:
     value: slack
   - variable: APP_BASE_URL
     value: https://web-staging--ser3bellum-v2.europe-west4.hosted.app
+  - variable: NEXT_PUBLIC_NANGO_GOOGLE_ANALYTICS_PROVIDER_CONFIG_KEY
+    value: google-analytics
     
