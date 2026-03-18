@@ -1,6 +1,5 @@
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
-
-const db = getFirestore();
+import { FieldValue } from "firebase-admin/firestore";
+import { db } from "@/lib/firebase/admin";
 
 export async function upsertNangoConnection(params: {
   userId: string;
@@ -9,7 +8,6 @@ export async function upsertNangoConnection(params: {
   provider?: string;
 }) {
   const { userId, providerConfigKey, connectionId, provider } = params;
-
   const docId = `${userId}__${providerConfigKey}`;
 
   await db.collection("nango_connections").doc(docId).set(
@@ -20,7 +18,7 @@ export async function upsertNangoConnection(params: {
       provider: provider ?? providerConfigKey,
       status: "connected",
       createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp()
+      updatedAt: FieldValue.serverTimestamp(),
     },
     { merge: true }
   );
