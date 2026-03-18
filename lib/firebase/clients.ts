@@ -18,17 +18,29 @@ function readWebConfig(): WebAppConfig {
     process.env.NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG;
 
   if (raw) {
-    const parsed = JSON.parse(raw) as WebAppConfig;
-    if (parsed?.apiKey && parsed?.authDomain && parsed?.projectId && parsed?.appId) {
-      return parsed;
+    try {
+      const parsed = JSON.parse(raw) as WebAppConfig;
+      if (parsed?.apiKey && parsed?.authDomain && parsed?.projectId && parsed?.appId) {
+        return parsed;
+      }
+      throw new Error("Invalid Firebase web config JSON: missing required fields.");
+    } catch (error) {
+      throw new Error("Invalid FIREBASE_WEBAPP_CONFIG JSON.");
     }
-    throw new Error("Invalid Firebase web config JSON.");
   }
 
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
   const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
   const appId = process.env.NEXT_PUBLIC_FIREBASE_APP_ID;
+
+  console.log("firebase env debug", {
+    hasApiKey: !!apiKey,
+    hasAuthDomain: !!authDomain,
+    hasProjectId: !!projectId,
+    hasAppId: !!appId,
+    hasRawConfig: !!raw,
+  });
 
   if (!apiKey || !authDomain || !projectId || !appId) {
     throw new Error(
@@ -45,7 +57,7 @@ function readWebConfig(): WebAppConfig {
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   };
 }
-
+console.log("STAGING BUILD MARKER 2026-03-18-A");
 const firebaseConfig = readWebConfig();
 
 export const app: FirebaseApp =
