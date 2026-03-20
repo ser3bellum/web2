@@ -41,18 +41,20 @@ export default async function DashboardPage({
       );
     }
 
-    const kpis = await getDashboardKpis({
-      range,
-      companyId: company.id,
-    });
+    let hydration: Awaited<ReturnType<typeof getDashboardHydration>> | null = null;
 
-    const hydration = await getDashboardHydration({
-      from: range.from,
-      to: range.to,
-      endUserId: company.id,
-    });
+    try {
+      hydration = await getDashboardHydration({
+        from: range.from,
+        to: range.to,
+        endUserId: company.id,
+      });
+    } catch (e) {
+      console.warn("Hydration failed, fallback to empty:", e);
+    }
 
-    const hasIntegration = hydration.cards.length > 0;
+    const hasIntegration =
+      Array.isArray(hydration?.cards) && hydration.cards.length > 0;
 
     if (!hasIntegration) {
       return (
@@ -65,13 +67,23 @@ export default async function DashboardPage({
       );
     }
 
+    const kpis = await getDashboardKpis({
+      range,
+      companyId: company.id,
+    });
+
+    console.log("DEBUG DASHBOARD:", {
+      hasCompany: !!company?.id,
+      cards: hydration?.cards?.length,
+    });
+
     return (
       <div className="flex flex-col">
         <div className="flex flex-col gap-6 px-4 pb-8 pt-6 lg:px-8">
           <KpiStrip kpis={kpis} />
 
           <section>
-            <DashboardCardsGrid hydrationCards={hydration.cards} />
+            <DashboardCardsGrid hydrationCards={hydration?.cards ?? []} />
           </section>
 
           {isDev && (
