@@ -44,7 +44,6 @@ async function safeJson(req: Request) {
 /* -------------------------------- handler -------------------------------- */
 
 export async function POST(req: Request) {
-  // 1) Reject bad / bot requests early
   const parsed = await safeJson(req);
   if (!parsed.ok) {
     return NextResponse.json(
@@ -64,28 +63,24 @@ export async function POST(req: Request) {
   }
 
   try {
-    // 2) Verify Firebase ID token
     const decoded = await verifyIdToken(token);
     const uid = decoded.uid;
     const email = decoded.email ?? null;
     const tokenName = decoded.name ?? null;
 
-    // 3) Create session cookie FIRST
-    const expiresIn = 14 * 24 * 60 * 60 * 1000; // 14 days
+    const expiresIn = 14 * 24 * 60 * 60 * 1000;
     const sessionCookie = await createSessionCookie(token, expiresIn);
 
     const res = NextResponse.json({ ok: true });
 
-    // ✅ SINGLE, CANONICAL COOKIE
     res.cookies.set("__Host-sb_auth", sessionCookie, {
       httpOnly: true,
-      secure: true, // required for __Host-
+      secure: true,
       sameSite: "lax",
-      path: "/",    // required for __Host-
+      path: "/",
       maxAge: Math.floor(expiresIn / 1000),
     });
 
-    // 4) Firestore writes are best-effort
     try {
       const userRef = adminDb.collection("users").doc(uid);
       const snap = await userRef.get();
@@ -115,6 +110,9 @@ export async function POST(req: Request) {
         const companySize = cleanString(p.companySize);
         if (companySize) update.companySize = companySize;
 
+        const industry = cleanString(p.industry);
+        if (industry) update.industry = industry;
+
         const country = cleanString(p.country);
         if (country) update.country = country;
 
@@ -134,7 +132,6 @@ export async function POST(req: Request) {
       }
     } catch (e) {
       console.error("SESSION_PROFILE_WRITE_FAILED:", e);
-      // login must still succeed
     }
 
     return res;
