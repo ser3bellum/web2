@@ -11,6 +11,7 @@ import { getUserCompanyContext } from "@/lib/data/getUserCompanyContext";
 import { KpiStrip } from "./KpiStrip";
 import { getDashboardHydration } from "app/(app)/dashboard/getDashboardHydration";
 import { DashboardOnboardingEmptyState } from "./DashboardOnboardingEmptyState";
+// import { getNangoConnectionsCount } from "@/lib/nango/getNangoConnectionsCount";
 
 type DashboardSearchParams = { from?: string; to?: string };
 
@@ -41,20 +42,18 @@ export default async function DashboardPage({
       );
     }
 
-    let hydration: Awaited<ReturnType<typeof getDashboardHydration>> | null = null;
+    // Replace this with your real Nango helper
+    const connectionCount = 0;
+    // const connectionCount = await getNangoConnectionsCount({
+    //   endUserId: company.id,
+    // });
 
-    try {
-      hydration = await getDashboardHydration({
-        from: range.from,
-        to: range.to,
-        endUserId: company.id,
-      });
-    } catch (e) {
-      console.warn("Hydration failed, fallback to empty:", e);
-    }
+    const hasIntegration = connectionCount > 0;
 
-    const hasIntegration =
-      Array.isArray(hydration?.cards) && hydration.cards.length > 0;
+    console.log("DEBUG DASHBOARD:", {
+      hasCompany: !!company?.id,
+      connectionCount,
+    });
 
     if (!hasIntegration) {
       return (
@@ -67,15 +66,17 @@ export default async function DashboardPage({
       );
     }
 
-    const kpis = await getDashboardKpis({
-      range,
-      companyId: company.id,
-    });
-
-    console.log("DEBUG DASHBOARD:", {
-      hasCompany: !!company?.id,
-      cards: hydration?.cards?.length,
-    });
+    const [kpis, hydration] = await Promise.all([
+      getDashboardKpis({
+        range,
+        companyId: company.id,
+      }),
+      getDashboardHydration({
+        from: range.from,
+        to: range.to,
+        endUserId: company.id,
+      }),
+    ]);
 
     return (
       <div className="flex flex-col">
