@@ -29,13 +29,16 @@ export default async function DashboardPage({
     if (!session) redirect("/login");
 
     const { company } = await getUserCompanyContext(session);
+
     if (!company?.id) {
       return (
-    <div className="px-4 pb-8 pt-6 lg:px-8">
-      <DashboardOnboardingEmptyState />
-    </div>
-     );
-
+        <div className="px-4 pb-8 pt-6 lg:px-8">
+          <DashboardOnboardingEmptyState
+            hasCompany={false}
+            hasIntegration={false}
+          />
+        </div>
+      );
     }
 
     const kpis = await getDashboardKpis({
@@ -48,6 +51,19 @@ export default async function DashboardPage({
       to: range.to,
       endUserId: company.id,
     });
+
+    const hasIntegration = hydration.cards.length > 0;
+
+    if (!hasIntegration) {
+      return (
+        <div className="px-4 pb-8 pt-6 lg:px-8">
+          <DashboardOnboardingEmptyState
+            hasCompany={true}
+            hasIntegration={false}
+          />
+        </div>
+      );
+    }
 
     return (
       <div className="flex flex-col">
