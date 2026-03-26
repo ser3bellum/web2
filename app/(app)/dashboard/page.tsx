@@ -11,7 +11,7 @@ import { getUserCompanyContext } from "@/lib/data/getUserCompanyContext";
 import { KpiStrip } from "./KpiStrip";
 import { getDashboardHydration } from "app/(app)/dashboard/getDashboardHydration";
 import { DashboardOnboardingEmptyState } from "./DashboardOnboardingEmptyState";
-// import { getNangoConnectionsCount } from "@/lib/nango/getNangoConnectionsCount";
+import { findNangoConnectionId } from "@/lib/nango/findConnectionId";
 
 type DashboardSearchParams = { from?: string; to?: string };
 
@@ -29,7 +29,7 @@ export default async function DashboardPage({
     const session = (await cookies()).get("__Host-sb_auth")?.value;
     if (!session) redirect("/login");
 
-    const { company } = await getUserCompanyContext(session);
+    const { user, company } = await getUserCompanyContext(session);
 
     if (!company?.id) {
       return (
@@ -42,17 +42,58 @@ export default async function DashboardPage({
       );
     }
 
-    // Replace this with your real Nango helper
-    const connectionCount = 0;
-    // const connectionCount = await getNangoConnectionsCount({
-    //   endUserId: company.id,
-    // });
+    if (!user?.id) {
+      return (
+        <div className="px-4 pb-8 pt-6 lg:px-8">
+          <DashboardOnboardingEmptyState
+            hasCompany={true}
+            hasIntegration={false}
+          />
+        </div>
+      );
+    }
+
+    const endUserId = user.id;
+
+    const providerConfigKeys = ["google-analytics", "slack"];
+
+    const connectionResults = await Promise.all(
+      providerConfigKeys.map(async (providerConfigKey) => {
+        try {
+          const connectionId = await findNangoConnectionId({
+            providerConfigKey,
+            endUserId,
+          });
+
+          return {
+            providerConfigKey,
+            connected: Boolean(connectionId),
+            connectionId,
+          };
+        } catch {
+          return {
+            providerConfigKey,
+            connected: false,
+            connectionId: undefined,
+          };
+        }
+      })
+    );
+
+    const connectionCount = connectionResults.filter(
+      (item) => item.connected
+    ).length;
 
     const hasIntegration = connectionCount > 0;
 
     console.log("DEBUG DASHBOARD:", {
       hasCompany: !!company?.id,
+      companyId: company.id,
+      userId: user.id,
+      endUserId,
       connectionCount,
+      connectionResults,
+      hasIntegration,
     });
 
     if (!hasIntegration) {
@@ -74,7 +115,7 @@ export default async function DashboardPage({
       getDashboardHydration({
         from: range.from,
         to: range.to,
-        endUserId: company.id,
+        endUserId, // use Nango/user identity here, not company.id
       }),
     ]);
 
