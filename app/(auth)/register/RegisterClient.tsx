@@ -35,6 +35,7 @@ const COUNTRIES = [
   "Germany",
   "Spain",
   "Italy",
+  "Portugal",
   "Canada",
   "Australia",
 ];

@@ -27,10 +27,12 @@ type Integration = {
   key: IntegrationKey;
   name: string;
   subtitle: string;
-  userIdLabel?: string;
-  userIdValue?: string;
-  lastUpdate: string;
-  createdOn: string;
+  primaryLabel: string;
+  primaryValue: string | null;
+  secondaryLabel?: string;
+  secondaryValue?: string | null;
+  lastUpdate: string | null;
+  createdOn: string | null;
   connected: boolean;
 };
 
@@ -116,18 +118,29 @@ function IntegrationCard({
             onChange={(next) => onToggle(integration.key, next)}
           />
           <div className="text-[11px] text-zinc-500">
-            Last update {integration.lastUpdate}
+            Last update {integration.lastUpdate ?? "—"}
           </div>
         </div>
       </div>
 
       <div className="mt-6">
         <div className="text-xl font-semibold text-indigo-700">
-          {integration.userIdLabel ?? "User ID"}
+          {integration.primaryLabel}
         </div>
         <div className="mt-1 text-sm text-zinc-600">
-          {integration.userIdValue ?? "—"}
+          {integration.primaryValue ?? "—"}
         </div>
+
+        {integration.secondaryLabel ? (
+          <div className="mt-4">
+            <div className="text-sm font-medium text-zinc-500">
+              {integration.secondaryLabel}
+            </div>
+            <div className="mt-1 text-sm text-zinc-600">
+              {integration.secondaryValue ?? "—"}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-7 flex items-center justify-between gap-4">
@@ -142,7 +155,7 @@ function IntegrationCard({
         <div className="flex items-center gap-2 text-xs text-zinc-300">
           <span>Created on</span>
           <span className="inline-block h-3.5 w-3.5 rounded border border-zinc-200 bg-white" />
-          <span className="text-zinc-300">{integration.createdOn}</span>
+          <span className="text-zinc-300">{integration.createdOn ?? "—"}</span>
         </div>
       </div>
     </div>
@@ -166,60 +179,66 @@ export default function IntegrationsPage() {
         key: "notion",
         name: "Notion",
         subtitle: "Auto-track on",
-        userIdLabel: "User ID",
-        userIdValue: "562f36da-40b05897-p0012-9877",
-        lastUpdate: "2 days ago",
-        createdOn: "29/01/2026",
+        primaryLabel: "Workspace",
+        primaryValue: null,
+        lastUpdate: null,
+        createdOn: null,
         connected: false,
       },
       {
         key: "shopify",
         name: "Shopify",
         subtitle: "Auto-track on",
-        userIdLabel: "Store ID",
-        userIdValue: "—",
-        lastUpdate: "—",
-        createdOn: "—",
+        primaryLabel: "Store",
+        primaryValue: null,
+        lastUpdate: null,
+        createdOn: null,
         connected: false,
       },
       {
         key: "stripe",
         name: "Stripe",
         subtitle: "Auto-track on",
-        userIdLabel: "Account",
-        userIdValue: "—",
-        lastUpdate: "—",
-        createdOn: "—",
+        primaryLabel: "Account",
+        primaryValue: null,
+        lastUpdate: null,
+        createdOn: null,
         connected: false,
       },
       {
         key: "google",
         name: "Google Analytics",
         subtitle: "Auto-track on",
-        userIdLabel: "Project ID",
-        userIdValue: "—",
-        lastUpdate: "—",
-        createdOn: "—",
+        primaryLabel: "Property",
+        primaryValue: null,
+        secondaryLabel: "Property ID",
+        secondaryValue: null,
+        lastUpdate: null,
+        createdOn: null,
         connected: false,
       },
       {
         key: "slack",
         name: "Slack",
         subtitle: "Auto-track on",
-        userIdLabel: "Workspace",
-        userIdValue: "—",
-        lastUpdate: "—",
-        createdOn: "—",
+        primaryLabel: "Workspace",
+        primaryValue: null,
+        secondaryLabel: "Team ID",
+        secondaryValue: null,
+        lastUpdate: null,
+        createdOn: null,
         connected: false,
       },
       {
         key: "github",
         name: "GitHub",
         subtitle: "Auto-track on",
-        userIdLabel: "Org",
-        userIdValue: "—",
-        lastUpdate: "—",
-        createdOn: "—",
+        primaryLabel: "Organization",
+        primaryValue: null,
+        secondaryLabel: "Org ID",
+        secondaryValue: null,
+        lastUpdate: null,
+        createdOn: null,
         connected: false,
       },
     ],
@@ -264,40 +283,64 @@ export default function IntegrationsPage() {
   }, []);
 
   const loadStatus = async () => {
-    if (!authUser?.endUserId) return;
+  if (!authUser?.endUserId) return;
 
-    const providerConfigKeys = Object.values(NANGO_INTEGRATION_ID);
+  const providerConfigKeys = Object.values(NANGO_INTEGRATION_ID);
 
-    const res = await fetch("/api/nango/connection-status", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        endUserId: authUser.endUserId,
-        providerConfigKeys,
-      }),
-    });
+  const res = await fetch("/api/nango/connection-status", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      endUserId: authUser.endUserId,
+      providerConfigKeys,
+    }),
+  });
 
-    if (!res.ok) {
-      console.error("Failed to load connection status");
-      return;
+  if (!res.ok) {
+    console.error("Failed to load connection status");
+    return;
+  }
+
+  const data = await res.json();
+
+  const statusMap = new Map<
+    string,
+    {
+      connected: boolean;
+      primaryValue: string | null;
+      secondaryValue: string | null;
+      lastUpdate: string | null;
+      createdOn: string | null;
     }
+  >(data.results.map((r: any) => [r.providerConfigKey, r]));
 
-    const data = await res.json();
+  setIntegrations((prev) =>
+    prev.map((i) => {
+      const providerConfigKey = NANGO_INTEGRATION_ID[i.key];
+      const status = statusMap.get(providerConfigKey);
 
-    const connectedMap = new Map<string, boolean>(
-      data.results.map((r: any) => [r.providerConfigKey, r.connected])
-    );
-
-    setIntegrations((prev) =>
-      prev.map((i) => {
-        const providerConfigKey = NANGO_INTEGRATION_ID[i.key];
+      if (!status) {
         return {
           ...i,
-          connected: connectedMap.get(providerConfigKey) ?? false,
+          connected: false,
+          primaryValue: null,
+          secondaryValue: null,
+          lastUpdate: null,
+          createdOn: null,
         };
-      })
-    );
-  };
+      }
+
+      return {
+        ...i,
+        connected: status.connected,
+        primaryValue: status.primaryValue,
+        secondaryValue: status.secondaryValue,
+        lastUpdate: status.lastUpdate,
+        createdOn: status.createdOn,
+      };
+    })
+  );
+};
 
   useEffect(() => {
     if (!authUser?.endUserId) return;

@@ -1,24 +1,37 @@
 // lib/data/getUserCompanyContext.ts
 import { adminAuth, adminDb } from "@/lib/firebase/admin";
+import { getUserLanguageFromDoc } from "@/lib/i18n/getUserLanguage";
+import type { SupportedLanguage } from "@/lib/i18n/config";
 
 export type UserDoc = {
   email?: string | null;
   name?: string | null;
   jobTitle?: string | null;
 
-  // ✅ workspace model
+  // workspace model
   lastWorkspaceId?: string | null;
 
-  // ✅ legacy/company model fallback
+  // legacy/company model fallback
   companyId?: string | null;
 
-  // ✅ cached bits
+  // cached bits
   companyName?: string | null;
   companySize?: string | null;
   country?: string | null;
 
   avatarUrl?: string | null;
   onboardingStatus?: string | null;
+
+  settings?: {
+    localization?: {
+      language?: string | null;
+    };
+  };
+};
+
+export type UserContextDoc = UserDoc & {
+  id: string;
+  initialLanguage: SupportedLanguage;
 };
 
 export type WorkspaceDoc = {
@@ -32,13 +45,15 @@ export type WorkspaceDoc = {
 };
 
 // We return "company" but it may come from workspaces OR companies
-export type CompanyContextDoc = WorkspaceDoc & { id: string };
+export type CompanyContextDoc = WorkspaceDoc & {
+  id: string;
+};
 
 export async function getUserCompanyContext(
   sessionCookie: string,
 ): Promise<{
   uid: string;
-  user: (UserDoc & { id: string }) | null;
+  user: UserContextDoc | null;
   company: CompanyContextDoc | null;
 }> {
   // 1) Verify session
@@ -47,19 +62,32 @@ export async function getUserCompanyContext(
 
   // 2) Load user
   const userSnap = await adminDb.collection("users").doc(uid).get();
-  if (!userSnap.exists) return { uid, user: null, company: null };
+  if (!userSnap.exists) {
+    return { uid, user: null, company: null };
+  }
 
-  const user = { id: userSnap.id, ...(userSnap.data() as UserDoc) };
+  const rawUser = userSnap.data() as UserDoc;
+  const initialLanguage = getUserLanguageFromDoc(rawUser);
+
+  const user: UserContextDoc = {
+    id: userSnap.id,
+    ...rawUser,
+    initialLanguage,
+  };
 
   // 3) Prefer workspace model
   const workspaceId = user.lastWorkspaceId ?? null;
   if (workspaceId) {
     const wsSnap = await adminDb.collection("workspaces").doc(workspaceId).get();
+
     if (wsSnap.exists) {
       return {
         uid,
         user,
-        company: { id: wsSnap.id, ...(wsSnap.data() as WorkspaceDoc) },
+        company: {
+          id: wsSnap.id,
+          ...(wsSnap.data() as WorkspaceDoc),
+        },
       };
     }
   }
@@ -68,11 +96,15 @@ export async function getUserCompanyContext(
   const companyId = user.companyId ?? null;
   if (companyId) {
     const cSnap = await adminDb.collection("companies").doc(companyId).get();
+
     if (cSnap.exists) {
       return {
         uid,
         user,
-        company: { id: cSnap.id, ...(cSnap.data() as WorkspaceDoc) },
+        company: {
+          id: cSnap.id,
+          ...(cSnap.data() as WorkspaceDoc),
+        },
       };
     }
   }

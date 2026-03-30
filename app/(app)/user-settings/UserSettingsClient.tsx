@@ -10,7 +10,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { auth } from "@/lib/firebase/clients"; // adjust path to your actual client auth export
 import FieldRow from "./components/FieldRow";
 import SettingsCard from "./components/SettingsCard";
-
+import { LanguageSettingsCard } from "./components/LanguageSettingsCard";
+import type { SupportedLanguage } from "@/lib/i18n/config";
 /**
  * API helpers
  */
@@ -95,7 +96,7 @@ type Props = {
 		id: string;
 		email: string;
 		name: string;
-
+		initialLanguage: SupportedLanguage;
 		// ✅ “Role” is stored as jobTitle
 		jobTitle?: string;
 
@@ -169,6 +170,9 @@ export default function UserSettingsClient({ user, company }: Props) {
 	const [companySaved, setCompanySaved] = useState(false);
 
 	const emailLabel = useMemo(() => user.email || "—", [user.email]);
+
+	/** language */
+	const initialLanguage = user.initialLanguage;
 
 	// Keep form state in sync if server props revalidate (router.refresh, logout/login, etc.)
 	useEffect(() => {
@@ -374,6 +378,9 @@ export default function UserSettingsClient({ user, company }: Props) {
 							</button>
 						</div>
 					</SettingsCard>
+									<LanguageSettingsCard
+ 										 userId={user.id}
+  									initialLanguage={initialLanguage}/>
 
 					<SettingsCard
 						title="Team Management"
