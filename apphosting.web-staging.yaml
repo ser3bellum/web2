@@ -11,4 +11,8 @@ env:
     value: https://web-staging--ser3bellum-v2.europe-west4.hosted.app
   - variable: NEXT_PUBLIC_NANGO_GOOGLE_ANALYTICS_PROVIDER_CONFIG_KEY
     value: google-analytics
-    
+  - variable: NEXT_PUBLIC_FIRESTORE_DATABASE_ID
+    value: ser3bellum
+    availability:
+      - BUILD
+      - RUNTIME
