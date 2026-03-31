@@ -24,4 +24,5 @@ env:
   - variable: NEXT_PUBLIC_NANGO_GOOGLE_ANALYTICS_PROVIDER_CONFIG_KEY
     value: google-analytics
 
-  
+  - variable: NEXT_PUBLIC_FIRESTORE_DATABASE_ID
+    value: ser3bellum
