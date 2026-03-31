@@ -23,3 +23,5 @@ env:
 
   - variable: NEXT_PUBLIC_NANGO_GOOGLE_ANALYTICS_PROVIDER_CONFIG_KEY
     value: google-analytics
+
+  
