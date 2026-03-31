@@ -51,11 +51,16 @@ function readWebConfig(): WebAppConfig {
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   };
 }
+
 console.log("STAGING BUILD MARKER 2026-03-18-A");
+
 const firebaseConfig = readWebConfig();
 
 export const app: FirebaseApp =
   getApps().length > 0 ? getApps()[0]! : initializeApp(firebaseConfig);
 
+const firestoreDatabaseId =
+  process.env.NEXT_PUBLIC_FIRESTORE_DATABASE_ID || "(default)";
+
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const db = getFirestore(app, firestoreDatabaseId);
