@@ -152,18 +152,18 @@ export function Sidebar({
 			{ label: "Analytics", href: "/analytics", icon: <AnalyticsIcon /> },
 			{ label: "Site Health ", href: "/site-health", icon: <ShieldIcon /> },
 		],
-		[],
+		[t],
 	);
 
 	const settingsLinks: NavItem[] = useMemo(
 		() => [
 			{
-				label: "Integrations",
+				label: t.integrations,
 				href: "/settings/integrations",
 				icon: <KeyIcon />,
 			},
 		],
-		[],
+		[t],
 	);
 
 	const companies = useMemo(
@@ -266,7 +266,7 @@ export function Sidebar({
 
 				<Link
 					href="/user-settings"
-					aria-label="Open profile settings"
+					aria-label={t.openProfileSettings}
 					className={cn(
 						"group mb-5 flex w-full items-center gap-3 rounded-xl px-3 py-2.5",
 						"border border-white/25 bg-white/10 backdrop-blur-xl ring-1 ring-white/10 shadow-sm transition-colors",
@@ -289,20 +289,20 @@ export function Sidebar({
 						)}
 
 						<span className="pointer-events-none absolute inset-0 grid place-items-center bg-black/40 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
-							Edit
+							{t.edit}
 						</span>
 					</div>
 
 					<div className="min-w-0 flex-1">
 						<div className="truncate text-sm font-semibold text-slate-800">
-						{userName || "User"}
+						{userName || t.userFallback}
 						</div>
 
 						<div className="flex items-center gap-2">
 						
 
 						<span className="text-xs text-slate-400 opacity-0 transition group-hover:opacity-100">
-						• Edit profile
+						• {t.editProfile}
 						</span>
 						</div>
 					</div>
@@ -314,7 +314,7 @@ export function Sidebar({
 
 				<div className="mt-3 flex min-h-0 flex-1 flex-col gap-1 px-1">
 					<DropdownHeader
-						label="Apps"
+						label={t.apps}
 						open={appsOpen}
 						onToggle={() => {
 							setAppsOpen((v) => {
@@ -357,7 +357,7 @@ export function Sidebar({
 									))
 								) : (
 									<div className="px-3 py-2 text-sm text-slate-400">
-										No apps connected
+										{t.noAppsConnected}
 									</div>
 								)}
 							</div>
@@ -365,7 +365,7 @@ export function Sidebar({
 					</div>
 
 					<ActionRow
-						label="Refresh Data"
+						label={t.refreshData}
 						icon={<RefreshIcon />}
 						onClick={() => console.log("Trigger dashboard refresh")}
 					/>
@@ -382,7 +382,7 @@ export function Sidebar({
 
 					<div className="pt-2">
 	<DropdownHeader
-		label="Settings"
+		label={t.settings}
 		open={settingsOpen}
 		onToggle={() => {
 			setSettingsOpen((v) => {
@@ -434,7 +434,7 @@ export function Sidebar({
 		)}
 	>
 		<GridIcon />
-		<span className="text-sm">Customize Dashboard</span>
+		<span className="text-sm">{t.customizeDashboard}</span>
 	</button>
 </div>
 				<CustomizeDashboardModal

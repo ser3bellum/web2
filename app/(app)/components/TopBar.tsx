@@ -101,11 +101,11 @@ function DashboardHomeLink({
 
 	const presets = useMemo(
 		() => [
-			preset("Today", 0),
-			preset("Last 7 days", 6),
-			preset("Last 30 days", 29),
-			preset("Last 60 days", 59),
-			preset("Last 90 days", 89),
+			preset(t.today, 0),
+			preset(t.last7Days, 6),
+			preset(t.last30Days, 29),
+			preset(t.last60Days, 59),
+			preset(t.last90Days, 89),
 		],
 		[],
 	);
@@ -347,7 +347,7 @@ const notifCount = notifications.filter((item) => item.unread).length;
 							</span>
 							<input
 								type="search"
-								placeholder="Search…"
+								placeholder={t.searchPlaceholder}
 								className="h-10 w-full rounded-lg border border-white/50 px-10 text-sm outline-none shadow-[0_2px_4px_rgba(0,0,0,0.08)] focus:ring-2 focus:ring-black/10"
 							/>
 						</div>
@@ -490,7 +490,7 @@ const notifCount = notifications.filter((item) => item.unread).length;
 														: "bg-white/70 text-zinc-700 hover:bg-white",
 												)}
 											>
-												Done
+												{t.done}
 											</button>
 										</div>
 									</div>
@@ -499,7 +499,7 @@ const notifCount = notifications.filter((item) => item.unread).length;
 						)}
 
 						<IconButton
-							label="Messages"
+							label={t.messages}
 							count={mailCount}
 							showCheck
 							onClick={() => setMailOpen(true)}
@@ -509,7 +509,7 @@ const notifCount = notifications.filter((item) => item.unread).length;
 						</IconButton>
 
 						<IconButton
-						label="Notifications"
+						label={t.notifications}
 						count={notifCount}
 						showCheck
 						onClick={() => setNotifOpen(true)}>
@@ -517,14 +517,14 @@ const notifCount = notifications.filter((item) => item.unread).length;
 						</IconButton>
 
 						<IconButton
-							label="Print report"
+							label={t.printReport}
 							onClick={() => window.print()}
 							className="no-print"
 						>
 							<PrinterIcon />
 						</IconButton>
 
-						<IconButton label="Help">
+						<IconButton label={t.help}>
 							<HelpIcon />
 						</IconButton>
 
@@ -541,6 +541,7 @@ const notifCount = notifications.filter((item) => item.unread).length;
 	<MailModal
 		onClose={() => setMailOpen(false)}
 		messages={messages}
+		closeLabel={t.close}
 		connections={{
 			slack: true,
 			gmail: false,
@@ -553,6 +554,7 @@ const notifCount = notifications.filter((item) => item.unread).length;
 			<NotificationModal
 			onClose={() => setNotifOpen(false)}
 			notifications={notifications}
+			closeLabel={t.close}
 	/>
 )}
 			
@@ -788,6 +790,7 @@ type MailMessage = {
   preview: string;
   timeLabel: string;
   unread?: boolean;
+  
 };
 type NotificationItem = {
 	id: string;
@@ -798,14 +801,17 @@ type NotificationItem = {
 	unread?: boolean;
 };
 
+
 function MailModal({
 	onClose,
 	messages,
 	connections,
+	closeLabel,
 }: {
 	onClose: () => void;
 	messages: MailMessage[];
 	connections: Record<Provider, boolean>;
+	closeLabel: string;
 }) {
 	const [selectedProvider, setSelectedProvider] = useState<Provider>("slack");
 
@@ -989,9 +995,11 @@ function MailModal({
 function NotificationModal({
 	onClose,
 	notifications,
+	closeLabel,
 }: {
 	onClose: () => void;
 	notifications: NotificationItem[];
+	closeLabel: string;
 }) {
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
@@ -1013,7 +1021,7 @@ function NotificationModal({
 					onClick={onClose}
 					className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
 				>
-					Close
+					{closeLabel}
 				</button>
 			}
 		>
