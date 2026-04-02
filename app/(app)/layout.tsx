@@ -1,4 +1,3 @@
-// app/(app)/layout.tsx
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -11,10 +10,10 @@ import { TopBar } from "@/app/(app)/components/TopBar";
 import { getUserCompanyContext } from "@/lib/data/getUserCompanyContext";
 import { adminAuth } from "@/lib/firebase/admin";
 import { findNangoConnectionId } from "@/lib/nango/findConnectionId";
+import { getDictionary } from "@/lib/i18n/getDictionary";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
-
   const session = cookieStore.get("__Host-sb_auth")?.value;
 
   if (!session) redirect("/login");
@@ -31,6 +30,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (!user?.id) redirect("/login");
 
   const endUserId = user.id;
+  const dictionary = getDictionary(user.initialLanguage);
 
   let slackConnected = false;
   let googleAnalyticsConnected = false;
@@ -66,12 +66,16 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         userName={user?.name ?? ""}
         avatarUrl={user?.avatarUrl ?? null}
         endUserId={endUserId}
+        dictionary={dictionary}
       />
 
       <div className="flex min-w-0 flex-1 flex-col app-gradient">
         <DailyReportModalController />
 
-        <TopBar companyName={company?.name ?? user?.companyName ?? "Ser3bellum"} />
+        <TopBar
+          companyName={company?.name ?? user?.companyName ?? "Ser3bellum"}
+          dictionary={dictionary}
+        />
 
         <main className="flex-1 overflow-y-auto bg-transparent -mt-[72px] pt-[72px]">
           {children}

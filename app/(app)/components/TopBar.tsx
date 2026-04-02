@@ -11,6 +11,7 @@ import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DayPicker, type DateRange as DayPickerRange } from "react-day-picker";
 import { Home } from "lucide-react";
+import type { Dictionary } from "@/lib/i18n/getDictionary";
 
 type UiDateRange = {
 	from: Date;
@@ -21,6 +22,7 @@ type UiDateRange = {
 type TopBarProps = {
 	companyName?: string;
 	rightSlot?: ReactNode;
+	dictionary: Dictionary;
 };
 
 
@@ -91,8 +93,9 @@ function DashboardHomeLink({
 		</Link>
 	);
 }
-	export function TopBar({ companyName, rightSlot }: TopBarProps) {
-	const router = useRouter();
+	export function TopBar({ companyName, rightSlot, dictionary }: TopBarProps) {
+		 const t = dictionary.topbar;
+		const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
 

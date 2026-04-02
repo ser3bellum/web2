@@ -6,6 +6,7 @@ import { cn } from "app/(app)/lib/cn";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import type { Dictionary } from "@/lib/i18n/getDictionary";
 
 type NavItem = { label: string; href: string; icon: React.ReactNode };
 type AppId = "slack" | "google-analytics";
@@ -23,12 +24,14 @@ const glassBase =
 const glassHover = "hover:bg-white/22 hover:border-white/45 hover:shadow-md";
 const glassActive = "bg-white/18 border-blue-400/35 ring-1 ring-blue-500/20";
 
+
 type SidebarProps = {
 	companyName: string;
 	userEmail: string;
 	userName?: string;
 	avatarUrl?: string | null;
 	endUserId: string;
+	dictionary: Dictionary;
 };
 
 type ConnectionState = {
@@ -42,13 +45,14 @@ export function Sidebar({
 	userName,
 	avatarUrl,
 	endUserId,
+	dictionary,
 }: SidebarProps) {
+	const t = dictionary.navigation;
 	const pathname = usePathname();
 	const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
 	const [appsOpen, setAppsOpen] = useState(false);
 	const [settingsOpen, setSettingsOpen] = useState(false);
-	const [companyOpen, setCompanyOpen] = useState(false);
-
+	const [companyOpen, setCompanyOpen] = useState(false);	
 	const [connections, setConnections] = useState<ConnectionState>({
 		slack: false,
 		googleAnalytics: false,

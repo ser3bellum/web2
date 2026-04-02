@@ -1,53 +1,57 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { updateUserLanguage } from '@/lib/i18n/updateUserLanguage'
-import type { SupportedLanguage } from '@/lib/i18n/config'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { updateUserLanguage } from "@/lib/i18n/updateUserLanguage";
+import type { SupportedLanguage } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/getDictionary";
 
 type Props = {
-  userId: string
-  initialLanguage: SupportedLanguage
-}
+  userId: string;
+  initialLanguage: SupportedLanguage;
+  dictionary: Dictionary;
+};
 
 export function LanguageSettingsCard({
   userId,
   initialLanguage,
+  dictionary,
 }: Props) {
-  const [language, setLanguage] =
-    useState<SupportedLanguage>(initialLanguage)
-
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState('')
+  const router = useRouter();
+  const [language, setLanguage] = useState<SupportedLanguage>(initialLanguage);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
 
   async function handleSave() {
     try {
-      setSaving(true)
-      setMessage('')
+      setSaving(true);
+      setMessage("");
 
-      await updateUserLanguage(userId, language)
+      await updateUserLanguage(userId, language);
+      router.refresh();
 
-      setMessage('Language updated successfully.')
+      setMessage(dictionary.settings.languageUpdated);
     } catch {
-      setMessage('Could not update language.')
+      setMessage(dictionary.settings.languageUpdateError);
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
   return (
     <div className="rounded-xl border p-6 space-y-4">
       <div>
-        <h2 className="text-lg font-semibold">Language</h2>
+        <h2 className="text-lg font-semibold">
+          {dictionary.settings.language}
+        </h2>
         <p className="text-sm text-muted-foreground">
-          Choose the display language for Ser3bellum.
+          {dictionary.settings.displayLanguage}
         </p>
       </div>
 
       <select
         value={language}
-        onChange={(e) =>
-          setLanguage(e.target.value as SupportedLanguage)
-        }
+        onChange={(e) => setLanguage(e.target.value as SupportedLanguage)}
         className="w-full rounded-md border px-3 py-2"
       >
         <option value="en">English</option>
@@ -59,12 +63,12 @@ export function LanguageSettingsCard({
         disabled={saving}
         className="rounded-md border px-4 py-2"
       >
-        {saving ? 'Saving...' : 'Save'}
+        {saving ? dictionary.settings.saving : dictionary.settings.save}
       </button>
 
-      {message && (
+      {message ? (
         <p className="text-sm text-muted-foreground">{message}</p>
-      )}
+      ) : null}
     </div>
-  )
+  );
 }

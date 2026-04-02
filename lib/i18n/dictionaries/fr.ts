@@ -1,8 +1,105 @@
-//lib/i18n/dictionaries/fr.ts
-export const fr = {
+import type { Dictionary } from "../getDictionary";
+
+export const fr: Dictionary = {
   settings: {
-    language: 'Langue',
+    title: "Paramètres utilisateur",
+    closeSettings: "Fermer les paramètres",
+
+    profileTitle: "Profil",
+    profileSubtitle: "Voici comment les autres vous verront sur le site.",
+    changeAvatar: "Modifier",
+    removeAvatar: "Supprimer",
+    uploading: "Téléchargement…",
+    username: "Nom d'utilisateur",
+    email: "E-mail",
+    role: "Rôle",
+    authority: "Autorité",
+    yourName: "Votre nom",
+    saveProfile: "Enregistrer le profil",
+    saving: "Enregistrement…",
+    saved: "Enregistré ✓",
+
+    language: "Langue",
     displayLanguage: "Langue d'affichage",
-    save: 'Enregistrer',
+    save: "Enregistrer",
+    languageUpdated: "Langue mise à jour avec succès.",
+    languageUpdateError: "Impossible de mettre à jour la langue.",
+
+    teamManagement: "Gestion de l'équipe",
+    teamSubtitle: "Invitez et gérez les membres de votre équipe.",
+    memberEmail: "E-mail du membre",
+    memberEmailPlaceholder: "nom@exemple.com",
+    addMember: "Ajouter un membre",
+    adminOnly: "Administrateur uniquement.",
+
+    changePassword: "Changer le mot de passe",
+    changePasswordSubtitle:
+      "Mettez à jour votre mot de passe ici. Veuillez choisir un mot de passe fort.",
+    currentPassword: "Mot de passe actuel",
+    newPassword: "Nouveau mot de passe",
+    confirmNewPassword: "Confirmer le nouveau mot de passe",
+    updatePassword: "Mettre à jour le mot de passe",
+    updating: "Mise à jour…",
+    updated: "Mis à jour ✓",
+    passwordsDoNotMatch: "Les mots de passe ne correspondent pas.",
+    currentPasswordIncorrect: "Le mot de passe actuel est incorrect.",
+    newPasswordWeak:
+      "Le nouveau mot de passe est trop faible. Essayez au moins 8 caractères.",
+    loginAgainToChangePassword:
+      "Veuillez vous reconnecter, puis réessayez de changer votre mot de passe.",
+    passwordUpdateFailed: "La mise à jour du mot de passe a échoué.",
+    notAuthenticatedInBrowser: "Non authentifié dans le navigateur.",
+
+    companyInfos: "Informations de l'entreprise",
+    companySubtitle: "Gérez les informations de votre entreprise.",
+    companyName: "Nom de l'entreprise",
+    companyWebsite: "Site web de l'entreprise",
+    numberOfEmployees: "Nombre d'employés",
+    typeOfActivity: "Type d'activité",
+    companyNamePlaceholder: "Nom de l'entreprise",
+    companyWebsitePlaceholder: "https://exemple.com",
+    companySizePlaceholder: "Sélectionnez une taille",
+    companyActivityPlaceholder: "Technologie",
+    saveCompany: "Enregistrer l'entreprise",
+
+    billingInformation: "Informations de facturation",
+    billingSubtitle:
+      "Gérez vos informations de facturation et vos moyens de paiement.",
+    edit: "Modifier",
+    billingAddress: "Adresse de facturation",
+    billingAddressPlaceholder: "1234 rue Principale, Ville, Pays",
+    saveBilling: "Enregistrer la facturation",
   },
-}
+  navigation: {
+  openProfileSettings: "Ouvrir les paramètres du profil",
+  edit: "Modifier",
+  userFallback: "Utilisateur",
+  editProfile: "Modifier le profil",
+  apps: "Applications",
+  noAppsConnected: "Aucune application connectée",
+  refreshData: "Rafraîchir les données",
+  analytics: "Analytique",
+  siteHealth: "Santé du site",
+  settings: "Paramètres",
+  integrations: "Intégrations",
+  customizeDashboard: "Personnaliser le tableau de bord",
+},
+
+topbar: {
+  today: "Aujourd’hui",
+  last7Days: "7 derniers jours",
+  last30Days: "30 derniers jours",
+  last60Days: "60 derniers jours",
+  last90Days: "90 derniers jours",
+  customRange: "Période personnalisée",
+  selectDates: "Sélectionner des dates",
+  searchPlaceholder: "Rechercher…",
+  close: "Fermer",
+  done: "Terminer",
+  messages: "Messages",
+  notifications: "Notifications",
+  printReport: "Imprimer le rapport",
+  help: "Aide",
+  returnToDashboard: "Retour au tableau de bord",
+},
+};

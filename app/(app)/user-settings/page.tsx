@@ -1,6 +1,8 @@
+//app/(app)/user-settings/page.tsx
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getUserCompanyContext } from "@/lib/data/getUserCompanyContext";
+import { getDictionary } from "@/lib/i18n/getDictionary";
 import UserSettingsClient from "./UserSettingsClient";
 
 export default async function UserSettingsPage() {
@@ -9,6 +11,8 @@ export default async function UserSettingsPage() {
 
   const { user, company } = await getUserCompanyContext(session);
   if (!user) redirect("/login");
+
+  const dictionary = getDictionary(user.initialLanguage);
 
   return (
     <UserSettingsClient
@@ -29,6 +33,7 @@ export default async function UserSettingsPage() {
         vatId: company?.vatId ?? "",
         country: company?.country ?? "",
       }}
+      dictionary={dictionary}
     />
   );
 }
