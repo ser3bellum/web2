@@ -6,6 +6,13 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { auth } from "@/lib/firebase/clients";
 
+type SupportedLanguage = "en" | "fr";
+
+const LANGUAGES: Array<{ value: SupportedLanguage; label: string }> = [
+  { value: "en", label: "English" },
+  { value: "fr", label: "Français" },
+];
+
 const COMPANY_SIZES = [
   "1–10",
   "11–50",
@@ -13,7 +20,7 @@ const COMPANY_SIZES = [
   "201–500",
   "501–1000",
   "1000+",
-];
+] as const;
 
 const INDUSTRIES = [
   "Restaurant",
@@ -26,7 +33,7 @@ const INDUSTRIES = [
   "Hospitality",
   "Education",
   "Other",
-];
+] as const;
 
 const COUNTRIES = [
   "France",
@@ -38,12 +45,13 @@ const COUNTRIES = [
   "Portugal",
   "Canada",
   "Australia",
-];
+] as const;
 
 type SignupState = {
   name: string;
   email: string;
   password: string;
+  language: SupportedLanguage;
   companyName: string;
   companySize: string;
   industry: string;
@@ -59,6 +67,7 @@ export default function RegisterClient() {
     name: "",
     email: "",
     password: "",
+    language: "en",
     companyName: "",
     companySize: "",
     industry: "",
@@ -137,6 +146,7 @@ export default function RegisterClient() {
             companySize: signup.companySize,
             industry: signup.industry,
             country: signup.country,
+            initialLanguage: signup.language,
           },
         }),
       });
@@ -200,7 +210,6 @@ export default function RegisterClient() {
                 step === 1 ? "translate-x-0" : "-translate-x-1/2"
               }`}
             >
-              {/* Step 1 */}
               <div className="w-1/2 pr-3 space-y-3">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-700">
@@ -256,6 +265,27 @@ export default function RegisterClient() {
                   />
                 </div>
 
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                    Language
+                  </label>
+                  <Select
+                    value={signup.language}
+                    onChange={(e) =>
+                      setSignup((s) => ({
+                        ...s,
+                        language: e.target.value as SupportedLanguage,
+                      }))
+                    }
+                  >
+                    {LANGUAGES.map((language) => (
+                      <option key={language.value} value={language.value}>
+                        {language.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+
                 {error && step === 1 && (
                   <p className="text-sm text-rose-600">{error}</p>
                 )}
@@ -269,7 +299,6 @@ export default function RegisterClient() {
                 </button>
               </div>
 
-              {/* Step 2 */}
               <div className="w-1/2 pl-3 space-y-3">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-700">

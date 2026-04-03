@@ -1,36 +1,38 @@
 "use client";
 
 import Link from "next/link";
+import type { Dictionary } from "@/lib/i18n/getDictionary";
+
+type DashboardOnboardingLabels = Dictionary["dashboard"]["onboarding"];
 
 type DashboardOnboardingEmptyStateProps = {
   hasCompany: boolean;
   hasIntegration: boolean;
+  labels: DashboardOnboardingLabels;
 };
 
 export function DashboardOnboardingEmptyState({
   hasCompany,
   hasIntegration,
+  labels,
 }: DashboardOnboardingEmptyStateProps) {
   const steps = [
     {
       id: "step-1",
-      title: "Create your company",
-      description:
-        "Set up your workspace with your company name and basic details so Ser3bellum can personalise your dashboard.",
+      title: labels.steps.company.title,
+      description: labels.steps.company.description,
       completed: hasCompany,
     },
     {
       id: "step-2",
-      title: "Connect your first provider",
-      description:
-        "Plug in a service like Google Analytics to start pulling in website and operational data.",
+      title: labels.steps.integration.title,
+      description: labels.steps.integration.description,
       completed: hasIntegration,
     },
     {
       id: "step-3",
-      title: "Unlock your dashboard",
-      description:
-        "Once connected, Ser3bellum will surface analytics, health signals, and actionable insights in one place.",
+      title: labels.steps.unlock.title,
+      description: labels.steps.unlock.description,
       completed: hasCompany && hasIntegration,
     },
   ];
@@ -38,23 +40,23 @@ export function DashboardOnboardingEmptyState({
   const allDone = hasCompany && hasIntegration;
 
   const heading = allDone
-    ? "Your dashboard is ready"
+    ? labels.titleReady
     : hasCompany
-      ? "Connect your first provider"
-      : "Let’s set up your workspace";
+      ? labels.titleNoIntegration
+      : labels.titleNoCompany;
 
   const description = allDone
-    ? "Your workspace is configured. Start exploring your dashboard and integrations."
+    ? labels.descriptionReady
     : hasCompany
-      ? "Your company is set up. Connect your first provider to start surfacing traffic, monitoring, and operational insights."
-      : "Start by creating your company and connecting your first provider. Once setup is complete, your dashboard will begin surfacing traffic, monitoring, and operational insights in one place.";
+      ? labels.descriptionNoIntegration
+      : labels.descriptionNoCompany;
 
   return (
     <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm lg:p-8">
       <div className="mx-auto max-w-4xl">
         <div className="max-w-2xl">
           <div className="inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">
-            Welcome to Ser3bellum
+            {labels.badge}
           </div>
 
           <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-900 lg:text-4xl">
@@ -102,14 +104,14 @@ export function DashboardOnboardingEmptyState({
                 href="/user-settings"
                 className="inline-flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-600/80 via-blue-600/90 to-indigo-600/70 px-5 py-3 text-sm font-medium text-white"
               >
-                Create company
+                {labels.actions.createCompany}
               </Link>
             ) : (
               <Link
                 href="/settings/integrations"
                 className="inline-flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-600/80 via-blue-600/90 to-indigo-600/70 px-5 py-3 text-sm font-medium text-white"
               >
-                Connect your first provider
+                {labels.actions.connectProvider}
               </Link>
             )}
 
@@ -118,7 +120,7 @@ export function DashboardOnboardingEmptyState({
                 href="/settings/integrations"
                 className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
               >
-                Browse integrations
+                {labels.actions.browseIntegrations}
               </Link>
             )}
 
@@ -127,7 +129,7 @@ export function DashboardOnboardingEmptyState({
                 href="/settings/integrations"
                 className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
               >
-                View integrations
+                {labels.actions.viewIntegrations}
               </Link>
             )}
           </div>
@@ -135,21 +137,21 @@ export function DashboardOnboardingEmptyState({
 
         <div className="mt-8 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-5">
           <h3 className="text-sm font-medium text-slate-900">
-            What you’ll get after setup
+            {labels.benefits.title}
           </h3>
 
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
-              Traffic visibility
+              {labels.benefits.items.trafficVisibility}
             </div>
             <div className="rounded-xl bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
-              Provider health checks
+              {labels.benefits.items.providerHealthChecks}
             </div>
             <div className="rounded-xl bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
-              Alerts and summaries
+              {labels.benefits.items.alertsAndSummaries}
             </div>
             <div className="rounded-xl bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
-              Operational insights
+              {labels.benefits.items.operationalInsights}
             </div>
           </div>
         </div>

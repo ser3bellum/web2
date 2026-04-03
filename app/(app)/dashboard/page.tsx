@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import { getDictionary } from "@/lib/i18n/getDictionary";
 import DashboardCardsGrid from "app/(app)/components/DashboardCardsGrid";
 import { getDashboardKpis } from "app/(app)/dashboard/dashboardKpis";
 import { parseDashboardRange } from "app/(app)/lib/dateRange";
@@ -30,13 +31,15 @@ export default async function DashboardPage({
     if (!session) redirect("/login");
 
     const { user, company } = await getUserCompanyContext(session);
-
-    if (!company?.id) {
+    const dictionary = await getDictionary(user?.initialLanguage ?? "en");
+    
+    if (!company?.id) { 
       return (
         <div className="px-4 pb-8 pt-6 lg:px-8">
           <DashboardOnboardingEmptyState
             hasCompany={false}
             hasIntegration={false}
+            labels={dictionary.dashboard.onboarding}
           />
         </div>
       );
@@ -48,11 +51,13 @@ export default async function DashboardPage({
           <DashboardOnboardingEmptyState
             hasCompany={true}
             hasIntegration={false}
+            labels={dictionary.dashboard.onboarding}
           />
         </div>
       );
     }
 
+   
     const endUserId = user.id;
 
     const providerConfigKeys = ["google-analytics", "slack"];
@@ -102,6 +107,7 @@ export default async function DashboardPage({
           <DashboardOnboardingEmptyState
             hasCompany={true}
             hasIntegration={false}
+            labels={dictionary.dashboard.onboarding}
           />
         </div>
       );
@@ -115,17 +121,20 @@ export default async function DashboardPage({
       getDashboardHydration({
         from: range.from,
         to: range.to,
-        endUserId, // use Nango/user identity here, not company.id
+        endUserId,
       }),
     ]);
 
     return (
       <div className="flex flex-col">
         <div className="flex flex-col gap-6 px-4 pb-8 pt-6 lg:px-8">
-          <KpiStrip kpis={kpis} />
+         <KpiStrip kpis={kpis} labels={dictionary.dashboard.kpis} />
 
           <section>
-            <DashboardCardsGrid hydrationCards={hydration?.cards ?? []} />
+            <DashboardCardsGrid
+              hydrationCards={hydration?.cards ?? []}
+              labels={dictionary.dashboard}
+            />
           </section>
 
           {isDev && (

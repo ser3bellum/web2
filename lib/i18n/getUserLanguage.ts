@@ -1,25 +1,33 @@
-import {
-  DEFAULT_LANGUAGE,
-  isSupportedLanguage,
-  type SupportedLanguage,
-} from "./config";
+// lib/i18n/getUserLanguage.ts
+import type { SupportedLanguage } from "@/lib/i18n/config";
 
-type UserLanguageSource = {
+const SUPPORTED_LANGUAGES: SupportedLanguage[] = ["en", "fr"];
+
+function isSupportedLanguage(value: unknown): value is SupportedLanguage {
+  return typeof value === "string" && SUPPORTED_LANGUAGES.includes(value as SupportedLanguage);
+}
+
+type LanguageSourceDoc = {
+  initialLanguage?: string | null;
   settings?: {
     localization?: {
       language?: string | null;
-    } | null;
-  } | null;
+    };
+  };
 };
 
 export function getUserLanguageFromDoc(
-  userDoc: UserLanguageSource | null | undefined,
+  user: LanguageSourceDoc | null | undefined,
 ): SupportedLanguage {
-  const value = userDoc?.settings?.localization?.language;
-
-  if (typeof value === "string" && isSupportedLanguage(value)) {
-    return value;
+  const settingsLanguage = user?.settings?.localization?.language;
+  if (isSupportedLanguage(settingsLanguage)) {
+    return settingsLanguage;
   }
 
-  return DEFAULT_LANGUAGE;
+  const initialLanguage = user?.initialLanguage;
+  if (isSupportedLanguage(initialLanguage)) {
+    return initialLanguage;
+  }
+
+  return "en";
 }

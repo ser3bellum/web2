@@ -82,6 +82,9 @@ export type Dictionary = {
     settings: string;
     integrations: string;
     customizeDashboard: string;
+    dashboard: string;
+    logout: string;
+    loggingOut: string;
   };
 
   topbar: {
@@ -100,7 +103,156 @@ export type Dictionary = {
     printReport: string;
     help: string;
     returnToDashboard: string;
+    logout: string;
+    loggingOut: string;
+
+    mailModal: {
+      title: string;
+      empty: string;
+      markAllAsRead: string;
+      viewAll: string;
+    };
+
+    notificationModal: {
+      title: string;
+      empty: string;
+      markAllAsRead: string;
+      viewAll: string;
+    };
   };
+
+  dashboard: {
+  title: string;
+  subtitle: string;
+
+  cards: {
+    analytics: {
+      title: string;
+      subtitle: string;
+    };
+    sales: {
+      title: string;
+      subtitle: string;
+    };
+    marketing: {
+      title: string;
+      subtitle: string;
+    };
+    downtime: {
+      title: string;
+      subtitle: string;
+    };
+    cpu: {
+      title: string;
+      subtitle: string;
+    };
+    threats: {
+      title: string;
+      subtitle: string;
+    };
+    accounting: {
+      title: string;
+      subtitle: string;
+    };
+    social: {
+      title: string;
+      subtitle: string;
+    };
+    booking: {
+      title: string;
+      subtitle: string;
+    };
+    productivity: {
+      title: string;
+      subtitle: string;
+    };
+  };
+
+  status: {
+    ok: string;
+    warn: string;
+    error: string;
+    disabled: string;
+  };
+
+  emptyState: {
+    noData: string;
+    connectProvider: string;
+  };
+
+  kpis: {
+    items: {
+      "kpi-analytics": {
+        title: string;
+        subtitle: string;
+      };
+      "kpi-sales": {
+        title: string;
+        subtitle: string;
+      };
+      "kpi-marketing": {
+        title: string;
+        subtitle: string;
+      };
+      "kpi-downtime": {
+        title: string;
+        subtitle: string;
+      };
+      "kpi-cpu-usage": {
+        title: string;
+        subtitle: string;
+      };
+    };
+    modal: {
+      close: string;
+      detailsDescription: string;
+      totalForPeriod: string;
+      delta: string;
+      chartPlaceholder: string;
+    };
+  };
+   onboarding: {
+    badge: string;
+    titleNoCompany: string;
+    titleNoIntegration: string;
+    titleReady: string;
+    descriptionNoCompany: string;
+    descriptionNoIntegration: string;
+    descriptionReady: string;
+    steps: {
+      company: {
+        title: string;
+        description: string;
+      };
+      integration: {
+        title: string;
+        description: string;
+      };
+      unlock: {
+        title: string;
+        description: string;
+      };
+    };
+    actions: {
+      createCompany: string;
+      connectProvider: string;
+      browseIntegrations: string;
+      completeSetup: string;
+      viewIntegrations: string;
+    };
+    benefits: {
+      title: string;
+      items: {
+        trafficVisibility: string;
+        providerHealthChecks: string;
+        alertsAndSummaries: string;
+        operationalInsights: string;
+      };
+    };
+  };
+};
+  
+  
 };
 
 export function getDictionary(language: SupportedLanguage): Dictionary {

@@ -13,6 +13,7 @@ import {
   loadJson,
 } from "app/(app)/components/dashboardPreferences";
 import type { ReactNode } from "react";
+import type { Dictionary } from "@/lib/i18n/getDictionary";
 
 type HydrationCard = {
   key: string;
@@ -22,6 +23,8 @@ type HydrationCard = {
   delta?: string;
   meta?: Record<string, any>;
 };
+
+type DashboardCardsGridLabels = Dictionary["dashboard"];
 
 function renderIconSafe(icon: ReactNode) {
   if (!icon) return null;
@@ -33,15 +36,21 @@ const HYDRATION_KEY_BY_CARD_ID: Record<string, string> = {
   integrations: "integrations",
 };
 
-function StatusPill({ status }: { status: HydrationCard["status"] }) {
+function StatusPill({
+  status,
+  labels,
+}: {
+  status: HydrationCard["status"];
+  labels: DashboardCardsGridLabels["status"];
+}) {
   const label =
     status === "ok"
-      ? "OK"
+      ? labels.ok
       : status === "warn"
-      ? "Attention"
+      ? labels.warn
       : status === "error"
-      ? "Error"
-      : "Disabled";
+      ? labels.error
+      : labels.disabled;
 
   return (
     <span className="rounded-full border px-2 py-0.5 text-[11px] text-slate-600">
@@ -52,41 +61,48 @@ function StatusPill({ status }: { status: HydrationCard["status"] }) {
 
 export default function DashboardCardsGrid({
   hydrationCards,
+  labels,
 }: {
   hydrationCards?: HydrationCard[];
+  labels: DashboardCardsGridLabels;
 }) {
   const [mounted, setMounted] = useState(false);
   const [enabledIds, setEnabledIds] = useState<DashboardCardId[] | null>(null);
 
   useEffect(() => {
-  setMounted(true);
+    setMounted(true);
 
-  const syncEnabledCards = () => {
-    const savedEnabled = loadJson<DashboardCardId[]>(DASHBOARD_ENABLED_KEY);
+    const syncEnabledCards = () => {
+      const savedEnabled = loadJson<DashboardCardId[]>(DASHBOARD_ENABLED_KEY);
 
-    if (savedEnabled && savedEnabled.length) {
-      const validIds = savedEnabled.filter((id) =>
-        DASHBOARD_CARDS.some((card) => card.id === id)
+      if (savedEnabled && savedEnabled.length) {
+        const validIds = savedEnabled.filter((id) =>
+          DASHBOARD_CARDS.some((card) => card.id === id)
+        );
+        setEnabledIds(validIds);
+        return;
+      }
+
+      setEnabledIds(
+        DASHBOARD_CARDS.filter((c) => c.defaultEnabled).map((c) => c.id)
       );
-      setEnabledIds(validIds);
-      return;
-    }
+    };
 
-    setEnabledIds(
-      DASHBOARD_CARDS.filter((c) => c.defaultEnabled).map((c) => c.id)
-    );
-  };
+    syncEnabledCards();
 
-  syncEnabledCards();
-
-  window.addEventListener("sb-dashboard-preferences-updated", syncEnabledCards);
-  return () => {
-    window.removeEventListener(
+    window.addEventListener(
       "sb-dashboard-preferences-updated",
       syncEnabledCards
     );
-  };
-}, []);
+
+    return () => {
+      window.removeEventListener(
+        "sb-dashboard-preferences-updated",
+        syncEnabledCards
+      );
+    };
+  }, []);
+
   const visibleCards = useMemo(() => {
     if (!enabledIds) return [];
     return DASHBOARD_CARDS.filter((card) => enabledIds.includes(card.id));
@@ -104,11 +120,30 @@ export default function DashboardCardsGrid({
           const hydrationKey = HYDRATION_KEY_BY_CARD_ID[c.id] ?? c.id;
           const h = hydrationCards?.find((x) => x.key === hydrationKey);
 
+          const localizedCardLabels: Partial<
+            Record<DashboardCardId, { title: string; subtitle: string }>
+          > = {
+            analytics: labels.cards.analytics,
+            sales: labels.cards.sales,
+            marketing: labels.cards.marketing,
+            downtime: labels.cards.downtime,
+            cpu: labels.cards.cpu,
+            threats: labels.cards.threats,
+            accounting: labels.cards.accounting,
+            social: labels.cards.social,
+            booking: labels.cards.booking,
+            productivity: labels.cards.productivity,
+          };
+
+          const localized = localizedCardLabels[c.id];
+          const localizedTitle = localized?.title ?? c.title;
+          const localizedSubtitle = localized?.subtitle ?? c.subtitle;
+
           return (
             <Card
               key={c.id}
-              title={c.title}
-              subtitle={c.subtitle}
+              title={localizedTitle}
+              subtitle={localizedSubtitle}
               rightSlot={renderIconSafe((c as any).icon)}
               className="h-[408px]"
             >
@@ -122,7 +157,7 @@ export default function DashboardCardsGrid({
                       </span>
                     ) : null}
                   </div>
-                  <StatusPill status={h.status} />
+                  <StatusPill status={h.status} labels={labels.status} />
                 </div>
               )}
 
@@ -130,16 +165,14 @@ export default function DashboardCardsGrid({
                 <AnalyticsMiniChart />
               ) : (
                 <div className="text-sm opacity-70">
-                  {(c as any).description ??
-                    "No data yet. Connect a service to start tracking activity."}
+                  {(c as any).description ?? labels.emptyState.noData}
                   <br />
-                  
                   <a
                     href="/settings/integrations"
-                      className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-100"
->
-                    Connect provider 
-                     <span aria-hidden>→</span>
+                    className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-100"
+                  >
+                    {labels.emptyState.connectProvider}
+                    <span aria-hidden>→</span>
                   </a>
                 </div>
               )}

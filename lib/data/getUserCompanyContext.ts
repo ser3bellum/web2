@@ -22,6 +22,8 @@ export type UserDoc = {
   avatarUrl?: string | null;
   onboardingStatus?: string | null;
 
+  initialLanguage?: string | null;
+
   settings?: {
     localization?: {
       language?: string | null;

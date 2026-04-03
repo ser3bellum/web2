@@ -530,7 +530,10 @@ const notifCount = notifications.filter((item) => item.unread).length;
 
 						{/* Avatar */}
 						<div className="mt-auto p-3">
-							<LogoutButton />
+							<LogoutButton
+  							label={dictionary.navigation.logout}
+  							loadingLabel={dictionary.navigation.loggingOut}
+							/>
 						</div>
 
 						{rightSlot}

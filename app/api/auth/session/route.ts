@@ -11,10 +11,20 @@ import {
 
 /* -------------------------------- helpers -------------------------------- */
 
+const SUPPORTED_LANGUAGES = ["en", "fr"] as const;
+type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
+
 function cleanString(v: unknown) {
   if (typeof v !== "string") return undefined;
   const s = v.trim();
   return s.length ? s : undefined;
+}
+
+function cleanLanguage(v: unknown): SupportedLanguage | undefined {
+  if (typeof v !== "string") return undefined;
+  return SUPPORTED_LANGUAGES.includes(v as SupportedLanguage)
+    ? (v as SupportedLanguage)
+    : undefined;
 }
 
 async function safeJson(req: Request) {
@@ -68,6 +78,64 @@ export async function POST(req: Request) {
     const email = decoded.email ?? null;
     const tokenName = decoded.name ?? null;
 
+    const userRef = adminDb.collection("users").doc(uid);
+    const snap = await userRef.get();
+    const isNewUser = !snap.exists;
+    const existingUser = snap.exists ? (snap.data() as Record<string, any>) : null;
+
+    const baseUpdate: Record<string, any> = {
+      email,
+      lastLoginAt: FieldValue.serverTimestamp(),
+    };
+
+    if (isNewUser) {
+      baseUpdate.createdAt = FieldValue.serverTimestamp();
+      baseUpdate.onboardingStatus = "registered";
+    }
+
+    const update: Record<string, any> = {};
+
+    if (profile && typeof profile === "object") {
+      const p = profile as Record<string, unknown>;
+
+      const name = cleanString(p.name) ?? cleanString(tokenName);
+      if (name) update.name = name;
+
+      const companyName = cleanString(p.companyName);
+      if (companyName) update.companyName = companyName;
+
+      const companySize = cleanString(p.companySize);
+      if (companySize) update.companySize = companySize;
+
+      const industry = cleanString(p.industry);
+      if (industry) update.industry = industry;
+
+      const country = cleanString(p.country);
+      if (country) update.country = country;
+
+      const initialLanguage = cleanLanguage(p.initialLanguage);
+      if (initialLanguage) {
+        update.initialLanguage = initialLanguage;
+      }
+
+      if (!existingUser?.companyId && companyName) {
+        const companyRef = adminDb.collection("companies").doc();
+        await companyRef.set({
+          name: companyName,
+          ownerUid: uid,
+          createdAt: FieldValue.serverTimestamp(),
+        });
+        update.companyId = companyRef.id;
+      }
+    } else {
+      const fallbackName = cleanString(tokenName);
+      if (fallbackName) {
+        update.name = fallbackName;
+      }
+    }
+
+    await userRef.set({ ...baseUpdate, ...update }, { merge: true });
+
     const expiresIn = 14 * 24 * 60 * 60 * 1000;
     const sessionCookie = await createSessionCookie(token, expiresIn);
 
@@ -80,59 +148,6 @@ export async function POST(req: Request) {
       path: "/",
       maxAge: Math.floor(expiresIn / 1000),
     });
-
-    try {
-      const userRef = adminDb.collection("users").doc(uid);
-      const snap = await userRef.get();
-      const isNewUser = !snap.exists;
-      const existingUser = snap.exists ? (snap.data() as any) : null;
-
-      const baseUpdate: Record<string, any> = {
-        email,
-        lastLoginAt: FieldValue.serverTimestamp(),
-      };
-
-      if (isNewUser) {
-        baseUpdate.createdAt = FieldValue.serverTimestamp();
-        baseUpdate.onboardingStatus = "registered";
-      }
-
-      if (profile && typeof profile === "object") {
-        const p = profile as Record<string, unknown>;
-        const update: Record<string, any> = {};
-
-        const name = cleanString(p.name) ?? cleanString(tokenName);
-        if (name) update.name = name;
-
-        const companyName = cleanString(p.companyName);
-        if (companyName) update.companyName = companyName;
-
-        const companySize = cleanString(p.companySize);
-        if (companySize) update.companySize = companySize;
-
-        const industry = cleanString(p.industry);
-        if (industry) update.industry = industry;
-
-        const country = cleanString(p.country);
-        if (country) update.country = country;
-
-        if (!existingUser?.companyId && companyName) {
-          const companyRef = adminDb.collection("companies").doc();
-          await companyRef.set({
-            name: companyName,
-            ownerUid: uid,
-            createdAt: FieldValue.serverTimestamp(),
-          });
-          update.companyId = companyRef.id;
-        }
-
-        await userRef.set({ ...baseUpdate, ...update }, { merge: true });
-      } else {
-        await userRef.set(baseUpdate, { merge: true });
-      }
-    } catch (e) {
-      console.error("SESSION_PROFILE_WRITE_FAILED:", e);
-    }
 
     return res;
   } catch (err: any) {
