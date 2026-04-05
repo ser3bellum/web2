@@ -148,11 +148,11 @@ export function Sidebar({
 	};
 
 	const appLinks: NavItem[] = useMemo(
-		() => [
-			{ label: "Analytics", href: "/analytics", icon: <AnalyticsIcon /> },
-			{ label: "Site Health ", href: "/site-health", icon: <ShieldIcon /> },
-		],
-		[t],
+	() => [
+		{ label: t.analytics, href: "/analytics", icon: <AnalyticsIcon /> },
+		{ label: t.siteHealth, href: "/site-health", icon: <ShieldIcon /> },
+	],
+	[t],
 	);
 
 	const settingsLinks: NavItem[] = useMemo(
