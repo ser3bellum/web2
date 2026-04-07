@@ -122,6 +122,130 @@ export const en: Dictionary = {
     },
   },
 
+  analytics: {
+  title: "Analytics",
+  subtitle: "Business performance, correlated with system health",
+  emptyState: {
+    title: "Connect your business data",
+    description:
+      "Ser3bellum brings traffic, sales, and system reliability into one place. Connect Google Analytics and/or Shopify to see how incidents, latency, and downtime impact real business outcomes.",
+    optional: "Optional",
+    exampleInsightLabel: "Example insight",
+    exampleInsightText:
+      "On Jan 5, a latency increase of +180ms coincided with a 12% drop in checkout conversions.",
+    footer:
+      "Analytics is optional and only activated when integrations are connected.",
+    googleAnalytics: {
+      title: "Google Analytics",
+      subtitle: "Website traffic & engagement",
+      bullets: {
+        sessionsAndUsers: "Sessions & users",
+        trafficSources: "Traffic sources",
+        keyEngagementSignals: "Key engagement signals",
+      },
+      cta: "Connect Google Analytics",
+      hint: "Correlate traffic spikes with latency and errors",
+    },
+    shopify: {
+      title: "Shopify",
+      subtitle: "Sales & conversions",
+      bullets: {
+        ordersAndRevenue: "Orders & revenue",
+        conversionRate: "Conversion rate",
+        checkoutPerformance: "Checkout performance",
+      },
+      cta: "Connect Shopify",
+      hint: "Understand how incidents affect sales in real time",
+    },
+  },
+  activeState: {
+  metricCards: {
+    sessions: "Sessions",
+    revenue: "Revenue",
+    conversionRate: "Conversion rate",
+    connectGaToPopulate: "Connect GA to populate",
+    connectShopifyToPopulate: "Connect Shopify to populate",
+  },
+  timeline: {
+    title: "Timeline correlation",
+    description:
+      "Overlay traffic and revenue with incidents, downtime, and latency.",
+    connectedLabel: "Connected:",
+    none: "None",
+    chartPlaceholder:
+      "Chart placeholder (v1): Sessions/Revenue line + incident markers + downtime blocks + P95 latency spikes.",
+  },
+  insights: {
+    title: "Automated insights",
+    description:
+      "Short, rules-based insights that connect business impact to reliability.",
+    revenueDropped:
+      "Revenue dropped during a recorded incident (example placeholder).",
+    trafficPeaked:
+      "Traffic peaked while latency increased above threshold (example placeholder).",
+    conversionRateDecreased:
+      "Conversion rate decreased following downtime (example placeholder).",
+  },
+},
+},
+siteHealth: {
+  title: "Site Health",
+  subtitle: "An overview of your website’s reliability and risk indicators",
+  lastUpdated: "Last updated",
+  summaryTitle: "Your site’s health, at a glance",
+  summaryDescription:
+    "As monitoring and checks are enabled, this page will reflect the overall state of your site.",
+  helper: {
+    title: "What this means",
+    description:
+      "Site Health summarizes the key signals that affect availability, reliability, and exposure — so you can quickly tell if anything needs attention.",
+  },
+  status: {
+    healthy: "Healthy",
+    attention: "Needs attention",
+    unavailable: "Status unavailable",
+  },
+  signals: {
+    availability: {
+      title: "Availability",
+      emptyLabel: "No data yet",
+      detail: "Uptime status will appear once monitors are enabled.",
+      cta: "View uptime",
+    },
+    incidents: {
+      title: "Incidents",
+      emptyLabel: "No incidents",
+      detail: "Incident history will appear once monitoring is active.",
+      cta: "View incidents",
+    },
+    exposure: {
+      title: "Exposure",
+      emptyLabel: "Not enabled",
+      detail:
+        "Exposure indicators (e.g. configuration or vulnerability signals) will appear when available.",
+      cta: "View details",
+      unavailable: "Not available yet.",
+    },
+  },
+  infoSection: {
+    title: "What you’ll see here",
+    availability: {
+      title: "Availability",
+      text: "Uptime status and recent downtime signals.",
+    },
+    reliability: {
+      title: "Reliability",
+      text: "Incident patterns, anomalies, and performance-related signals.",
+    },
+    exposure: {
+      title: "Exposure",
+      text: "Configuration or vulnerability indicators when available.",
+    },
+    footer:
+      "This page is designed to be a calm summary — not a setup wizard.",
+  },
+},
+
   dashboard: {
     title: "Dashboard",
     subtitle: "Monitor your services and operational health at a glance.",

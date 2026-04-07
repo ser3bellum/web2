@@ -121,6 +121,116 @@ export type Dictionary = {
     };
   };
 
+  analytics: {
+  title: string;
+  subtitle: string;
+  emptyState: {
+    title: string;
+    description: string;
+    optional: string;
+    exampleInsightLabel: string;
+    exampleInsightText: string;
+    footer: string;
+    googleAnalytics: {
+      title: string;
+      subtitle: string;
+      bullets: {
+        sessionsAndUsers: string;
+        trafficSources: string;
+        keyEngagementSignals: string;
+      };
+      cta: string;
+      hint: string;
+    };
+    shopify: {
+      title: string;
+      subtitle: string;
+      bullets: {
+        ordersAndRevenue: string;
+        conversionRate: string;
+        checkoutPerformance: string;
+      };
+      cta: string;
+      hint: string;
+    };
+  };
+  activeState: {
+    metricCards: {
+      sessions: string;
+      revenue: string;
+      conversionRate: string;
+      connectGaToPopulate: string;
+      connectShopifyToPopulate: string;
+    };
+    timeline: {
+      title: string;
+      description: string;
+      connectedLabel: string;
+      none: string;
+      chartPlaceholder: string;
+    };
+    insights: {
+      title: string;
+      description: string;
+      revenueDropped: string;
+      trafficPeaked: string;
+      conversionRateDecreased: string;
+    };
+  };
+};
+siteHealth: {
+  title: string;
+  subtitle: string;
+  lastUpdated: string;
+  summaryTitle: string;
+  summaryDescription: string;
+  helper: {
+    title: string;
+    description: string;
+  };
+  status: {
+    healthy: string;
+    attention: string;
+    unavailable: string;
+  };
+  signals: {
+    availability: {
+      title: string;
+      emptyLabel: string;
+      detail: string;
+      cta: string;
+    };
+    incidents: {
+      title: string;
+      emptyLabel: string;
+      detail: string;
+      cta: string;
+    };
+    exposure: {
+      title: string;
+      emptyLabel: string;
+      detail: string;
+      cta: string;
+      unavailable: string;
+    };
+  };
+  infoSection: {
+    title: string;
+    availability: {
+      title: string;
+      text: string;
+    };
+    reliability: {
+      title: string;
+      text: string;
+    };
+    exposure: {
+      title: string;
+      text: string;
+    };
+    footer: string;
+  };
+}
   dashboard: {
   title: string;
   subtitle: string;

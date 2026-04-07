@@ -122,6 +122,130 @@ export const fr: Dictionary = {
     },
   },
 
+  analytics: {
+  title: "Analytiques",
+  subtitle: "Performance métier, corrélée à la santé du système",
+  emptyState: {
+    title: "Connectez vos données métier",
+    description:
+      "Ser3bellum regroupe le trafic, les ventes et la fiabilité du système au même endroit. Connectez Google Analytics et/ou Shopify pour voir comment les incidents, la latence et les interruptions influencent les résultats métier.",
+    optional: "Optionnel",
+    exampleInsightLabel: "Exemple d’insight",
+    exampleInsightText:
+      "Le 5 janv., une hausse de latence de +180 ms a coïncidé avec une baisse de 12 % des conversions au paiement.",
+    footer:
+      "Les analytiques sont optionnelles et ne sont activées que lorsque des intégrations sont connectées.",
+    googleAnalytics: {
+      title: "Google Analytics",
+      subtitle: "Trafic du site et engagement",
+      bullets: {
+        sessionsAndUsers: "Sessions et utilisateurs",
+        trafficSources: "Sources de trafic",
+        keyEngagementSignals: "Signaux d’engagement clés",
+      },
+      cta: "Connecter Google Analytics",
+      hint: "Corrélez les pics de trafic avec la latence et les erreurs",
+    },
+    shopify: {
+      title: "Shopify",
+      subtitle: "Ventes et conversions",
+      bullets: {
+        ordersAndRevenue: "Commandes et revenus",
+        conversionRate: "Taux de conversion",
+        checkoutPerformance: "Performance du paiement",
+      },
+      cta: "Connecter Shopify",
+      hint: "Comprenez comment les incidents affectent les ventes en temps réel",
+    },
+  },
+  activeState: {
+  metricCards: {
+    sessions: "Sessions",
+    revenue: "Revenus",
+    conversionRate: "Taux de conversion",
+    connectGaToPopulate: "Connectez GA pour afficher les données",
+    connectShopifyToPopulate: "Connectez Shopify pour afficher les données",
+  },
+  timeline: {
+    title: "Corrélation chronologique",
+    description:
+      "Superposez le trafic et les revenus avec les incidents, les interruptions et la latence.",
+    connectedLabel: "Connecté :",
+    none: "Aucune",
+    chartPlaceholder:
+      "Espace réservé du graphique (v1) : courbe Sessions/Revenus + marqueurs d’incident + plages d’interruption + pics de latence P95.",
+  },
+  insights: {
+    title: "Insights automatisés",
+    description:
+      "Des insights courts, basés sur des règles, qui relient l’impact métier à la fiabilité.",
+    revenueDropped:
+      "Les revenus ont baissé pendant un incident enregistré (exemple fictif).",
+    trafficPeaked:
+      "Le trafic a atteint un pic pendant que la latence dépassait le seuil (exemple fictif).",
+    conversionRateDecreased:
+      "Le taux de conversion a diminué après une interruption (exemple fictif).",
+  },
+},
+},
+siteHealth: {
+  title: "État du site",
+  subtitle: "Une vue d’ensemble de la fiabilité de votre site et des indicateurs de risque",
+  lastUpdated: "Dernière mise à jour",
+  summaryTitle: "La santé de votre site en un coup d’œil",
+  summaryDescription:
+    "À mesure que la supervision et les vérifications seront activées, cette page reflétera l’état global de votre site.",
+  helper: {
+    title: "Ce que cela signifie",
+    description:
+      "L’état du site résume les principaux signaux qui affectent la disponibilité, la fiabilité et l’exposition, afin que vous puissiez voir rapidement si quelque chose nécessite votre attention.",
+  },
+  status: {
+    healthy: "Sain",
+    attention: "Attention requise",
+    unavailable: "Statut indisponible",
+  },
+  signals: {
+    availability: {
+      title: "Disponibilité",
+      emptyLabel: "Aucune donnée pour le moment",
+      detail: "Le statut de disponibilité apparaîtra une fois les moniteurs activés.",
+      cta: "Voir la disponibilité",
+    },
+    incidents: {
+      title: "Incidents",
+      emptyLabel: "Aucun incident",
+      detail: "L’historique des incidents apparaîtra une fois la supervision active.",
+      cta: "Voir les incidents",
+    },
+    exposure: {
+      title: "Exposition",
+      emptyLabel: "Non activé",
+      detail:
+        "Les indicateurs d’exposition (par ex. configuration ou signaux de vulnérabilité) apparaîtront lorsqu’ils seront disponibles.",
+      cta: "Voir les détails",
+      unavailable: "Pas encore disponible.",
+    },
+  },
+  infoSection: {
+    title: "Ce que vous verrez ici",
+    availability: {
+      title: "Disponibilité",
+      text: "Statut de disponibilité et signaux récents d’interruption.",
+    },
+    reliability: {
+      title: "Fiabilité",
+      text: "Tendances d’incidents, anomalies et signaux liés aux performances.",
+    },
+    exposure: {
+      title: "Exposition",
+      text: "Indicateurs de configuration ou de vulnérabilité lorsqu’ils seront disponibles.",
+    },
+    footer:
+      "Cette page est conçue comme un résumé apaisé, pas comme un assistant de configuration.",
+  },
+},
+
   dashboard: {
     title: "Tableau de bord",
     subtitle: "Surveillez vos services et l’état opérationnel en un coup d’œil.",
