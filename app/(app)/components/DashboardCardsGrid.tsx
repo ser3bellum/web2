@@ -161,8 +161,12 @@ export default function DashboardCardsGrid({
                 </div>
               )}
 
-              {c.id === "analytics" ? (
-                <AnalyticsMiniChart />
+                           {c.id === "analytics" ? (
+                <AnalyticsMiniChart
+                  series={Array.isArray(h?.meta?.series) ? h.meta.series : []}
+                  allowRangeToggle={false}
+                  initialRange="7d"
+                />
               ) : (
                 <div className="text-sm opacity-70">
                   {(c as any).description ?? labels.emptyState.noData}

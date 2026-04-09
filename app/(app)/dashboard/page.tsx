@@ -113,17 +113,17 @@ export default async function DashboardPage({
       );
     }
 
-    const [kpis, hydration] = await Promise.all([
-      getDashboardKpis({
-        range,
-        companyId: company.id,
-      }),
-      getDashboardHydration({
-        from: range.from,
-        to: range.to,
-        endUserId,
-      }),
-    ]);
+    const hydration = await getDashboardHydration({
+  from: range.from,
+  to: range.to,
+  endUserId,
+});
+
+const kpis = await getDashboardKpis({
+  range,
+  companyId: company.id,
+  hydration,
+});
 
     return (
       <div className="flex flex-col">

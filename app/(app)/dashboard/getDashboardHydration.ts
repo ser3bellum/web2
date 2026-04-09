@@ -19,6 +19,12 @@ export type DashboardHydration = {
   }>;
 };
 
+type GaSeriesPoint = {
+  t: number;
+  label: string;
+  value: number;
+};
+
 function toYyyyMmDd(input: string | Date) {
   if (typeof input === "string") return input;
   return input.toISOString().slice(0, 10);
@@ -31,6 +37,13 @@ function parseYyyyMmDd(s: string) {
 
 function fmtYyyyMmDd(d: Date) {
   return d.toISOString().slice(0, 10);
+}
+
+function formatDayLabel(ts: number) {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+  }).format(ts);
 }
 
 function daysBetweenInclusive(from: string, to: string) {
@@ -72,7 +85,6 @@ async function getFirstGa4PropertyId(params: {
 }) {
   const nango = getNango();
 
-  // 1) List GA accounts
   const accountsRes = await nango.get({
     endpoint: "/v1beta/accounts",
     params: { pageSize: 1 },
@@ -84,10 +96,8 @@ async function getFirstGa4PropertyId(params: {
   const accountName: string | undefined =
     accountsRes?.data?.accounts?.[0]?.name;
 
-  // accountName looks like "accounts/123456"
   if (!accountName) return undefined;
 
-  // 2) List properties under that account (filter is required)
   const propertiesRes = await nango.get({
     endpoint: "/v1beta/properties",
     params: {
@@ -102,7 +112,6 @@ async function getFirstGa4PropertyId(params: {
   const propName: string | undefined =
     propertiesRes?.data?.properties?.[0]?.name;
 
-  // propName looks like "properties/123456"
   return propName?.split("/")[1];
 }
 
@@ -142,6 +151,72 @@ async function runGaReport(params: {
   };
 }
 
+async function runGaDailySeriesReport(params: {
+  providerConfigKey: string;
+  connectionId: string;
+  propertyId: string;
+  from: string;
+  to: string;
+}) {
+  const nango = getNango();
+
+  const res = await nango.post({
+    endpoint: `/v1beta/properties/${params.propertyId}:runReport`,
+    providerConfigKey: params.providerConfigKey,
+    connectionId: params.connectionId,
+    baseUrlOverride: "https://analyticsdata.googleapis.com",
+    data: {
+      dateRanges: [{ startDate: params.from, endDate: params.to }],
+      dimensions: [{ name: "date" }],
+      metrics: [{ name: "sessions" }],
+      orderBys: [
+        {
+          dimension: {
+            dimensionName: "date",
+          },
+        },
+      ],
+    },
+  });
+
+  const rows = Array.isArray(res?.data?.rows) ? res.data.rows : [];
+
+  const valuesByDate = new Map<string, number>();
+
+  for (const row of rows) {
+    const dateValue: string | undefined = row?.dimensionValues?.[0]?.value;
+    const metricValue: string | undefined = row?.metricValues?.[0]?.value;
+
+    if (!dateValue) continue;
+    valuesByDate.set(dateValue, metricValue ? Number(metricValue) : 0);
+  }
+
+  const series: GaSeriesPoint[] = [];
+  const start = parseYyyyMmDd(params.from);
+  const end = parseYyyyMmDd(params.to);
+
+  for (
+    let cursor = new Date(start);
+    cursor.getTime() <= end.getTime();
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+  ) {
+    const yyyy = cursor.getUTCFullYear();
+    const mm = String(cursor.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(cursor.getUTCDate()).padStart(2, "0");
+    const gaDateKey = `${yyyy}${mm}${dd}`;
+
+    const t = cursor.getTime();
+
+    series.push({
+      t,
+      label: formatDayLabel(t),
+      value: valuesByDate.get(gaDateKey) ?? 0,
+    });
+  }
+
+  return series;
+}
+
 export async function getDashboardHydration(params: {
   from: string | Date;
   to: string | Date;
@@ -171,7 +246,7 @@ export async function getDashboardHydration(params: {
     : "disabled";
   let gaValue = connected ? "Ready to fetch metrics" : "—";
   let gaDelta: string | undefined;
-  let gaMeta: Record<string, any> = { from, to };
+  let gaMeta: Record<string, any> = { from, to, series: [] };
 
   if (connected && connectionId) {
     try {
@@ -186,7 +261,7 @@ export async function getDashboardHydration(params: {
       } else {
         const { prevFrom, prevTo } = previousPeriod(from, to);
 
-        const [current, prev] = await Promise.all([
+        const [current, prev, series] = await Promise.all([
           runGaReport({
             providerConfigKey,
             connectionId,
@@ -201,6 +276,13 @@ export async function getDashboardHydration(params: {
             from: prevFrom,
             to: prevTo,
           }),
+          runGaDailySeriesReport({
+            providerConfigKey,
+            connectionId,
+            propertyId,
+            from,
+            to,
+          }),
         ]);
 
         gaStatus = "ok";
@@ -211,19 +293,18 @@ export async function getDashboardHydration(params: {
           propertyId,
           prevFrom,
           prevTo,
+          series,
         };
       }
     } catch (e: any) {
-      console.error(
-        "GA_FETCH_FAILED:",
-        e?.response?.data || e?.message || e
-      );
+      console.error("GA_FETCH_FAILED:", e?.response?.data || e?.message || e);
 
       gaStatus = "error";
       gaValue = "GA fetch failed";
       gaMeta = {
         ...gaMeta,
         error: e?.response?.data ?? e?.message ?? "unknown",
+        series: [],
       };
     }
   }
