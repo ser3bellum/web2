@@ -88,6 +88,38 @@ export const fr: Dictionary = {
     loggingOut: "Déconnexion...",
   },
 
+  integrations: {
+  title: "Intégrations",
+  subtitle:
+    "Connectez des services tiers à Ser3bellum pour surveiller la disponibilité, la fraîcheur des données et les signaux opérationnels — depuis un seul tableau de bord.",
+  connect: "Connecter",
+  connectIntegration: "Connecter une intégration",
+  moreComingSoon: "Plus à venir",
+
+  connected: "Connecté",
+  disconnected: "Déconnecté",
+
+  autoTrackOn: "Suivi automatique activé",
+  lastUpdate: "Dernière mise à jour",
+  edit: "Modifier",
+  createdOn: "Créé le",
+
+  workspace: "Espace de travail",
+  store: "Boutique",
+  account: "Compte",
+  property: "Propriété",
+  organization: "Organisation",
+
+  propertyId: "ID de propriété",
+  teamId: "ID d’équipe",
+  orgId: "ID de l’organisation",
+
+  noAuthenticatedUser: "Aucun utilisateur authentifié trouvé.",
+  couldNotStartConnection:
+    "Impossible de démarrer la connexion. Vérifiez les logs.",
+  missingSessionToken:
+    "Jeton de session manquant. Vérifiez les logs.",
+},
   topbar: {
     today: "Aujourd’hui",
     last7Days: "7 derniers jours",

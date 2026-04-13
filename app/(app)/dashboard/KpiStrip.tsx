@@ -5,6 +5,7 @@ import { Card } from "app/(app)/components/Card";
 import { BaseModal } from "app/(app)/components/ui/Modal";
 import type { AnalyticsModalPayload } from "@/lib/analytics/types";
 import type { DashboardKpi } from "./dashboardKpis";
+import { SalesMiniBarChart } from "app/(app)/components/SalesMiniBarChart";
 
 function toneClass(tone?: "up" | "down" | "neutral") {
   if (tone === "down") return "text-red-600";
@@ -50,13 +51,27 @@ type ComparisonPanelProps = {
   previousLabel: string;
   currentValue: number;
   previousValue: number;
-  format?: "number" | "percent";
+  format?: "number" | "percent" | "currency";
+  currency?: string;
 };
 
-function formatMetricValue(value: number, format: "number" | "percent" = "number") {
+function formatMetricValue(
+  value: number,
+  format: "number" | "percent" | "currency" = "number",
+  currency = "EUR"
+) {
   if (format === "percent") {
     return `${value.toFixed(1).replace(".", ",")} %`;
   }
+
+  if (format === "currency") {
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(value);
+  }
+
   return value.toLocaleString("fr-FR");
 }
 
@@ -67,6 +82,7 @@ function ComparisonPanel({
   currentValue,
   previousValue,
   format = "number",
+  currency = "EUR",
 }: ComparisonPanelProps) {
   const max = Math.max(currentValue, previousValue, 1);
   const currentWidth = `${(currentValue / max) * 100}%`;
@@ -78,15 +94,15 @@ function ComparisonPanel({
         <div className="text-sm font-medium text-slate-900">{title}</div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div>
           <div className="mb-1 flex items-center justify-between gap-3">
             <span className="text-xs text-slate-500">{currentLabel}</span>
             <span className="text-sm font-semibold text-slate-900">
-              {formatMetricValue(currentValue, format)}
+              {formatMetricValue(currentValue, format, currency)}
             </span>
           </div>
-          <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+          <div className="h-2 overflow-hidden rounded-full bg-slate-100">
             <div
               className="h-full rounded-full bg-indigo-500 transition-all"
               style={{ width: currentWidth }}
@@ -98,10 +114,10 @@ function ComparisonPanel({
           <div className="mb-1 flex items-center justify-between gap-3">
             <span className="text-xs text-slate-500">{previousLabel}</span>
             <span className="text-sm font-semibold text-slate-900">
-              {formatMetricValue(previousValue, format)}
+              {formatMetricValue(previousValue, format, currency)}
             </span>
           </div>
-          <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+          <div className="h-2 overflow-hidden rounded-full bg-slate-100">
             <div
               className="h-full rounded-full bg-sky-400 transition-all"
               style={{ width: previousWidth }}
@@ -131,7 +147,7 @@ export function KpiStrip({
     [activeId, kpis]
   );
 
-    useEffect(() => {
+  useEffect(() => {
     if (activeId !== "kpi-analytics") return;
 
     let cancelled = false;
@@ -163,10 +179,13 @@ export function KpiStrip({
           let message = "Failed to load analytics details";
 
           try {
-            const errorJson = (await res.json()) as { error?: string; details?: string };
+            const errorJson = (await res.json()) as {
+              error?: string;
+              details?: string;
+            };
             message = errorJson.error || errorJson.details || message;
           } catch {
-            // ignore JSON parse errors and keep fallback message
+            // keep fallback message
           }
 
           throw new Error(message);
@@ -303,8 +322,8 @@ export function KpiStrip({
                         Page la plus consultée
                       </div>
                       <div
-                      className="mt-1 truncate text-lg font-semibold text-slate-900"
-                      title={analyticsData.topPage}
+                        className="mt-1 truncate text-lg font-semibold text-slate-900"
+                        title={analyticsData.topPage}
                       >
                         {analyticsData.topPage}
                       </div>
@@ -324,10 +343,7 @@ export function KpiStrip({
                         Taux d’engagement
                       </div>
                       <div className="mt-1 text-2xl font-semibold text-slate-900">
-                        {analyticsData.engagementRate
-                          .toFixed(1)
-                          .replace(".", ",")}{" "}
-                        %
+                        {analyticsData.engagementRate.toFixed(1).replace(".", ",")} %
                       </div>
                     </div>
                   </div>
@@ -369,6 +385,133 @@ export function KpiStrip({
                   No analytics data available.
                 </div>
               )}
+            </div>
+          ) : activeKpi.id === "kpi-sales" ? (
+            <div className="grid gap-4">
+              <p className="text-sm text-slate-600">
+                {labels.modal.detailsDescription}
+              </p>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="text-xs text-slate-500">Chiffre d’affaires</div>
+                  <div className="mt-1 text-2xl font-semibold text-slate-900">
+                    {activeKpi.value}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="text-xs text-slate-500">Commandes</div>
+                  <div className="mt-1 text-2xl font-semibold text-slate-900">
+                    {typeof activeKpi.meta?.orderCount === "number"
+                      ? activeKpi.meta.orderCount.toLocaleString("fr-FR")
+                      : "0"}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="text-xs text-slate-500">Panier moyen</div>
+                  <div className="mt-1 text-2xl font-semibold text-slate-900">
+                    {typeof activeKpi.meta?.averageOrderValue === "number"
+                      ? new Intl.NumberFormat("fr-FR", {
+                          style: "currency",
+                          currency:
+                            typeof activeKpi.meta?.currency === "string"
+                              ? activeKpi.meta.currency
+                              : "EUR",
+                          maximumFractionDigits: 0,
+                        }).format(activeKpi.meta.averageOrderValue)
+                      : "—"}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="text-xs text-slate-500">Variation</div>
+                  <div
+                    className={[
+                      "mt-1 text-2xl font-semibold",
+                      toneClass(activeKpi.delta?.tone),
+                    ].join(" ")}
+                  >
+                    {activeKpi.delta?.value ?? "—"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div className="mb-4">
+                    <div className="text-sm font-medium text-slate-900">
+                      Comparaison de période
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      Période actuelle vs période précédente
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4">
+                    <ComparisonPanel
+                      title="Chiffre d’affaires"
+                      currentLabel="Période actuelle"
+                      previousLabel="Période précédente"
+                      currentValue={
+                        typeof activeKpi.meta?.currentRevenue === "number"
+                          ? activeKpi.meta.currentRevenue
+                          : 0
+                      }
+                      previousValue={
+                        typeof activeKpi.meta?.previousRevenue === "number"
+                          ? activeKpi.meta.previousRevenue
+                          : 0
+                      }
+                      format="currency"
+                      currency={
+                        typeof activeKpi.meta?.currency === "string"
+                          ? activeKpi.meta.currency
+                          : "EUR"
+                      }
+                    />
+
+                    <ComparisonPanel
+                      title="Commandes"
+                      currentLabel="Période actuelle"
+                      previousLabel="Période précédente"
+                      currentValue={
+                        typeof activeKpi.meta?.orderCount === "number"
+                          ? activeKpi.meta.orderCount
+                          : 0
+                      }
+                      previousValue={
+                        typeof activeKpi.meta?.previousOrderCount === "number"
+                          ? activeKpi.meta.previousOrderCount
+                          : 0
+                      }
+                      format="number"
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div className="mb-4">
+                    <div className="text-sm font-medium text-slate-900">
+                      Ventes par jour
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      Répartition sur la période sélectionnée
+                    </div>
+                  </div>
+
+                  <SalesMiniBarChart
+                    series={Array.isArray(activeKpi.meta?.series) ? activeKpi.meta.series : []}
+                    currency={
+                      typeof activeKpi.meta?.currency === "string"
+                        ? activeKpi.meta.currency
+                        : "EUR"
+                    }
+                    height={220}
+                  />
+                </div>
+              </div>
             </div>
           ) : (
             <div className="grid gap-4">

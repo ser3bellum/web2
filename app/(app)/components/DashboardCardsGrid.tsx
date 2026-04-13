@@ -13,6 +13,7 @@ import {
   loadJson,
 } from "app/(app)/components/dashboardPreferences";
 import type { ReactNode } from "react";
+import { SalesMiniBarChart } from "app/(app)/components/SalesMiniBarChart";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 
 type HydrationCard = {
@@ -34,6 +35,7 @@ function renderIconSafe(icon: ReactNode) {
 const HYDRATION_KEY_BY_CARD_ID: Record<string, string> = {
   analytics: "ga_overview",
   integrations: "integrations",
+  sales: "sales",
 };
 
 function StatusPill({
@@ -47,16 +49,50 @@ function StatusPill({
     status === "ok"
       ? labels.ok
       : status === "warn"
-      ? labels.warn
-      : status === "error"
-      ? labels.error
-      : labels.disabled;
+        ? labels.warn
+        : status === "error"
+          ? labels.error
+          : labels.disabled;
 
   return (
     <span className="rounded-full border px-2 py-0.5 text-[11px] text-slate-600">
       {label}
     </span>
   );
+}
+
+function formatCurrency(
+  amount: number,
+  currency: string,
+  locale = "fr-FR"
+): string {
+  const safeCurrency =
+    typeof currency === "string" && currency.trim().length === 3
+      ? currency.toUpperCase()
+      : "EUR";
+
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: safeCurrency,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  } catch {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: "EUR",
+      maximumFractionDigits: 0,
+    }).format(amount);
+  }
+}
+
+function toNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
 }
 
 export default function DashboardCardsGrid({
@@ -139,6 +175,28 @@ export default function DashboardCardsGrid({
           const localizedTitle = localized?.title ?? c.title;
           const localizedSubtitle = localized?.subtitle ?? c.subtitle;
 
+          const salesRevenue = toNumber(
+            h?.meta?.currentRevenue ?? h?.meta?.revenue ?? h?.meta?.amount
+          );
+
+          const salesOrderCount = toNumber(h?.meta?.orderCount);
+
+          const salesCurrency =
+            typeof h?.meta?.currency === "string" &&
+            h.meta.currency.trim().length === 3
+              ? h.meta.currency.toUpperCase()
+              : "EUR";
+
+          const hasHydratedData =
+            c.id === "sales"
+              ? salesRevenue !== null || salesOrderCount !== null
+              : typeof h?.value === "string" && h.value.trim().length > 0;
+
+          const headerValue =
+            c.id === "sales" && salesRevenue !== null
+              ? formatCurrency(salesRevenue, salesCurrency)
+              : h?.value ?? "";
+
           return (
             <Card
               key={c.id}
@@ -150,7 +208,7 @@ export default function DashboardCardsGrid({
               {h && (
                 <div className="mb-3 flex items-center justify-between">
                   <div className="text-sm font-semibold text-slate-900">
-                    {h.value}
+                    {headerValue}
                     {h.delta ? (
                       <span className="ml-2 text-xs font-medium text-slate-500">
                         {h.delta}
@@ -161,12 +219,40 @@ export default function DashboardCardsGrid({
                 </div>
               )}
 
-                           {c.id === "analytics" ? (
+              {c.id === "analytics" ? (
                 <AnalyticsMiniChart
                   series={Array.isArray(h?.meta?.series) ? h.meta.series : []}
                   allowRangeToggle={false}
                   initialRange="7d"
                 />
+              ) : c.id === "sales" ? (
+                hasHydratedData ? (
+                  <div className="space-y-4">
+                    <div className="text-sm text-slate-600">
+                      {salesOrderCount !== null
+                        ? `${salesOrderCount} commande${salesOrderCount > 1 ? "s" : ""}`
+                        : h?.meta?.description ?? localizedSubtitle}
+                    </div>
+
+                    <SalesMiniBarChart
+                      series={Array.isArray(h?.meta?.series) ? h.meta.series : []}
+                      currency={salesCurrency}
+                      height={170}
+                    />
+                  </div>
+                ) : (
+                  <div className="text-sm opacity-70">
+                    {labels.emptyState.noData}
+                    <br />
+                    <a
+                      href="/settings/integrations"
+                      className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-100"
+                    >
+                      {labels.emptyState.connectProvider}
+                      <span aria-hidden>→</span>
+                    </a>
+                  </div>
+                )
               ) : (
                 <div className="text-sm opacity-70">
                   {(c as any).description ?? labels.emptyState.noData}

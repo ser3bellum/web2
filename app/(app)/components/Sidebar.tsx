@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 
 type NavItem = { label: string; href: string; icon: React.ReactNode };
-type AppId = "slack" | "google-analytics";
+type AppId = "slack" | "google-analytics" | "shopify";
 
 /**
  * Glass system
@@ -24,7 +24,6 @@ const glassBase =
 const glassHover = "hover:bg-white/22 hover:border-white/45 hover:shadow-md";
 const glassActive = "bg-white/18 border-blue-400/35 ring-1 ring-blue-500/20";
 
-
 type SidebarProps = {
 	companyName: string;
 	userEmail: string;
@@ -37,6 +36,7 @@ type SidebarProps = {
 type ConnectionState = {
 	slack: boolean;
 	googleAnalytics: boolean;
+	shopify: boolean;
 };
 
 export function Sidebar({
@@ -52,10 +52,11 @@ export function Sidebar({
 	const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
 	const [appsOpen, setAppsOpen] = useState(false);
 	const [settingsOpen, setSettingsOpen] = useState(false);
-	const [companyOpen, setCompanyOpen] = useState(false);	
+	const [companyOpen, setCompanyOpen] = useState(false);
 	const [connections, setConnections] = useState<ConnectionState>({
 		slack: false,
 		googleAnalytics: false,
+		shopify: false,
 	});
 
 	useEffect(() => {
@@ -63,6 +64,14 @@ export function Sidebar({
 
 		async function loadConnections() {
 			try {
+				const slackKey =
+					process.env.NEXT_PUBLIC_NANGO_SLACK_PROVIDER_CONFIG_KEY || "slack";
+				const gaKey =
+					process.env.NEXT_PUBLIC_NANGO_GOOGLE_ANALYTICS_PROVIDER_CONFIG_KEY ||
+					"google-analytics";
+				const shopifyKey =
+					process.env.NEXT_PUBLIC_NANGO_SHOPIFY_PROVIDER_CONFIG_KEY || "shopify";
+
 				const res = await fetch("/api/nango/connection-status", {
 					method: "POST",
 					headers: {
@@ -70,23 +79,13 @@ export function Sidebar({
 					},
 					body: JSON.stringify({
 						endUserId,
-						providerConfigKeys: [
-							process.env.NEXT_PUBLIC_NANGO_SLACK_PROVIDER_CONFIG_KEY || "slack",
-							process.env.NEXT_PUBLIC_NANGO_GOOGLE_ANALYTICS_PROVIDER_CONFIG_KEY ||
-								"google-analytics",
-						],
+						providerConfigKeys: [slackKey, gaKey, shopifyKey],
 					}),
 				});
 
 				const data = await res.json();
 
 				if (cancelled || !Array.isArray(data?.results)) return;
-
-				const slackKey =
-					process.env.NEXT_PUBLIC_NANGO_SLACK_PROVIDER_CONFIG_KEY || "slack";
-				const gaKey =
-					process.env.NEXT_PUBLIC_NANGO_GOOGLE_ANALYTICS_PROVIDER_CONFIG_KEY ||
-					"google-analytics";
 
 				setConnections({
 					slack: Boolean(
@@ -99,6 +98,12 @@ export function Sidebar({
 						data.results.find(
 							(item: { providerConfigKey: string; connected: boolean }) =>
 								item.providerConfigKey === gaKey && item.connected,
+						),
+					),
+					shopify: Boolean(
+						data.results.find(
+							(item: { providerConfigKey: string; connected: boolean }) =>
+								item.providerConfigKey === shopifyKey && item.connected,
 						),
 					),
 				});
@@ -127,6 +132,10 @@ export function Sidebar({
 			apps.push("google-analytics");
 		}
 
+		if (connections.shopify) {
+			apps.push("shopify");
+		}
+
 		return apps;
 	}, [connections]);
 
@@ -145,14 +154,15 @@ export function Sidebar({
 	const appLabels: Record<AppId, string> = {
 		slack: "Slack",
 		"google-analytics": "Google Analytics",
+		shopify: "Shopify",
 	};
 
 	const appLinks: NavItem[] = useMemo(
-	() => [
-		{ label: t.analytics, href: "/analytics", icon: <AnalyticsIcon /> },
-		{ label: t.siteHealth, href: "/site-health", icon: <ShieldIcon /> },
-	],
-	[t],
+		() => [
+			{ label: t.analytics, href: "/analytics", icon: <AnalyticsIcon /> },
+			{ label: t.siteHealth, href: "/site-health", icon: <ShieldIcon /> },
+		],
+		[t],
 	);
 
 	const settingsLinks: NavItem[] = useMemo(
@@ -168,7 +178,6 @@ export function Sidebar({
 
 	const companies = useMemo(
 		() => [
-			{ name: "Company X", href: "/dashboard?company=x" },
 			{ name: "Company A", href: "/dashboard?company=a" },
 			{ name: "Company B", href: "/dashboard?company=b" },
 			{ name: "Company C", href: "/dashboard?company=c" },
@@ -295,15 +304,13 @@ export function Sidebar({
 
 					<div className="min-w-0 flex-1">
 						<div className="truncate text-sm font-semibold text-slate-800">
-						{userName || t.userFallback}
+							{userName || t.userFallback}
 						</div>
 
 						<div className="flex items-center gap-2">
-						
-
-						<span className="text-xs text-slate-400 opacity-0 transition group-hover:opacity-100">
-						• {t.editProfile}
-						</span>
+							<span className="text-xs text-slate-400 opacity-0 transition group-hover:opacity-100">
+								• {t.editProfile}
+							</span>
 						</div>
 					</div>
 
@@ -381,62 +388,64 @@ export function Sidebar({
 					</nav>
 
 					<div className="pt-2">
-	<DropdownHeader
-		label={t.settings}
-		open={settingsOpen}
-		onToggle={() => {
-			setSettingsOpen((v) => {
-				const next = !v;
-				if (next) setAppsOpen(false);
-				if (next) setCompanyOpen(false);
-				return next;
-			});
-		}}
-		icon={<SettingsIcon />}
-	/>
+						<DropdownHeader
+							label={t.settings}
+							open={settingsOpen}
+							onToggle={() => {
+								setSettingsOpen((v) => {
+									const next = !v;
+									if (next) setAppsOpen(false);
+									if (next) setCompanyOpen(false);
+									return next;
+								});
+							}}
+							icon={<SettingsIcon />}
+						/>
 
-	<div
-		className={cn(
-			"grid transition-[grid-template-rows,opacity] duration-200 ease-out",
-			settingsOpen
-				? "grid-rows-[1fr] opacity-100"
-				: "grid-rows-[0fr] opacity-0 pointer-events-none",
-				)}
-				>
-				<div className="overflow-hidden">
-					<div className="mt-3">
-					<nav className="flex flex-col gap-1">
-					{settingsLinks.map((item) => (
-						<NavRow
-							key={item.href}
-							item={item}
-							active={pathname === item.href}
-							/>
-							))}
-						</nav>
+						<div
+							className={cn(
+								"grid transition-[grid-template-rows,opacity] duration-200 ease-out",
+								settingsOpen
+									? "grid-rows-[1fr] opacity-100"
+									: "grid-rows-[0fr] opacity-0 pointer-events-none",
+							)}
+						>
+							<div className="overflow-hidden">
+								<div className="mt-3">
+									<nav className="flex flex-col gap-1">
+										{settingsLinks.map((item) => (
+											<NavRow
+												key={item.href}
+												item={item}
+												active={pathname === item.href}
+											/>
+										))}
+									</nav>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
+
+				<div className="mt-auto pt-4">
+					<button
+						type="button"
+						onClick={() => setIsCustomizeOpen(true)}
+						className={cn(
+							"flex h-14 w-full items-center justify-center gap-2 rounded-xl px-3",
+							"bg-gradient-to-br from-blue-600/80 via-blue-600/90 to-indigo-600/70 backdrop-blur-xl",
+							"border border-white/20 text-white",
+							"transition-all duration-200",
+							"hover:bg-blue-600/90 hover:shadow-md hover:shadow-blue-700/20",
+							"active:translate-y-[1px]",
+							"focus:outline-none focus:ring-2 focus:ring-blue-400/30",
+						)}
+					>
+						<GridIcon />
+						<span className="text-sm">{t.customizeDashboard}</span>
+					</button>
 				</div>
-			</div>
-				</div>
-							<div className="mt-auto pt-4">
-	<button
-		type="button"
-		onClick={() => setIsCustomizeOpen(true)}
-		className={cn(
-			"flex h-14 w-full items-center justify-center gap-2 rounded-xl px-3",
-			"bg-gradient-to-br from-blue-600/80 via-blue-600/90 to-indigo-600/70 backdrop-blur-xl",
-			"border border-white/20 text-white",
-			"transition-all duration-200",
-			"hover:bg-blue-600/90 hover:shadow-md hover:shadow-blue-700/20",
-			"active:translate-y-[1px]",
-			"focus:outline-none focus:ring-2 focus:ring-blue-400/30",
-		)}
-	>
-		<GridIcon />
-		<span className="text-sm">{t.customizeDashboard}</span>
-	</button>
-</div>
+
 				<CustomizeDashboardModal
 					open={isCustomizeOpen}
 					onClose={() => setIsCustomizeOpen(false)}

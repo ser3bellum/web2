@@ -87,6 +87,36 @@ export type Dictionary = {
     loggingOut: string;
   };
 
+  integrations: {
+  title: string;
+  subtitle: string;
+  connect: string;
+  connectIntegration: string;
+  moreComingSoon: string;
+
+  connected: string;
+  disconnected: string;
+
+  autoTrackOn: string;
+  lastUpdate: string;
+  edit: string;
+  createdOn: string;
+
+  workspace: string;
+  store: string;
+  account: string;
+  property: string;
+  organization: string;
+
+  propertyId: string;
+  teamId: string;
+  orgId: string;
+
+  noAuthenticatedUser: string;
+  couldNotStartConnection: string;
+  missingSessionToken: string;
+};
+
   topbar: {
     today: string;
     last7Days: string;

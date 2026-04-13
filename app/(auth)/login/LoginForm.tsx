@@ -1,26 +1,35 @@
 "use client";
 
-import { signInWithEmailAndPassword } from "firebase/auth";
+import {
+	sendPasswordResetEmail,
+	signInWithEmailAndPassword,
+} from "firebase/auth";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { auth } from "@/lib/firebase/clients";
 
 export default function LoginForm() {
 	const router = useRouter();
+
+	const [email, setEmail] = useState("");
 	const [loading, setLoading] = useState(false);
+	const [resetLoading, setResetLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [message, setMessage] = useState<string | null>(null);
 
 	async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
 		setError(null);
+		setMessage(null);
 		setLoading(true);
 
 		const form = new FormData(e.currentTarget);
-		const email = String(form.get("email") || "").trim();
+		const emailValue = String(form.get("email") || "").trim();
 		const password = String(form.get("password") || "");
 
 		try {
-			const cred = await signInWithEmailAndPassword(auth, email, password);
+			const cred = await signInWithEmailAndPassword(auth, emailValue, password);
 			const idToken = await cred.user.getIdToken();
 
 			const res = await fetch("/api/auth/session", {
@@ -33,9 +42,51 @@ export default function LoginForm() {
 
 			router.push("/dashboard");
 		} catch (err: any) {
-			setError(err?.message ?? "Login failed");
+			switch (err?.code) {
+				case "auth/invalid-credential":
+				case "auth/wrong-password":
+				case "auth/user-not-found":
+					setError("Invalid email or password.");
+					break;
+				case "auth/too-many-requests":
+					setError("Too many attempts. Please try again later.");
+					break;
+				default:
+					setError(err?.message ?? "Login failed");
+			}
 		} finally {
 			setLoading(false);
+		}
+	}
+
+	async function onForgotPassword() {
+		setError(null);
+		setMessage(null);
+
+		const trimmedEmail = email.trim();
+
+		if (!trimmedEmail) {
+			setError("Please enter your email address first.");
+			return;
+		}
+
+		try {
+			setResetLoading(true);
+			await sendPasswordResetEmail(auth, trimmedEmail);
+			setMessage("Password reset email sent. Check your inbox.");
+		} catch (err: any) {
+			switch (err?.code) {
+				case "auth/invalid-email":
+					setError("Please enter a valid email address.");
+					break;
+				case "auth/user-not-found":
+					setError("No account found with this email.");
+					break;
+				default:
+					setError("Unable to send password reset email.");
+			}
+		} finally {
+			setResetLoading(false);
 		}
 	}
 
@@ -60,6 +111,8 @@ export default function LoginForm() {
 						name="email"
 						type="email"
 						placeholder="you@company.com"
+						value={email}
+						onChange={(e) => setEmail(e.target.value)}
 						className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
 						autoComplete="email"
 						required
@@ -87,22 +140,34 @@ export default function LoginForm() {
 				<div className="-mt-2 flex justify-end">
 					<button
 						type="button"
-						className="text-sm text-blue-600 hover:underline"
-						onClick={() => alert("Forgot password (later)")}
+						className="text-sm text-blue-600 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+						onClick={onForgotPassword}
+						disabled={resetLoading}
 					>
-						Forgot password?
+						{resetLoading ? "Sending..." : "Forgot password?"}
 					</button>
 				</div>
 
 				{error && <p className="text-sm text-red-600">{error}</p>}
+				{message && <p className="text-sm text-green-600">{message}</p>}
 
 				<button
 					type="submit"
 					disabled={loading}
-					className="mt-2 h-11 w-full rounded-lg bg-blue-600 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
+					className="mt-2 h-11 w-full rounded-lg bg-blue-600 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
 				>
 					{loading ? "Signing in..." : "Continue"}
 				</button>
+
+				<p className="text-center text-sm text-slate-500">
+					Don&apos;t have an account?{" "}
+					<Link
+						href="/register"
+						className="font-medium text-blue-600 hover:underline"
+					>
+						Register
+					</Link>
+				</p>
 			</form>
 		</>
 	);
