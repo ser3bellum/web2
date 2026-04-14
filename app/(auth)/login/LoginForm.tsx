@@ -74,7 +74,7 @@ export default function LoginForm() {
 		setResetLoading(true);
 
 		await sendPasswordResetEmail(auth, trimmedEmail, {
-			url: "https://app.ser3bellum.com/reset-password",
+			url: "https://staging.ser3bellum.com/reset-password",
 			handleCodeInApp: false,
 		});
 
