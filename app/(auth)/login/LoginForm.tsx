@@ -60,35 +60,39 @@ export default function LoginForm() {
 	}
 
 	async function onForgotPassword() {
-		setError(null);
-		setMessage(null);
+	setError(null);
+	setMessage(null);
 
-		const trimmedEmail = email.trim();
+	const trimmedEmail = email.trim();
 
-		if (!trimmedEmail) {
-			setError("Please enter your email address first.");
-			return;
-		}
-
-		try {
-			setResetLoading(true);
-			await sendPasswordResetEmail(auth, trimmedEmail);
-			setMessage("Password reset email sent. Check your inbox.");
-		} catch (err: any) {
-			switch (err?.code) {
-				case "auth/invalid-email":
-					setError("Please enter a valid email address.");
-					break;
-				case "auth/user-not-found":
-					setError("No account found with this email.");
-					break;
-				default:
-					setError("Unable to send password reset email.");
-			}
-		} finally {
-			setResetLoading(false);
-		}
+	if (!trimmedEmail) {
+		setError("Please enter your email address first.");
+		return;
 	}
+
+	try {
+		setResetLoading(true);
+
+		await sendPasswordResetEmail(auth, trimmedEmail, {
+			url: "https://app.ser3bellum.com/reset-password",
+			handleCodeInApp: false,
+		});
+
+		setMessage(
+			"If an account exists for this email, a reset link has been sent."
+		);
+	} catch (err: any) {
+		switch (err?.code) {
+			case "auth/invalid-email":
+				setError("Please enter a valid email address.");
+				break;
+			default:
+				setError("Unable to send password reset email.");
+		}
+	} finally {
+		setResetLoading(false);
+	}
+}
 
 	return (
 		<>
