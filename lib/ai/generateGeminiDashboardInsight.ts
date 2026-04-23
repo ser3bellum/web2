@@ -2,14 +2,6 @@ import { GoogleGenAI } from "@google/genai";
 import type { AIInsightPayload } from "@/types/ai";
 import type { DashboardInsightInput } from "@/lib/ai/generateDashboardInsight";
 
-const apiKey = process.env.GEMINI_API_KEY;
-
-if (!apiKey) {
-  throw new Error("GEMINI_API_KEY is missing.");
-}
-
-const ai = new GoogleGenAI({ apiKey });
-
 function extractJsonObject(text: string): string | null {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
@@ -51,6 +43,14 @@ function isAIInsightPayload(value: unknown): value is AIInsightPayload {
 export async function generateGeminiDashboardInsight(
   input: DashboardInsightInput
 ): Promise<AIInsightPayload> {
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is missing.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+
   const prompt = `
 You are generating one operational insight for a SaaS dashboard.
 
