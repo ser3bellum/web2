@@ -132,9 +132,10 @@ const kpis = await getDashboardKpis({
 
           <section>
             <DashboardCardsGrid
-              hydrationCards={hydration?.cards ?? []}
-              labels={dictionary.dashboard}
-            />
+  hydrationCards={hydration?.cards ?? []}
+  labels={dictionary.dashboard}
+  endUserId={endUserId}
+/>
           </section>
 
           {isDev && (

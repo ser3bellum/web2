@@ -9,14 +9,15 @@ export type DashboardCardId =
 	| "accounting"
 	| "social"
 	| "booking"
-	| "productivity";
+	| "productivity"
+	| "aiInsights";
 
 export type DashboardCardDef = {
 	id: DashboardCardId;
 	title: string;
 	subtitle?: string;
 	defaultEnabled: boolean;
-	size?: "small" | "medium" | "large";
+	size?: "small" | "medium" | "large" | "extraLarge";
 };
 
 export const DASHBOARD_CARDS: DashboardCardDef[] = [
@@ -25,21 +26,21 @@ export const DASHBOARD_CARDS: DashboardCardDef[] = [
 		title: "Analytics",
 		subtitle: "Website traffic for the selected period",
 		defaultEnabled: true,
-		size: "large",
+		size: "medium",
 	},
 	{
 		id: "sales",
 		title: "Sales",
 		subtitle: "Sales overview for the selected period",
 		defaultEnabled: true,
-		size: "large",
+		size: "medium",
 	},
 	{
 		id: "marketing",
 		title: "Marketing",
 		subtitle: "Conversions by channel",
 		defaultEnabled: true,
-		size: "large",
+		size: "medium",
 	},
 
 	{
@@ -92,4 +93,11 @@ export const DASHBOARD_CARDS: DashboardCardDef[] = [
 		defaultEnabled: true,
 		size: "medium",
 	},
+	{
+ 	 	id: "aiInsights",
+  		title: "AI Insights",
+  		subtitle: "Smart operational summary",
+  		defaultEnabled: true,
+		size: "large",
+		},
 ];

@@ -4,11 +4,11 @@ import { CustomizeDashboardModal } from "app/(app)/components/CustomizeDashboard
 import { DASHBOARD_CARDS } from "app/(app)/components/DashboardCards";
 import { cn } from "app/(app)/lib/cn";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 
-type NavItem = { label: string; href: string; icon: React.ReactNode };
+type NavItem = { label: string; href: string; icon: ReactNode };
 type AppId = "slack" | "google-analytics" | "shopify";
 
 /**
@@ -49,6 +49,7 @@ export function Sidebar({
 }: SidebarProps) {
 	const t = dictionary.navigation;
 	const pathname = usePathname();
+	const searchParams = useSearchParams();
 	const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
 	const [appsOpen, setAppsOpen] = useState(false);
 	const [settingsOpen, setSettingsOpen] = useState(false);
@@ -196,6 +197,41 @@ export function Sidebar({
 			}
 			return next;
 		});
+	};
+
+		const handleRefresh = async () => {
+		try {
+			const from =
+				searchParams.get("from") ??
+				new Date().toISOString().slice(0, 10);
+
+			const to =
+				searchParams.get("to") ??
+				new Date().toISOString().slice(0, 10);
+
+			const res = await fetch("/api/dashboard/refresh", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					from,
+					to,
+					endUserId,
+				}),
+			});
+
+			const text = await res.text();
+			const data = text ? JSON.parse(text) : null;
+
+			if (!res.ok) {
+				throw new Error(data?.error || "Refresh failed");
+			}
+
+			console.log("Dashboard refreshed:", data);
+		} catch (error) {
+			console.error("Refresh failed:", error);
+		}
 	};
 
 	return (
@@ -374,7 +410,7 @@ export function Sidebar({
 					<ActionRow
 						label={t.refreshData}
 						icon={<RefreshIcon />}
-						onClick={() => console.log("Trigger dashboard refresh")}
+						onClick={handleRefresh}
 					/>
 
 					<nav className="mt-2 flex flex-col gap-2">
@@ -465,7 +501,7 @@ function DropdownHeader({
 	label: string;
 	open: boolean;
 	onToggle: () => void;
-	icon: React.ReactNode;
+	icon: ReactNode;
 }) {
 	return (
 		<button
@@ -502,7 +538,7 @@ function RowShell({
 	className,
 }: {
 	active?: boolean;
-	children: React.ReactNode;
+	children: ReactNode;
 	className?: string;
 }) {
 	return (
@@ -522,7 +558,7 @@ function ActionRow({
 }: {
 	label: string;
 	onClick: () => void;
-	icon: React.ReactNode;
+	icon: ReactNode;
 }) {
 	return (
 		<RowShell>

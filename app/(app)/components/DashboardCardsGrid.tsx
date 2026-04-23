@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AnalyticsMiniChart } from "app/(app)/components/AnalyticsMiniChart";
+import { AIInsightsCard } from "app/(app)/components/AIInsightsCard";
 import { Card } from "app/(app)/components/Card";
 import {
   DASHBOARD_CARDS,
@@ -15,6 +16,7 @@ import {
 import type { ReactNode } from "react";
 import { SalesMiniBarChart } from "app/(app)/components/SalesMiniBarChart";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
+import type { AIInsightPayload } from "@/types/ai";
 
 type HydrationCard = {
   key: string;
@@ -36,6 +38,7 @@ const HYDRATION_KEY_BY_CARD_ID: Record<string, string> = {
   analytics: "ga_overview",
   integrations: "integrations",
   sales: "sales",
+  aiInsights: "ai_insights",
 };
 
 function StatusPill({
@@ -98,12 +101,21 @@ function toNumber(value: unknown): number | null {
 export default function DashboardCardsGrid({
   hydrationCards,
   labels,
+  endUserId,
 }: {
   hydrationCards?: HydrationCard[];
   labels: DashboardCardsGridLabels;
+  endUserId: string;
 }) {
   const [mounted, setMounted] = useState(false);
   const [enabledIds, setEnabledIds] = useState<DashboardCardId[] | null>(null);
+  const [aiInsight, setAiInsight] = useState<AIInsightPayload>({
+    status: "loading",
+    headline: "",
+    whyItMatters: "",
+    recommendedAction: "",
+    sourceNote: "",
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -139,6 +151,69 @@ export default function DashboardCardsGrid({
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchAIInsight() {
+      if (!endUserId) {
+        if (!cancelled) {
+          setAiInsight({
+            status: "empty",
+            headline: "",
+            whyItMatters: "",
+            recommendedAction: "",
+            sourceNote: "",
+          });
+        }
+        return;
+      }
+
+      try {
+        setAiInsight({
+          status: "loading",
+          headline: "",
+          whyItMatters: "",
+          recommendedAction: "",
+          sourceNote: "",
+        });
+
+        const res = await fetch(
+          `/api/ai/insight?workspaceId=${encodeURIComponent(endUserId)}`,
+          {
+            method: "GET",
+            cache: "no-store",
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch AI insight");
+        }
+
+        const data: AIInsightPayload = await res.json();
+
+        if (!cancelled) {
+          setAiInsight(data);
+        }
+      } catch {
+        if (!cancelled) {
+          setAiInsight({
+            status: "error",
+            headline: "",
+            whyItMatters: "",
+            recommendedAction: "",
+            sourceNote: "",
+          });
+        }
+      }
+    }
+
+    fetchAIInsight();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [endUserId]);
+
   const visibleCards = useMemo(() => {
     if (!enabledIds) return [];
     return DASHBOARD_CARDS.filter((card) => enabledIds.includes(card.id));
@@ -169,6 +244,10 @@ export default function DashboardCardsGrid({
             social: labels.cards.social,
             booking: labels.cards.booking,
             productivity: labels.cards.productivity,
+            aiInsights: {
+              title: "AI Insights",
+              subtitle: "Résumé intelligent",
+            },
           };
 
           const localized = localizedCardLabels[c.id];
@@ -196,6 +275,20 @@ export default function DashboardCardsGrid({
             c.id === "sales" && salesRevenue !== null
               ? formatCurrency(salesRevenue, salesCurrency)
               : h?.value ?? "";
+
+          if (c.id === "aiInsights") {
+            return (
+              <AIInsightsCard
+                key={c.id}
+                title={localizedTitle}
+                status={aiInsight.status}
+                headline={aiInsight.headline}
+                whyItMatters={aiInsight.whyItMatters}
+                recommendedAction={aiInsight.recommendedAction}
+                sourceNote={aiInsight.sourceNote}
+              />
+            );
+          }
 
           return (
             <Card
