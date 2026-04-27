@@ -6,6 +6,7 @@ import {
 import { generateGeminiDashboardInsight } from "@/lib/ai/generateGeminiDashboardInsight";
 import { buildDashboardInsightInput } from "@/lib/ai/buildDashboardInsightInput";
 import { getLatestSyncSummary } from "@/lib/firestore/getLatestSyncSummary";
+import { saveAIInsight } from "@/lib/firestore/saveAIInsight";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -16,9 +17,11 @@ export async function GET(req: Request) {
   const latestSummary = await getLatestSyncSummary(workspaceId);
 
   if (!latestSummary) {
-    return NextResponse.json(
-      generateDashboardInsight({} satisfies DashboardInsightInput)
+    const emptyPayload = generateDashboardInsight(
+      {} satisfies DashboardInsightInput
     );
+
+    return NextResponse.json(emptyPayload);
   }
 
   const input: DashboardInsightInput =
@@ -26,6 +29,14 @@ export async function GET(req: Request) {
 
   try {
     const payload = await generateGeminiDashboardInsight(input);
+
+    await saveAIInsight({
+      workspaceId,
+      syncRunId: latestSummary.syncRunId,
+      source: "gemini",
+      payload,
+    });
+
     return NextResponse.json(payload);
   } catch (error) {
     console.error(
@@ -34,6 +45,14 @@ export async function GET(req: Request) {
     );
 
     const fallback = generateDashboardInsight(input);
+
+    await saveAIInsight({
+      workspaceId,
+      syncRunId: latestSummary.syncRunId,
+      source: "fallback",
+      payload: fallback,
+    });
+
     return NextResponse.json(fallback);
   }
 }
