@@ -199,40 +199,48 @@ export function Sidebar({
 		});
 	};
 
-		const handleRefresh = async () => {
-		try {
-			const from =
-				searchParams.get("from") ??
-				new Date().toISOString().slice(0, 10);
+		const [isRefreshing, setIsRefreshing] = useState(false);
 
-			const to =
-				searchParams.get("to") ??
-				new Date().toISOString().slice(0, 10);
+const handleRefresh = async () => {
+	if (isRefreshing) return;
 
-			const res = await fetch("/api/dashboard/refresh", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					from,
-					to,
-					endUserId,
-				}),
-			});
+	try {
+		setIsRefreshing(true);
 
-			const text = await res.text();
-			const data = text ? JSON.parse(text) : null;
+		const from =
+			searchParams.get("from") ??
+			new Date().toISOString().slice(0, 10);
 
-			if (!res.ok) {
-				throw new Error(data?.error || "Refresh failed");
-			}
+		const to =
+			searchParams.get("to") ??
+			new Date().toISOString().slice(0, 10);
 
-			console.log("Dashboard refreshed:", data);
-		} catch (error) {
-			console.error("Refresh failed:", error);
+		const res = await fetch("/api/dashboard/refresh", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				from,
+				to,
+				endUserId,
+			}),
+		});
+
+		const text = await res.text();
+		const data = text ? JSON.parse(text) : null;
+
+		if (!res.ok) {
+			throw new Error(data?.error || "Refresh failed");
 		}
-	};
+
+		console.log("Dashboard refreshed:", data);
+	} catch (error) {
+		console.error("Refresh failed:", error);
+	} finally {
+		setIsRefreshing(false);
+	}
+};
 
 	return (
 		<aside className="z-50 h-full w-72 border-r border-white/40 bg-white/80 backdrop-blur-xl shadow-[0_2px_4px_rgba(0,0,0,0.08)]">
@@ -408,11 +416,15 @@ export function Sidebar({
 					</div>
 
 					<ActionRow
-						label={t.refreshData}
-						icon={<RefreshIcon />}
-						onClick={handleRefresh}
-					/>
-
+	label={isRefreshing ? "Actualisation..." : t.refreshData}
+	icon={
+		<RefreshIcon
+			className={isRefreshing ? "animate-spin" : ""}
+		/>
+	}
+	onClick={handleRefresh}
+	disabled={isRefreshing}
+/>
 					<nav className="mt-2 flex flex-col gap-2">
 						{appLinks.map((item) => (
 							<NavRow
@@ -553,36 +565,34 @@ function RowShell({
 
 function ActionRow({
 	label,
-	onClick,
 	icon,
+	onClick,
+	disabled = false,
 }: {
 	label: string;
+	icon: React.ReactNode;
 	onClick: () => void;
-	icon: ReactNode;
+	disabled?: boolean;
 }) {
 	return (
-		<RowShell>
-			<button
-				type="button"
-				onClick={onClick}
-				className={cn(
-					glassBase,
-					glassHover,
-					"text-zinc-700/90",
-					"focus:outline-none focus:ring-2 focus:ring-black/10",
-				)}
-			>
-				<span
-					className={cn(
-						"inline-flex h-8 w-8 items-center justify-center rounded-lg",
-						"bg-white/10 border border-white/20 text-slate-600",
-					)}
-				>
-					{icon}
-				</span>
-				<span className="text-sm text-slate-600">{label}</span>
-			</button>
-		</RowShell>
+		<button
+			type="button"
+			onClick={onClick}
+			disabled={disabled}
+			className={[
+				"flex w-full items-center gap-3 rounded-xl bg-white px-5 py-4 text-left text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-100 transition",
+				"hover:bg-slate-50 hover:text-slate-900",
+				disabled && "cursor-not-allowed opacity-60",
+			]
+				.filter(Boolean)
+				.join(" ")}
+		>
+			<span className="flex h-5 w-5 items-center justify-center text-slate-500">
+				{icon}
+			</span>
+
+			<span>{label}</span>
+		</button>
 	);
 }
 
@@ -727,17 +737,25 @@ export function SettingsIcon({ className = "" }: { className?: string }) {
 	);
 }
 
-function RefreshIcon() {
+function RefreshIcon({ className = "" }: { className?: string }) {
 	return (
-		<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+		<svg
+			className={className}
+			width="18"
+			height="18"
+			viewBox="0 0 24 24"
+			fill="none"
+			aria-hidden="true"
+		>
 			<path
-				d="M20 12a8 8 0 10-2.3 5.7"
+				d="M21 12a9 9 0 1 1-2.64-6.36"
 				stroke="currentColor"
 				strokeWidth="2"
 				strokeLinecap="round"
+				strokeLinejoin="round"
 			/>
 			<path
-				d="M20 8v4h-4"
+				d="M21 3v6h-6"
 				stroke="currentColor"
 				strokeWidth="2"
 				strokeLinecap="round"

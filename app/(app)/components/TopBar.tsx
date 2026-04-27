@@ -141,6 +141,11 @@ function DashboardHomeLink({
 
 	const [open, setOpen] = useState(false);
 
+	const [summaryNotification, setSummaryNotification] =
+	useState<NotificationItem | null>(null);
+
+	const [notificationsSeen, setNotificationsSeen] = useState(false);
+
 	// single source of truth for URL sync + preset matching
 	const [range, setRange] = useState<UiDateRange>(initialRange);
 
@@ -247,15 +252,53 @@ function DashboardHomeLink({
   };
 }, []);
 
+	useEffect(() => {
+	let cancelled = false;
+
+	async function loadSummaryNotification() {
+		try {
+			const workspaceId =
+				searchParams.get("company") ?? auth.currentUser?.uid;
+
+			if (!workspaceId) return;
+
+			const res = await fetch(
+				`/api/dashboard/latest-summary?workspaceId=${workspaceId}`
+			);
+
+			const data = await res.json();
+
+			if (!res.ok) {
+				throw new Error(data?.error || "Failed to load latest summary");
+			}
+
+			if (!cancelled && data.report) {
+				setSummaryNotification({
+					id: data.report.reportId,
+					kind: "summary",
+					title: data.report.headline,
+					description:
+						data.report.bullets?.[0] ??
+						"Your daily operational summary is ready to review.",
+					timeLabel: "Today",
+					unread: true,
+				});
+			}
+		} catch (error) {
+			console.error("SUMMARY_NOTIFICATION_FETCH_FAILED", error);
+		}
+	}
+
+	loadSummaryNotification();
+
+	return () => {
+		cancelled = true;
+	};
+}, [searchParams]);
+
 	const notifications: NotificationItem[] = [
-	{
-		id: "notif-1",
-		kind: "summary",
-		title: "Daily summary ready",
-		description: "Your website health summary is ready to review.",
-		timeLabel: "Today",
-		unread: true,
-	},
+	...(summaryNotification ? [summaryNotification] : []),
+	
 	{
 		id: "notif-2",
 		kind: "analytics",
@@ -283,7 +326,9 @@ function DashboardHomeLink({
 ];
 
 const mailCount = messages.filter((item) => item.unread).length;
-const notifCount = notifications.filter((item) => item.unread).length;
+	const notifCount = notificationsSeen
+	? 0
+	: notifications.filter((item) => item.unread).length;
 
 	// Sync URL when range changes
 	useEffect(() => {
@@ -512,7 +557,11 @@ const notifCount = notifications.filter((item) => item.unread).length;
 						label={t.notifications}
 						count={notifCount}
 						showCheck
-						onClick={() => setNotifOpen(true)}>
+						onClick={() => {
+						setNotificationsSeen(true);
+						setNotifOpen(true);
+							}}
+						>
 						<BellIcon />
 						</IconButton>
 

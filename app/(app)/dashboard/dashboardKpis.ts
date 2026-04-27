@@ -144,25 +144,22 @@ const averageOrderValue =
       },
     },
     {
-      id: "kpi-marketing",
-      title: "Marketing",
-      value: "1.8k",
-      subtitle: "Campaign visits",
-      delta: { value: "+12.3%", tone: "up" },
-    },
-    {
-      id: "kpi-downtime",
-      title: "Downtime",
-      value: "12 min",
-      subtitle: "Last 30 days",
-      delta: { value: "-35%", tone: "up" },
-    },
-    {
-      id: "kpi-cpu-usage",
-      title: "CPU Usage",
-      value: "68%",
-      subtitle: "Current average",
-      delta: { value: "-4%", tone: "up" },
-    },
+	id: "kpi-marketing",
+	title: "Marketing",
+	value: "—",
+	subtitle: "Connect Meta Ads or Google Ads",
+},
+{
+	id: "kpi-downtime",
+	title: "Downtime",
+	value: "—",
+	subtitle: "Connect uptime monitoring",
+},
+{
+	id: "kpi-cpu-usage",
+	title: "CPU Usage",
+	value: "—",
+	subtitle: "Connect infrastructure monitoring",
+},
   ];
 }

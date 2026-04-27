@@ -3,6 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import DailyReportModal from "./DailyReportModal";
 
+type DailyReport = {
+	date: string;
+	headline: string;
+	bullets: string[];
+	reportId: string;
+};
+
 function todayKey() {
 	const d = new Date();
 	const yyyy = d.getFullYear();
@@ -13,38 +20,59 @@ function todayKey() {
 
 const STORAGE_KEY = "ser3bellum.dailyReport.lastSeen";
 
-export default function DailyReportModalController() {
+export default function DailyReportModalController({
+	workspaceId,
+}: {
+	workspaceId: string;
+}) {
 	const [open, setOpen] = useState(false);
+	const [report, setReport] = useState<DailyReport | null>(null);
 	const today = useMemo(() => todayKey(), []);
 
 	useEffect(() => {
-		try {
-			const lastSeen = localStorage.getItem(STORAGE_KEY);
-			if (lastSeen !== today) setOpen(true);
-		} catch {
-			setOpen(true);
+		let cancelled = false;
+
+		async function loadSummary() {
+			try {
+				const lastSeen = localStorage.getItem(STORAGE_KEY);
+
+				if (lastSeen === today) return;
+
+				const res = await fetch(
+					`/api/dashboard/latest-summary?workspaceId=${workspaceId}`
+				);
+
+				const data = await res.json();
+
+				if (!res.ok) {
+					throw new Error(data?.error || "Failed to load summary");
+				}
+
+				if (!cancelled && data.report) {
+					setReport(data.report);
+					setOpen(true);
+				}
+			} catch (error) {
+				console.error("Failed to hydrate daily summary modal:", error);
+			}
 		}
-	}, [today]);
+
+		loadSummary();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [today, workspaceId]);
 
 	const close = () => {
 		setOpen(false);
+
 		try {
 			localStorage.setItem(STORAGE_KEY, today);
 		} catch {}
 	};
 
-	const report = {
-		date: today,
-		headline: "Daily Ops Summary",
-		bullets: [
-			"Uptime: 99.97% (last 24h)",
-			"2 alerts resolved, 1 ongoing",
-			"Slowest endpoint: /api/health (p95 820ms)",
-		],
-		reportId: `daily-${today}`,
-	};
-
-	if (!open) return null;
+	if (!open || !report) return null;
 
 	return (
 		<DailyReportModal report={report} onClose={close} onMarkSeen={close} />

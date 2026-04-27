@@ -29,6 +29,13 @@ export const DASHBOARD_CARDS: DashboardCardDef[] = [
 		size: "medium",
 	},
 	{
+ 	 	id: "aiInsights",
+  		title: "AI Insights",
+  		subtitle: "Smart operational summary",
+  		defaultEnabled: true,
+		size: "large",
+		},
+	{
 		id: "sales",
 		title: "Sales",
 		subtitle: "Sales overview for the selected period",
@@ -93,11 +100,5 @@ export const DASHBOARD_CARDS: DashboardCardDef[] = [
 		defaultEnabled: true,
 		size: "medium",
 	},
-	{
- 	 	id: "aiInsights",
-  		title: "AI Insights",
-  		subtitle: "Smart operational summary",
-  		defaultEnabled: true,
-		size: "large",
-		},
+	
 ];
