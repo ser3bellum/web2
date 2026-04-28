@@ -70,8 +70,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       />
 
       <div className="flex min-w-0 flex-1 flex-col app-gradient">
-        <DailyReportModalController />
-
+      <DailyReportModalController
+	workspaceId={company?.id ?? user.id}
+/>
         <TopBar
           companyName={company?.name ?? user?.companyName ?? "Ser3bellum"}
           dictionary={dictionary}
