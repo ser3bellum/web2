@@ -75,13 +75,13 @@ export function AIInsightsCard({
 						</div>
 					) : isEmpty ? (
 						<div className="space-y-4 pb-16">
-							<h4 className="text-xs font-semibold uppercase tracking-[0.14em] text-white/75">
+							<h4 className="mt-10 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/75">
 								No insight yet
 							</h4>
-							<p className="max-w-2xl text-[1.05rem] font-semibold leading-snug text-white">
+							<p className="mt-4 max-w-3xl text-base font-semibold leading-7 text-white/90">
 								AI Insights will appear once enough connector activity is available.
 							</p>
-							<p className="max-w-2xl text-sm leading-7 text-white/88">
+							<p className="mt-6 max-w-3xl text-sm leading-7 text-white/90">
 								Connect more sources or wait for fresh events so the system can generate a meaningful summary.
 							</p>
 						</div>
@@ -93,7 +93,7 @@ export function AIInsightsCard({
 							<p className="max-w-2xl text-[1.05rem] font-semibold leading-snug text-white">
 								We could not generate an AI insight right now.
 							</p>
-							<p className="max-w-2xl text-sm leading-7 text-white/88">
+							<p className="max-w-2xl text-sm leading-7 text-white/80">
 								Please retry in a moment or check whether your connected sources are returning fresh data.
 							</p>
 						</div>
@@ -121,7 +121,7 @@ export function AIInsightsCard({
 								<h4 className="text-xs font-semibold uppercase tracking-[0.14em] text-white/75">
 									Recommended action
 								</h4>
-								<p className="mt-3 max-w-3xl text-sm leading-7 text-white/92">
+								<p className="mt-3 max-w-3xl text-sm leading-7 text-white/90">
 									{recommendedAction}
 								</p>
 								<p className="mt-3 max-w-3xl text-sm leading-6 text-white/72">

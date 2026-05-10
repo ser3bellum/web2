@@ -13,15 +13,21 @@ type IntegrationKey =
   | "stripe"
   | "google"
   | "slack"
-  | "github";
+  | "github"
+  | "meta";
 
+  type HydratedSource = {
+  label: string;
+  variant?: "default" | "success" | "warning" | "danger";
+};
 const NANGO_INTEGRATION_ID: Record<IntegrationKey, string> = {
   github: "github-app",
   google: "google-analytics",
   notion: "notion",
   shopify: "shopify",
   slack: "slack",
-  stripe: "stripe",
+  stripe: "stripe-api-key",
+  meta: "meta-marketing-api",
 };
 
 type Integration = {
@@ -214,8 +220,10 @@ export default function IntegrationsClient({ dictionary }: Props) {
         key: "stripe",
         name: "Stripe",
         subtitle: t.autoTrackOn,
-        primaryLabel: t.account,
+        primaryLabel: "Payments account",
         primaryValue: null,
+        secondaryLabel: "Revenue source",
+        secondaryValue: null,
         lastUpdate: null,
         createdOn: null,
         connected: false,
@@ -256,6 +264,19 @@ export default function IntegrationsClient({ dictionary }: Props) {
         createdOn: null,
         connected: false,
       },
+
+      {
+      key: "meta",
+      name: "Meta Ads",
+      subtitle: t.autoTrackOn,
+      primaryLabel: t.account,
+      primaryValue: null,
+      secondaryLabel: "Ad Account ID",
+      secondaryValue: null,
+      lastUpdate: null,
+      createdOn: null,
+      connected: false,
+    },
     ],
     [t]
   );
@@ -441,10 +462,11 @@ export default function IntegrationsClient({ dictionary }: Props) {
             </p>
 
             <div className="mt-4 flex flex-wrap gap-2">
+      
               <BadgePill>
-                <button type="button" onClick={() => connect("stripe")}>
-                  Stripe
-                </button>
+              <button type="button" onClick={() => connect("meta")}>
+               Meta Ads
+              </button>
               </BadgePill>
               <BadgePill>
                 <button type="button" onClick={() => connect("google")}>
@@ -469,6 +491,11 @@ export default function IntegrationsClient({ dictionary }: Props) {
               <BadgePill>
                 <button type="button" onClick={() => connect("github")}>
                   GitHub
+                </button>
+              </BadgePill>
+              <BadgePill>
+                <button type="button" onClick={() => connect("stripe")}>
+                  Stripe
                 </button>
               </BadgePill>
               <BadgePill>{t.moreComingSoon}</BadgePill>
@@ -498,13 +525,14 @@ export default function IntegrationsClient({ dictionary }: Props) {
               key={integration.key}
               integration={integration}
               t={t}
-              onToggle={(key, next) =>
-                setIntegrations((prev) =>
-                  prev.map((i) =>
-                    i.key === key ? { ...i, connected: next } : i
-                  )
-                )
-              }
+             onToggle={async (key, next) => {
+              if (next) {
+             await connect(key);
+            return;
+             }
+
+            console.warn("Disconnect not implemented yet:", key);
+}}
               onEdit={(key) => console.log("Edit integration:", key)}
             />
           ))}

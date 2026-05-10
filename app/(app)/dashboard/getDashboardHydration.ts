@@ -19,6 +19,8 @@ export type DashboardHydration = {
   }>;
 };
 
+type CardStatus = "ok" | "warn" | "error" | "disabled";
+
 type GaSeriesPoint = {
   t: number;
   label: string;
@@ -127,7 +129,8 @@ async function getFirstGa4PropertyId(params: {
     baseUrlOverride: "https://analyticsadmin.googleapis.com",
   });
 
-  const propName: string | undefined = propertiesRes?.data?.properties?.[0]?.name;
+  const propName: string | undefined =
+    propertiesRes?.data?.properties?.[0]?.name;
 
   return propName?.split("/")[1];
 }
@@ -160,7 +163,8 @@ async function runGaReport(params: {
     },
   });
 
-  const valueStr: string | undefined = res?.data?.rows?.[0]?.metricValues?.[0]?.value;
+  const valueStr: string | undefined =
+    res?.data?.rows?.[0]?.metricValues?.[0]?.value;
 
   return {
     sessions: valueStr ? Number(valueStr) : 0,
@@ -309,6 +313,112 @@ function buildShopifySalesSeries(params: {
 
   return series;
 }
+async function getStripeBalance(params: {
+  providerConfigKey: string;
+  connectionId: string;
+}) {
+  const nango = getNango();
+
+  const res = await nango.get({
+    endpoint: "/v1/balance",
+    providerConfigKey: params.providerConfigKey,
+    connectionId: params.connectionId,
+    baseUrlOverride: "https://api.stripe.com",
+  });
+
+  return res?.data;
+}
+
+function sumStripeBalanceAmounts(items: any[]) {
+  return items.reduce((sum, item) => {
+    return sum + Number(item?.amount ?? 0) / 100;
+  }, 0);
+}
+async function getStripeBalanceTransactions(params: {
+  providerConfigKey: string;
+  connectionId: string;
+  from: string;
+  to: string;
+}) {
+  const nango = getNango();
+
+  const createdGte = Math.floor(parseYyyyMmDd(params.from).getTime() / 1000);
+  const createdLte = Math.floor(
+    new Date(`${params.to}T23:59:59Z`).getTime() / 1000
+  );
+
+  const res = await nango.get({
+    endpoint: "/v1/balance_transactions",
+    providerConfigKey: params.providerConfigKey,
+    connectionId: params.connectionId,
+    baseUrlOverride: "https://api.stripe.com",
+    params: {
+      limit: 100,
+      "created[gte]": createdGte,
+      "created[lte]": createdLte,
+    },
+  });
+
+  return Array.isArray(res?.data?.data) ? res.data.data : [];
+}
+
+function sumStripeBalanceTransactions(transactions: any[]) {
+  return transactions.reduce(
+    (acc, tx) => {
+      const amount = Number(tx?.amount ?? 0) / 100;
+      const fee = Number(tx?.fee ?? 0) / 100;
+      const net = Number(tx?.net ?? 0) / 100;
+
+      acc.gross += amount;
+      acc.fees += fee;
+      acc.net += net;
+
+      return acc;
+    },
+    { gross: 0, fees: 0, net: 0 }
+  );
+}
+
+function buildStripeSalesSeries(params: {
+  transactions: any[];
+  from: string;
+  to: string;
+}): SalesSeriesPoint[] {
+  const valuesByDate = new Map<string, number>();
+
+  for (const tx of params.transactions) {
+    if (tx?.type !== "charge") continue;
+
+    const created = Number(tx?.created);
+    if (!Number.isFinite(created)) continue;
+
+    const dateKey = new Date(created * 1000).toISOString().slice(0, 10);
+    const value = Number(tx?.amount ?? 0) / 100;
+
+    valuesByDate.set(dateKey, (valuesByDate.get(dateKey) ?? 0) + value);
+  }
+
+  const series: SalesSeriesPoint[] = [];
+  const start = parseYyyyMmDd(params.from);
+  const end = parseYyyyMmDd(params.to);
+
+  for (
+    let cursor = new Date(start);
+    cursor.getTime() <= end.getTime();
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+  ) {
+    const dateKey = fmtYyyyMmDd(cursor);
+    const t = cursor.getTime();
+
+    series.push({
+      t,
+      label: formatDayLabel(t),
+      value: valuesByDate.get(dateKey) ?? 0,
+    });
+  }
+
+  return series;
+}
 
 export async function getDashboardHydration(params: {
   from: string | Date;
@@ -321,6 +431,8 @@ export async function getDashboardHydration(params: {
 
   const gaProviderConfigKey = "google-analytics";
   const shopifyProviderConfigKey = "shopify";
+  const metaProviderConfigKey = "meta-marketing-api";
+  const stripeProviderConfigKey = "stripe-api-key";
 
   let gaConnected = false;
   let gaConnectionId: string | undefined;
@@ -348,9 +460,33 @@ export async function getDashboardHydration(params: {
     shopifyConnected = false;
   }
 
-  let gaStatus: "ok" | "warn" | "error" | "disabled" = gaConnected
-    ? "warn"
-    : "disabled";
+  let metaConnected = false;
+  let metaConnectionId: string | undefined;
+
+  try {
+    metaConnectionId = await findNangoConnectionId({
+      providerConfigKey: metaProviderConfigKey,
+      endUserId,
+    });
+    metaConnected = Boolean(metaConnectionId);
+  } catch {
+    metaConnected = false;
+  }
+
+  let stripeConnected = false;
+  let stripeConnectionId: string | undefined;
+
+  try {
+    stripeConnectionId = await findNangoConnectionId({
+      providerConfigKey: stripeProviderConfigKey,
+      endUserId,
+    });
+    stripeConnected = Boolean(stripeConnectionId);
+  } catch {
+    stripeConnected = false;
+  }
+
+  let gaStatus: CardStatus = gaConnected ? "warn" : "disabled";
   let gaValue = gaConnected ? "Ready to fetch metrics" : "—";
   let gaDelta: string | undefined;
   let gaMeta: Record<string, any> = { from, to, series: [] };
@@ -416,15 +552,14 @@ export async function getDashboardHydration(params: {
     }
   }
 
-  let salesStatus: "ok" | "warn" | "error" | "disabled" = shopifyConnected
-    ? "warn"
-    : "disabled";
+  let salesStatus: CardStatus = shopifyConnected ? "warn" : "disabled";
   let salesValue = shopifyConnected ? "Ready to fetch sales" : "—";
   let salesDelta: string | undefined;
   let salesMeta: Record<string, any> = {
     from,
     to,
     provider: "shopify",
+    sourceLabel: "Shopify orders",
     series: [],
   };
 
@@ -456,8 +591,6 @@ export async function getDashboardHydration(params: {
         prevTo,
         currentOrderCount: currentOrders.length,
         previousOrderCount: prevOrders.length,
-        currentOrders,
-        prevOrders,
       });
 
       const currentRevenue = sumShopifyOrdersRevenue(currentOrders);
@@ -506,6 +639,140 @@ export async function getDashboardHydration(params: {
     }
   }
 
+  let stripeSalesStatus: CardStatus = stripeConnected ? "warn" : "disabled";
+  let stripeSalesValue = stripeConnected ? "Ready to fetch payments" : "—";
+  let stripeSalesDelta: string | undefined;
+  let stripeSalesMeta: Record<string, any> = {
+    from,
+    to,
+    provider: "stripe",
+    sourceLabel: "Stripe payments",
+    series: [],
+  };
+
+  let accountingStatus: CardStatus = stripeConnected ? "warn" : "disabled";
+  let accountingValue = stripeConnected ? "Ready to fetch accounting" : "—";
+  let accountingMeta: Record<string, any> = {
+    from,
+    to,
+    provider: "stripe",
+  };
+
+  if (stripeConnected && stripeConnectionId) {
+    try {
+      const { prevFrom, prevTo } = previousPeriod(from, to);
+
+      const [currentTxs, prevTxs, balance] = await Promise.all([
+      getStripeBalanceTransactions({
+      providerConfigKey: stripeProviderConfigKey,
+      connectionId: stripeConnectionId,
+      from,
+      to,
+      }),
+      getStripeBalanceTransactions({
+      providerConfigKey: stripeProviderConfigKey,
+      connectionId: stripeConnectionId,
+      from: prevFrom,
+      to: prevTo,
+      }),
+      getStripeBalance({
+      providerConfigKey: stripeProviderConfigKey,
+      connectionId: stripeConnectionId,
+      }),
+    ]);
+
+      console.log("STRIPE_SALES_DEBUG", {
+        endUserId,
+        connectionId: stripeConnectionId,
+        from,
+        to,
+        prevFrom,
+        prevTo,
+        currentTransactionCount: currentTxs.length,
+        previousTransactionCount: prevTxs.length,
+      });
+
+      const current = sumStripeBalanceTransactions(currentTxs);
+      const previous = sumStripeBalanceTransactions(prevTxs);
+
+      const currency =
+        currentTxs
+          .find((tx: any) => typeof tx?.currency === "string")
+          ?.currency?.toUpperCase() ??
+        prevTxs
+          .find((tx: any) => typeof tx?.currency === "string")
+          ?.currency?.toUpperCase() ??
+        "EUR";
+
+      const series = buildStripeSalesSeries({
+        transactions: currentTxs,
+        from,
+        to,
+      });
+
+      stripeSalesStatus = "ok";
+      stripeSalesValue = formatCurrency(current.gross, currency);
+      stripeSalesDelta = pctDelta(current.gross, previous.gross);
+      stripeSalesMeta = {
+        ...stripeSalesMeta,
+        prevFrom,
+        prevTo,
+        currency,
+        currentRevenue: current.gross,
+        previousRevenue: previous.gross,
+        transactionCount: currentTxs.length,
+        previousTransactionCount: prevTxs.length,
+        fees: current.fees,
+        net: current.net,
+        series,
+      };
+      const pendingBalance = sumStripeBalanceAmounts(
+      Array.isArray(balance?.pending) ? balance.pending : []
+      );
+
+      const availableBalance = sumStripeBalanceAmounts(
+      Array.isArray(balance?.available) ? balance.available : []
+      );
+
+      accountingStatus = "ok";
+      accountingValue = formatCurrency(pendingBalance + availableBalance, currency);
+      accountingMeta = {
+      ...accountingMeta,
+      currency,
+      gross: current.gross,
+      fees: current.fees,
+      net: current.net,
+      pendingBalance,
+      availableBalance,
+      totalBalance: pendingBalance + availableBalance,
+      transactionCount: currentTxs.length,
+    };
+    } catch (e: any) {
+      console.error(
+        "STRIPE_FETCH_FAILED:",
+        e?.response?.data || e?.message || e
+      );
+
+      stripeSalesStatus = "error";
+      stripeSalesValue = "Stripe fetch failed";
+      stripeSalesMeta = {
+        ...stripeSalesMeta,
+        error: e?.response?.data ?? e?.message ?? "unknown",
+        series: [],
+      };
+
+      accountingStatus = "error";
+      accountingValue = "Stripe accounting fetch failed";
+      accountingMeta = {
+        ...accountingMeta,
+        error: e?.response?.data ?? e?.message ?? "unknown",
+      };
+    }
+  }
+
+  const anyConnected =
+    gaConnected || shopifyConnected || metaConnected || stripeConnected;
+
   const hydration: DashboardHydration = {
     range: { from, to },
     integrations: [
@@ -521,17 +788,58 @@ export async function getDashboardHydration(params: {
         connected: shopifyConnected,
         connectionId: shopifyConnectionId,
       },
+      {
+        key: "meta",
+        providerConfigKey: metaProviderConfigKey,
+        connected: metaConnected,
+        connectionId: metaConnectionId,
+      },
+      {
+        key: "stripe",
+        providerConfigKey: stripeProviderConfigKey,
+        connected: stripeConnected,
+        connectionId: stripeConnectionId,
+      },
     ],
     cards: [
       {
-        key: "integrations",
-        title: "Integrations",
-        status: gaConnected || shopifyConnected ? "ok" : "disabled",
-        value:
-          gaConnected || shopifyConnected
-            ? "Providers connected"
-            : "Connect a provider",
+  key: "integrations",
+  title: "Integrations",
+  status: anyConnected ? "ok" : "disabled",
+  value: anyConnected ? "Providers connected" : "Connect a provider",
+  meta: {
+    connectedIntegrations: [
+      {
+        key: "google",
+        label: "Google Analytics",
+        providerConfigKey: gaProviderConfigKey,
+        connected: gaConnected,
+        connectionId: gaConnectionId,
       },
+      {
+        key: "shopify",
+        label: "Shopify",
+        providerConfigKey: shopifyProviderConfigKey,
+        connected: shopifyConnected,
+        connectionId: shopifyConnectionId,
+      },
+      {
+        key: "meta",
+        label: "Meta Marketing API",
+        providerConfigKey: metaProviderConfigKey,
+        connected: metaConnected,
+        connectionId: metaConnectionId,
+      },
+      {
+        key: "stripe",
+        label: "Stripe",
+        providerConfigKey: stripeProviderConfigKey,
+        connected: stripeConnected,
+        connectionId: stripeConnectionId,
+      },
+    ].filter((integration) => integration.connected),
+  },
+},
       {
         key: "ga_overview",
         title: "Traffic (GA4)",
@@ -547,6 +855,35 @@ export async function getDashboardHydration(params: {
         value: salesValue,
         delta: salesDelta,
         meta: salesMeta,
+      },
+      {
+        key: "stripe_sales",
+        title: "Stripe Payments",
+        status: stripeSalesStatus,
+        value: stripeSalesValue,
+        delta: stripeSalesDelta,
+        meta: stripeSalesMeta,
+      },
+      {
+        key: "accounting",
+        title: "Accounting",
+        status: accountingStatus,
+        value: accountingValue,
+        meta: accountingMeta,
+      },
+      {
+        key: "meta_ads",
+        title: "Meta Ads",
+        status: metaConnected ? "warn" : "disabled",
+        value: metaConnected ? "Basic OAuth connected" : "Connect Meta Ads",
+        delta: metaConnected ? "Limited access" : undefined,
+        meta: {
+          providerConfigKey: metaProviderConfigKey,
+          connectionId: metaConnectionId,
+          accessLevel: metaConnected ? "basic_oauth" : "not_connected",
+          from,
+          to,
+        },
       },
     ],
   };

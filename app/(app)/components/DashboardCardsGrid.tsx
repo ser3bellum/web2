@@ -15,6 +15,7 @@ import {
 } from "app/(app)/components/dashboardPreferences";
 import type { ReactNode } from "react";
 import { SalesMiniBarChart } from "app/(app)/components/SalesMiniBarChart";
+import { AccountingBalanceBreakdown } from "app/(app)/components/AccountingBalanceBreakdown";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import type { AIInsightPayload } from "@/types/ai";
 
@@ -27,6 +28,11 @@ type HydrationCard = {
   meta?: Record<string, any>;
 };
 
+type HydratedSource = {
+  label: string;
+  variant?: "default" | "success" | "warning" | "danger";
+};
+
 type DashboardCardsGridLabels = Dictionary["dashboard"];
 
 function renderIconSafe(icon: ReactNode) {
@@ -37,7 +43,9 @@ function renderIconSafe(icon: ReactNode) {
 const HYDRATION_KEY_BY_CARD_ID: Record<string, string> = {
   analytics: "ga_overview",
   integrations: "integrations",
+  marketing: "meta_ads",
   sales: "sales",
+  accounting: "accounting",
   aiInsights: "ai_insights",
 };
 
@@ -61,6 +69,28 @@ function StatusPill({
     <span className="rounded-full border px-2 py-0.5 text-[11px] text-slate-600">
       {label}
     </span>
+  );
+}
+
+function EmptyCardState({
+  labels,
+  description,
+}: {
+  labels: DashboardCardsGridLabels;
+  description?: string;
+}) {
+  return (
+    <div className="text-sm opacity-70">
+      {description ?? labels.emptyState.noData}
+      <br />
+      <a
+        href="/settings/integrations"
+        className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-100"
+      >
+        {labels.emptyState.connectProvider}
+        <span aria-hidden>→</span>
+      </a>
+    </div>
   );
 }
 
@@ -96,6 +126,86 @@ function toNumber(value: unknown): number | null {
     return Number.isFinite(parsed) ? parsed : null;
   }
   return null;
+}
+function getHydratedSourcesForCard(
+  cardId: DashboardCardId,
+  integrations: HydrationCard[] | undefined
+): HydratedSource[] | undefined {
+  const integrationsCard = integrations?.find((x) => x.key === "integrations");
+  const connected = integrationsCard?.meta?.connectedIntegrations;
+
+  if (!Array.isArray(connected)) return undefined;
+
+  const has = (key: string) =>
+    connected.some((integration: any) => integration.key === key);
+
+  if (cardId === "marketing") {
+    const sources: HydratedSource[] = [];
+
+    if (has("meta")) {
+      sources.push({
+        label: "Meta Marketing API",
+        variant: "warning",
+      });
+    }
+
+    return sources.length ? sources : undefined;
+  }
+
+  if (cardId === "sales") {
+    const sources: HydratedSource[] = [];
+
+    if (has("shopify")) {
+      sources.push({
+        label: "Shopify",
+        variant: "success",
+      });
+    }
+
+    return sources.length ? sources : undefined;
+  }
+
+  if (cardId === "analytics") {
+    const sources: HydratedSource[] = [];
+
+    if (has("google")) {
+      sources.push({
+        label: "Google Analytics",
+        variant: "success",
+      });
+    }
+
+    return sources.length ? sources : undefined;
+  }
+
+  if (cardId === "accounting") {
+    const sources: HydratedSource[] = [];
+
+    if (has("stripe")) {
+      sources.push({
+        label: "Stripe",
+        variant: "success",
+      });
+    }
+
+    if (has("quickbooks")) {
+      sources.push({
+        label: "QuickBooks",
+        variant: "success",
+      });
+    }
+
+    if (has("xero")) {
+      sources.push({
+        label: "Xero",
+        variant: "success",
+      });
+    }
+
+    return sources.length ? sources : undefined;
+  }
+
+  return undefined;
 }
 
 export default function DashboardCardsGrid({
@@ -276,6 +386,15 @@ export default function DashboardCardsGrid({
               ? formatCurrency(salesRevenue, salesCurrency)
               : h?.value ?? "";
 
+          const updatedLabel =
+            hasHydratedData && typeof h?.meta?.updatedLabel === "string"
+            ? h.meta.updatedLabel
+            : hasHydratedData
+          ? "Updated just now"
+          : undefined;
+
+          const hydratedSources = getHydratedSourcesForCard(c.id, hydrationCards);
+
           if (c.id === "aiInsights") {
             return (
               <AIInsightsCard
@@ -292,12 +411,14 @@ export default function DashboardCardsGrid({
 
           return (
             <Card
-              key={c.id}
-              title={localizedTitle}
-              subtitle={localizedSubtitle}
-              rightSlot={renderIconSafe((c as any).icon)}
-              className="h-[408px]"
-            >
+            key={c.id}
+            title={localizedTitle}
+            subtitle={localizedSubtitle}
+            sources={hydratedSources}
+            updatedLabel={updatedLabel}
+            rightSlot={renderIconSafe((c as any).icon)}
+            className="h-[408px]"
+              >
               {h && (
                 <div className="mb-3 flex items-center justify-between">
                   <div className="text-sm font-semibold text-slate-900">
@@ -313,51 +434,74 @@ export default function DashboardCardsGrid({
               )}
 
               {c.id === "analytics" ? (
-                <AnalyticsMiniChart
-                  series={Array.isArray(h?.meta?.series) ? h.meta.series : []}
-                  allowRangeToggle={false}
-                  initialRange="7d"
-                />
+               <AnalyticsMiniChart
+              series={Array.isArray(h?.meta?.series) ? h.meta.series : []}
+              allowRangeToggle
+              initialRange="30d"
+              />
               ) : c.id === "sales" ? (
                 hasHydratedData ? (
                   <div className="space-y-4">
                     <div className="text-sm text-slate-600">
                       {salesOrderCount !== null
-                        ? `${salesOrderCount} commande${salesOrderCount > 1 ? "s" : ""}`
+                        ? `${salesOrderCount} commande${
+                            salesOrderCount > 1 ? "s" : ""
+                          }`
                         : h?.meta?.description ?? localizedSubtitle}
                     </div>
 
                     <SalesMiniBarChart
-                      series={Array.isArray(h?.meta?.series) ? h.meta.series : []}
+                      series={
+                        Array.isArray(h?.meta?.series) ? h.meta.series : []
+                      }
                       currency={salesCurrency}
-                      height={170}
+                      height={190}
                     />
                   </div>
                 ) : (
-                  <div className="text-sm opacity-70">
-                    {labels.emptyState.noData}
-                    <br />
-                    <a
-                      href="/settings/integrations"
-                      className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-100"
-                    >
-                      {labels.emptyState.connectProvider}
-                      <span aria-hidden>→</span>
-                    </a>
-                  </div>
+                  <EmptyCardState labels={labels} />
                 )
+              ) : c.id === "marketing" ? (
+                hasHydratedData ? (
+                  <div className="space-y-3 text-sm text-slate-600">
+
+                    {typeof h?.meta?.accessLevel === "string" ? (
+                      <div>
+                        <span className="font-medium text-slate-800">
+                          Access:
+                        </span>{" "}
+                        {h.meta.accessLevel}
+                      </div>
+                    ) : null}
+
+                    {typeof h?.meta?.connectionId === "string" ? (
+                      <div className="break-all text-xs text-slate-400">
+                        Connection: {h.meta.connectionId}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <EmptyCardState labels={labels} />
+                )
+                ) : c.id === "accounting" ? (
+                hasHydratedData ? (
+          <AccountingBalanceBreakdown
+           availableBalance={toNumber(h?.meta?.availableBalance) ?? 0}
+           pendingBalance={toNumber(h?.meta?.pendingBalance) ?? 0}
+          fees={toNumber(h?.meta?.fees) ?? 0}
+          net={toNumber(h?.meta?.net) ?? 0}
+          currency={
+        typeof h?.meta?.currency === "string" ? h.meta.currency : "EUR"
+      }
+    />
+  ) : (
+    <EmptyCardState labels={labels} />
+  )
               ) : (
-                <div className="text-sm opacity-70">
-                  {(c as any).description ?? labels.emptyState.noData}
-                  <br />
-                  <a
-                    href="/settings/integrations"
-                    className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-100"
-                  >
-                    {labels.emptyState.connectProvider}
-                    <span aria-hidden>→</span>
-                  </a>
-                </div>
+                <EmptyCardState
+                  labels={labels}
+                  description={(c as any).description}
+                />
               )}
             </Card>
           );

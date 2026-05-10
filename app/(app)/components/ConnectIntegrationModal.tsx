@@ -9,7 +9,9 @@ type IntegrationKey =
 	| "stripe"
 	| "google"
 	| "slack"
-	| "github";
+	| "github"
+	| "meta"
+	;
 
 const INTEGRATIONS: Record<IntegrationKey, { name: string }> = {
 	notion: { name: "Notion" },
@@ -18,6 +20,8 @@ const INTEGRATIONS: Record<IntegrationKey, { name: string }> = {
 	google: { name: "Google" },
 	slack: { name: "Slack" },
 	github: { name: "GitHub" },
+	meta: { name: "Meta Ads" },
+
 };
 
 export function ConnectIntegrationModal({

@@ -247,6 +247,7 @@ export function KpiStrip({
               <Card
                 title={title}
                 subtitle={subtitle}
+                subtitleVariant="kpi"
                 className={[
                   "min-h-[88px]",
                   "cursor-pointer select-none",

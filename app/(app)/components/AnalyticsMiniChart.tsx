@@ -15,7 +15,7 @@ import {
 } from "recharts";
 import { cn } from "@/app/(app)/lib/cn";
 
-type RangeKey = "7d" | "30d" | "90d";
+type RangeKey = "7d" | "30d" | "60d";
 
 type Point = {
   t: number;
@@ -81,7 +81,7 @@ function compactNumber(n: number) {
 }
 
 function filterSeriesByRange(series: Point[], range: RangeKey): Point[] {
-  const days = range === "7d" ? 7 : range === "30d" ? 30 : 90;
+  const days = range === "7d" ? 7 : range === "30d" ? 30 : 60;
   return series.slice(-days);
 }
 
@@ -93,6 +93,7 @@ export function AnalyticsMiniChart({
   allowRangeToggle = true,
   initialRange = "30d",
 }: AnalyticsMiniChartProps) {
+  
   const [range, setRange] = useState<RangeKey>(initialRange);
   const [hover, setHover] = useState<Point | null>(null);
 
@@ -163,44 +164,23 @@ export function AnalyticsMiniChart({
     <div className={cn("flex h-full min-w-0 flex-col overflow-hidden", className)}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-xs uppercase tracking-wide text-zinc-500">
-            Visits
-          </div>
-
-          <div className="mt-1 flex items-baseline gap-2">
-            <div className="text-2xl font-semibold text-zinc-900">
-              {niceNumber(liveValue)}
-            </div>
-            <div className="text-sm text-zinc-500">{liveLabel}</div>
-          </div>
-
-          <div className="mt-1 text-xs text-zinc-500">
-            Avg/day {niceNumber(avg)} • Peak {niceNumber(peak)}
-          </div>
+          <div>
+        <div className="flex items-baseline gap-2">
+        <div className="text-2xl font-semibold leading-none text-zinc-900">
+        {niceNumber(liveValue)}
         </div>
 
-        {allowRangeToggle ? (
-          <div className="flex gap-1 rounded-lg border border-black/10 bg-white/60 p-1">
-            {(["7d", "30d", "90d"] as RangeKey[]).map((k) => (
-              <button
-                type="button"
-                key={k}
-                onClick={() => setRange(k)}
-                className={cn(
-                  "h-8 rounded-md px-2 text-xs transition-colors",
-                  range === k
-                    ? "bg-white text-zinc-900 shadow-sm"
-                    : "text-zinc-600 hover:bg-white/70"
-                )}
-              >
-                {k}
-              </button>
-            ))}
-          </div>
-        ) : null}
+         <div className="text-sm text-zinc-500">{liveLabel}</div>
+
+      <div className="text-xs text-zinc-500">
+      Avg/day {niceNumber(avg)} • Peak {niceNumber(peak)}
+        </div>
+      </div>
+    </div>
+        </div>
       </div>
 
-      <div className="mt-3 h-[190px] min-w-0 overflow-hidden rounded-xl">
+      <div className="mt-3 h-[170px] min-w-0 overflow-hidden rounded-xl">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={data}
@@ -245,6 +225,23 @@ export function AnalyticsMiniChart({
           </AreaChart>
         </ResponsiveContainer>
       </div>
+      {allowRangeToggle ? (
+      <div className="mt-1 flex justify-end gap-5 pr-2 text-[11px] font-medium">
+    {(["7d", "30d", "60d"] as RangeKey[]).map((k) => (
+      <button
+        key={k}
+        type="button"
+        onClick={() => setRange(k)}
+        className={cn(
+          "transition-colors hover:text-slate-500",
+          range === k ? "text-indigo-500" : "text-slate-300"
+        )}
+      >
+        {k}
+      </button>
+    ))}
+  </div>
+) : null}
     </div>
   );
 }

@@ -11,13 +11,15 @@ type ConnectionStatusRequest = {
 
 function getDefaultPrimaryValue(providerConfigKey: string): string | null {
   switch (providerConfigKey) {
+    case "meta-marketing-api":
+      return "Connected";
     case "slack":
       return "Connected workspace";
     case "google-analytics":
       return "Connected property";
     case "github-app":
       return "Connected organization";
-    case "stripe":
+    case "stripe-api-key":
       return "Connected account";
     case "shopify":
       return "Connected store";
@@ -98,15 +100,26 @@ export async function POST(req: Request) {
           provider: normalizedProviderConfigKey,
         });
 
-        return {
-          providerConfigKey: normalizedProviderConfigKey,
-          connected: true,
-          connectionId,
-          primaryValue: getDefaultPrimaryValue(normalizedProviderConfigKey),
-          secondaryValue: connectionId,
-          lastUpdate: null,
-          createdOn: null,
-        };
+      const isMeta = normalizedProviderConfigKey === "meta-marketing-api";
+      const isStripe = normalizedProviderConfigKey === "stripe-api-key";
+
+      return {
+        providerConfigKey: normalizedProviderConfigKey,
+        connected: true,
+        connectionId,
+        primaryValue: isMeta
+        ? "Basic OAuth connected"
+        : isStripe
+        ? "Payments connected"
+        : getDefaultPrimaryValue(normalizedProviderConfigKey),
+        secondaryValue: isMeta
+        ? "Limited access"
+       : isStripe
+        ? "Feeds Sales + Accounting"
+      : connectionId,
+      lastUpdate: null,
+      createdOn: null,
+    };
       } catch {
         return {
           providerConfigKey: normalizedProviderConfigKey,
