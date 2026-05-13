@@ -14,7 +14,8 @@ type IntegrationKey =
   | "google"
   | "slack"
   | "github"
-  | "meta";
+  | "meta"
+  | "googleAds";
 
   type HydratedSource = {
   label: string;
@@ -23,6 +24,7 @@ type IntegrationKey =
 const NANGO_INTEGRATION_ID: Record<IntegrationKey, string> = {
   github: "github-app",
   google: "google-analytics",
+  googleAds: "google-ads",
   notion: "notion",
   shopify: "shopify",
   slack: "slack",
@@ -235,6 +237,18 @@ export default function IntegrationsClient({ dictionary }: Props) {
         primaryLabel: t.property,
         primaryValue: null,
         secondaryLabel: t.propertyId,
+        secondaryValue: null,
+        lastUpdate: null,
+        createdOn: null,
+        connected: false,
+      },
+      {
+        key: "googleAds",
+        name: "Google Ads",
+        subtitle: t.autoTrackOn,
+        primaryLabel: "Campaigns",
+        primaryValue: null,
+        secondaryLabel: "Customer ID",
         secondaryValue: null,
         lastUpdate: null,
         createdOn: null,
@@ -472,6 +486,11 @@ export default function IntegrationsClient({ dictionary }: Props) {
                 <button type="button" onClick={() => connect("google")}>
                   Google
                 </button>
+              </BadgePill>
+              <BadgePill>
+              <button type="button" onClick={() => connect("googleAds")}>
+                Google Ads
+               </button>
               </BadgePill>
               <BadgePill>
                 <button type="button" onClick={() => connect("shopify")}>

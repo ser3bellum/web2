@@ -8,6 +8,7 @@ type IntegrationKey =
 	| "shopify"
 	| "stripe"
 	| "google"
+	| "googleAds"
 	| "slack"
 	| "github"
 	| "meta"
@@ -18,6 +19,7 @@ const INTEGRATIONS: Record<IntegrationKey, { name: string }> = {
 	shopify: { name: "Shopify" },
 	stripe: { name: "Stripe" },
 	google: { name: "Google" },
+	googleAds: { name: "Google Ads" },
 	slack: { name: "Slack" },
 	github: { name: "GitHub" },
 	meta: { name: "Meta Ads" },

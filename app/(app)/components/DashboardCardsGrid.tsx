@@ -43,7 +43,8 @@ function renderIconSafe(icon: ReactNode) {
 const HYDRATION_KEY_BY_CARD_ID: Record<string, string> = {
   analytics: "ga_overview",
   integrations: "integrations",
-  marketing: "meta_ads",
+  social: "meta_ads",
+  marketing: "google_ads",
   sales: "sales",
   accounting: "accounting",
   aiInsights: "ai_insights",
@@ -140,30 +141,30 @@ function getHydratedSourcesForCard(
     connected.some((integration: any) => integration.key === key);
 
   if (cardId === "marketing") {
-    const sources: HydratedSource[] = [];
+  const sources: HydratedSource[] = [];
 
-    if (has("meta")) {
-      sources.push({
-        label: "Meta Marketing API",
-        variant: "warning",
-      });
-    }
-
-    return sources.length ? sources : undefined;
+  if (has("googleAds")) {
+    sources.push({
+      label: "Google Ads",
+      variant: "success",
+    });
   }
 
-  if (cardId === "sales") {
-    const sources: HydratedSource[] = [];
+  return sources.length ? sources : undefined;
+}
 
-    if (has("shopify")) {
-      sources.push({
-        label: "Shopify",
-        variant: "success",
-      });
-    }
+if (cardId === "social") {
+  const sources: HydratedSource[] = [];
 
-    return sources.length ? sources : undefined;
+  if (has("meta")) {
+    sources.push({
+      label: "Meta Marketing API",
+      variant: "warning",
+    });
   }
+
+  return sources.length ? sources : undefined;
+}
 
   if (cardId === "analytics") {
     const sources: HydratedSource[] = [];
@@ -462,27 +463,26 @@ export default function DashboardCardsGrid({
                   <EmptyCardState labels={labels} />
                 )
               ) : c.id === "marketing" ? (
-                hasHydratedData ? (
-                  <div className="space-y-3 text-sm text-slate-600">
-
-                    {typeof h?.meta?.accessLevel === "string" ? (
-                      <div>
-                        <span className="font-medium text-slate-800">
-                          Access:
-                        </span>{" "}
-                        {h.meta.accessLevel}
-                      </div>
-                    ) : null}
-
-                    {typeof h?.meta?.connectionId === "string" ? (
-                      <div className="break-all text-xs text-slate-400">
-                        Connection: {h.meta.connectionId}
-                      </div>
-                    ) : null}
-                  </div>
-                ) : (
-                  <EmptyCardState labels={labels} />
-                )
+              hasHydratedData ? (
+              <div className="space-y-3 text-sm text-slate-600">
+              <div>Google Ads data will appear here.</div>
+              </div>
+               ) : (
+              <EmptyCardState labels={labels} />
+               )
+              ) : c.id === "social" ? (
+              hasHydratedData ? (
+             <div className="space-y-3 text-sm text-slate-600">
+              {typeof h?.meta?.accessLevel === "string" ? (
+              <div>
+              <span className="font-medium text-slate-800">Access:</span>{" "}
+             {h.meta.accessLevel}
+            </div>
+            ) : null}
+            </div>
+           ) : (
+         <EmptyCardState labels={labels} />
+           )
                 ) : c.id === "accounting" ? (
                 hasHydratedData ? (
           <AccountingBalanceBreakdown

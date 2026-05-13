@@ -142,14 +142,6 @@ async function runGaReport(params: {
   from: string;
   to: string;
 }) {
-  if (process.env.NODE_ENV !== "production") {
-    console.log("GA_RUNREPORT_PAYLOAD:", {
-      propertyId: params.propertyId,
-      from: params.from,
-      to: params.to,
-    });
-  }
-
   const nango = getNango();
 
   const res = await nango.post({
@@ -159,15 +151,22 @@ async function runGaReport(params: {
     baseUrlOverride: "https://analyticsdata.googleapis.com",
     data: {
       dateRanges: [{ startDate: params.from, endDate: params.to }],
-      metrics: [{ name: "sessions" }],
+      metrics: [
+        { name: "activeUsers" },
+        { name: "sessions" },
+        { name: "newUsers" },
+        { name: "screenPageViews" },
+      ],
     },
   });
 
-  const valueStr: string | undefined =
-    res?.data?.rows?.[0]?.metricValues?.[0]?.value;
+  const metricValues = res?.data?.rows?.[0]?.metricValues ?? [];
 
   return {
-    sessions: valueStr ? Number(valueStr) : 0,
+    users: Number(metricValues?.[0]?.value ?? 0),
+    sessions: Number(metricValues?.[1]?.value ?? 0),
+    newUsers: Number(metricValues?.[2]?.value ?? 0),
+    views: Number(metricValues?.[3]?.value ?? 0),
   };
 }
 
@@ -188,7 +187,7 @@ async function runGaDailySeriesReport(params: {
     data: {
       dateRanges: [{ startDate: params.from, endDate: params.to }],
       dimensions: [{ name: "date" }],
-      metrics: [{ name: "sessions" }],
+      metrics: [{ name: "screenPageViews" }],
       orderBys: [
         {
           dimension: {
@@ -433,6 +432,7 @@ export async function getDashboardHydration(params: {
   const shopifyProviderConfigKey = "shopify";
   const metaProviderConfigKey = "meta-marketing-api";
   const stripeProviderConfigKey = "stripe-api-key";
+  const googleAdsProviderConfigKey = "google-ads";
 
   let gaConnected = false;
   let gaConnectionId: string | undefined;
@@ -446,6 +446,19 @@ export async function getDashboardHydration(params: {
   } catch {
     gaConnected = false;
   }
+
+  let googleAdsConnected = false;
+  let googleAdsConnectionId: string | undefined;
+
+  try {
+  googleAdsConnectionId = await findNangoConnectionId({
+    providerConfigKey: googleAdsProviderConfigKey,
+    endUserId,
+  });
+  googleAdsConnected = Boolean(googleAdsConnectionId);
+} catch {
+  googleAdsConnected = false;
+}
 
   let shopifyConnected = false;
   let shopifyConnectionId: string | undefined;
@@ -528,16 +541,24 @@ export async function getDashboardHydration(params: {
           }),
         ]);
 
-        gaStatus = "ok";
-        gaValue = `${formatInt(current.sessions)} sessions`;
-        gaDelta = pctDelta(current.sessions, prev.sessions);
-        gaMeta = {
-          ...gaMeta,
-          propertyId,
-          prevFrom,
-          prevTo,
-          series,
-        };
+       gaStatus = "ok";
+      gaValue = `${formatInt(current.users)} users`;
+      gaDelta = pctDelta(current.users, prev.users);
+      gaMeta = {
+       ...gaMeta,
+      propertyId,
+      prevFrom,
+      prevTo,
+      users: current.users,
+      sessions: current.sessions,
+      newUsers: current.newUsers,
+      views: current.views,
+      previousUsers: prev.users,
+      previousSessions: prev.sessions,
+      previousNewUsers: prev.newUsers,
+      previousViews: prev.views,
+      series,
+      };
       }
     } catch (e: any) {
       console.error("GA_FETCH_FAILED:", e?.response?.data || e?.message || e);
@@ -771,7 +792,8 @@ export async function getDashboardHydration(params: {
   }
 
   const anyConnected =
-    gaConnected || shopifyConnected || metaConnected || stripeConnected;
+    gaConnected || shopifyConnected || metaConnected || stripeConnected ||
+  googleAdsConnected;
 
   const hydration: DashboardHydration = {
     range: { from, to },
@@ -781,6 +803,12 @@ export async function getDashboardHydration(params: {
         providerConfigKey: gaProviderConfigKey,
         connected: gaConnected,
         connectionId: gaConnectionId,
+      },
+      {
+      key: "googleAds",
+      providerConfigKey: googleAdsProviderConfigKey,
+      connected: googleAdsConnected,
+      connectionId: googleAdsConnectionId,
       },
       {
         key: "shopify",
@@ -815,6 +843,13 @@ export async function getDashboardHydration(params: {
         providerConfigKey: gaProviderConfigKey,
         connected: gaConnected,
         connectionId: gaConnectionId,
+      },
+      {
+        key: "googleAds",
+        label: "Google Ads",
+        providerConfigKey: googleAdsProviderConfigKey,
+        connected: googleAdsConnected,
+        connectionId: googleAdsConnectionId,
       },
       {
         key: "shopify",
@@ -872,8 +907,22 @@ export async function getDashboardHydration(params: {
         meta: accountingMeta,
       },
       {
+        key: "google_ads",
+        title: "Marketing",
+        status: googleAdsConnected ? "warn" : "disabled",
+        value: googleAdsConnected ? "Google Ads connected" : "Connect Google Ads",
+        delta: googleAdsConnected ? "Awaiting campaign data" : undefined,
+        meta: {
+        providerConfigKey: googleAdsProviderConfigKey,
+        connectionId: googleAdsConnectionId,
+        accessLevel: googleAdsConnected ? "oauth_connected" : "not_connected",
+        from,
+        to,
+        },
+      },
+      {
         key: "meta_ads",
-        title: "Meta Ads",
+        title: "Social Network",
         status: metaConnected ? "warn" : "disabled",
         value: metaConnected ? "Basic OAuth connected" : "Connect Meta Ads",
         delta: metaConnected ? "Limited access" : undefined,

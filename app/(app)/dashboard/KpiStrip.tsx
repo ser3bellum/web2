@@ -305,82 +305,139 @@ export function KpiStrip({
                 <div className="flex h-64 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-sm text-red-600">
                   {analyticsError}
                 </div>
-              ) : analyticsData ? (
-                <>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="text-xs text-slate-500">Visites</div>
-                      <div className="mt-1 text-2xl font-semibold text-slate-900">
-                        {analyticsData.totalVisits.toLocaleString("fr-FR")}
-                      </div>
-                      <div className="mt-1 text-xs text-emerald-600">
-                        +{analyticsData.visitsDelta.toFixed(1).replace(".", ",")}%
-                      </div>
-                    </div>
+           ) : analyticsData ? (
+  <>
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div className="text-xs text-slate-500">Users</div>
 
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="text-xs text-slate-500">
-                        Page la plus consultée
-                      </div>
-                      <div
-                        className="mt-1 truncate text-lg font-semibold text-slate-900"
-                        title={analyticsData.topPage}
-                      >
-                        {analyticsData.topPage}
-                      </div>
-                    </div>
+        <div className="mt-1 text-2xl font-semibold text-slate-900">
+          {(
+            analyticsData.users ??
+            0
+          ).toLocaleString("fr-FR")}
+        </div>
+      </div>
 
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="text-xs text-slate-500">
-                        Taux de rebond
-                      </div>
-                      <div className="mt-1 text-2xl font-semibold text-slate-900">
-                        {analyticsData.bounceRate.toFixed(1).replace(".", ",")} %
-                      </div>
-                    </div>
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div className="text-xs text-slate-500">Sessions</div>
 
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="text-xs text-slate-500">
-                        Taux d’engagement
-                      </div>
-                      <div className="mt-1 text-2xl font-semibold text-slate-900">
-                        {analyticsData.engagementRate.toFixed(1).replace(".", ",")} %
-                      </div>
-                    </div>
-                  </div>
+        <div className="mt-1 text-2xl font-semibold text-slate-900">
+          {(analyticsData.sessions ?? 0).toLocaleString("fr-FR")}
+        </div>
+      </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                    <div className="mb-4">
-                      <div className="text-sm font-medium text-slate-900">
-                        Comparaison de période
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        {analyticsData.selectedRangeLabel} vs{" "}
-                        {analyticsData.previousRangeLabel}
-                      </div>
-                    </div>
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div className="text-xs text-slate-500">New users</div>
 
-                    <div className="grid gap-4">
-                      <ComparisonPanel
-                        title="Visites"
-                        currentLabel={analyticsData.selectedRangeLabel}
-                        previousLabel={analyticsData.previousRangeLabel}
-                        currentValue={analyticsData.comparison.visits.current}
-                        previousValue={analyticsData.comparison.visits.previous}
-                        format="number"
-                      />
+        <div className="mt-1 text-2xl font-semibold text-slate-900">
+          {(analyticsData.newUsers ?? 0).toLocaleString("fr-FR")}
+        </div>
+      </div>
 
-                      <ComparisonPanel
-                        title="Taux de rebond"
-                        currentLabel={analyticsData.selectedRangeLabel}
-                        previousLabel={analyticsData.previousRangeLabel}
-                        currentValue={analyticsData.comparison.bounceRate.current}
-                        previousValue={analyticsData.comparison.bounceRate.previous}
-                        format="percent"
-                      />
-                    </div>
-                  </div>
-                </>
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div className="text-xs text-slate-500">Top page</div>
+
+       <div
+  className="mt-1 break-all text-sm font-semibold text-slate-900"
+  title={analyticsData.topPage ?? ""}
+>
+  {analyticsData.topPage
+    ?.replace(/^https?:\/\//, "")
+    ?.replace(/^www\./, "www.") ?? "—"}
+</div>
+      </div>
+    </div>
+
+    <div className="grid min-w-0 gap-4 xl:grid-cols-[0.8fr_1.2fr]">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="mb-4">
+          <div className="text-sm font-medium text-slate-900">
+            Top locations
+          </div>
+
+          <div className="text-xs text-slate-500">
+            Countries with the most users
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {(analyticsData.topLocations ?? []).length > 0 ? (
+            (analyticsData.topLocations ?? [])
+              .slice(0, 5)
+              .map((location) => (
+                <div
+                  key={location.country}
+                  className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2"
+                >
+                  <span className="text-sm text-slate-700">
+                    {location.country}
+                  </span>
+
+                  <span className="text-sm font-semibold text-slate-900">
+                    {(location.users ?? 0).toLocaleString("fr-FR")}
+                  </span>
+                </div>
+              ))
+          ) : (
+            <div className="text-sm text-slate-500">
+              No location data yet.
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="mb-4">
+          <div className="text-sm font-medium text-slate-900">
+            Comparaison de période
+          </div>
+
+          <div className="text-xs text-slate-500">
+            {analyticsData.selectedRangeLabel ?? "Current"} vs{" "}
+            {analyticsData.previousRangeLabel ?? "Previous"}
+          </div>
+        </div>
+
+        <div className="grid gap-4">
+          <ComparisonPanel
+            title="Users"
+            currentLabel={
+              analyticsData.selectedRangeLabel ?? "Current"
+            }
+            previousLabel={
+              analyticsData.previousRangeLabel ?? "Previous"
+            }
+            currentValue={
+              analyticsData.comparison?.users?.current ??
+              0
+            }
+            previousValue={
+              analyticsData.comparison?.users?.previous ?? 0
+            }
+            format="number"
+          />
+
+          <ComparisonPanel
+            title="Sessions"
+            currentLabel={
+              analyticsData.selectedRangeLabel ?? "Current"
+            }
+            previousLabel={
+              analyticsData.previousRangeLabel ?? "Previous"
+            }
+            currentValue={
+              analyticsData.comparison?.sessions?.current ?? 0
+            }
+            previousValue={
+              analyticsData.comparison?.sessions?.previous ?? 0
+            }
+            format="number"
+          />
+        </div>
+      </div>
+    </div>
+  </>
               ) : (
                 <div className="flex h-64 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-500">
                   No analytics data available.
@@ -492,7 +549,7 @@ export function KpiStrip({
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4">
                   <div className="mb-4">
                     <div className="text-sm font-medium text-slate-900">
                       Ventes par jour
@@ -502,15 +559,19 @@ export function KpiStrip({
                     </div>
                   </div>
 
-                  <SalesMiniBarChart
-                    series={Array.isArray(activeKpi.meta?.series) ? activeKpi.meta.series : []}
-                    currency={
-                      typeof activeKpi.meta?.currency === "string"
-                        ? activeKpi.meta.currency
-                        : "EUR"
-                    }
-                    height={220}
-                  />
+                <div className="min-w-0 overflow-x-auto">
+              <div className="min-w-[720px]">
+              <SalesMiniBarChart
+              series={Array.isArray(activeKpi.meta?.series) ? activeKpi.meta.series : []}
+              currency={
+              typeof activeKpi.meta?.currency === "string"
+              ? activeKpi.meta.currency
+              : "EUR"
+               }
+              height={220}
+               />
+                </div>
+            </div>
                 </div>
               </div>
             </div>

@@ -4,15 +4,24 @@ export type AnalyticsComparisonValue = {
 };
 
 export type AnalyticsModalPayload = {
+  users: number;
+  sessions: number;
+  newUsers: number;
+  topPage: string;
+  topLocations: {
+    country: string;
+    users: number;
+  }[];
   selectedRangeLabel: string;
   previousRangeLabel: string;
-  totalVisits: number;
-  visitsDelta: number;
-  topPage: string;
-  bounceRate: number;
-  engagementRate: number;
   comparison: {
-    visits: AnalyticsComparisonValue;
-    bounceRate: AnalyticsComparisonValue;
+    users: {
+      current: number;
+      previous: number;
+    };
+    sessions: {
+      current: number;
+      previous: number;
+    };
   };
 };

@@ -111,9 +111,9 @@ async function runGaModalSummaryReport(params: {
     data: {
       dateRanges: [{ startDate: params.from, endDate: params.to }],
       metrics: [
+        { name: "activeUsers" },
         { name: "sessions" },
-        { name: "bounceRate" },
-        { name: "engagementRate" },
+        { name: "newUsers" },
       ],
     },
   });
@@ -121,9 +121,9 @@ async function runGaModalSummaryReport(params: {
   const row = res?.data?.rows?.[0];
 
   return {
-    sessions: safeNumber(row?.metricValues?.[0]?.value),
-    bounceRate: safeNumber(row?.metricValues?.[1]?.value),
-    engagementRate: safeNumber(row?.metricValues?.[2]?.value),
+    users: safeNumber(row?.metricValues?.[0]?.value),
+    sessions: safeNumber(row?.metricValues?.[1]?.value),
+    newUsers: safeNumber(row?.metricValues?.[2]?.value),
   };
 }
 
@@ -144,11 +144,11 @@ async function runGaTopPageReport(params: {
     data: {
       dateRanges: [{ startDate: params.from, endDate: params.to }],
       dimensions: [{ name: "pageLocation" }],
-      metrics: [{ name: "sessions" }],
+      metrics: [{ name: "screenPageViews" }],
       orderBys: [
         {
           metric: {
-            metricName: "sessions",
+            metricName: "screenPageViews",
           },
           desc: true,
         },
@@ -161,8 +161,46 @@ async function runGaTopPageReport(params: {
 
   return {
     pageLocation: row?.dimensionValues?.[0]?.value || "",
-    sessions: safeNumber(row?.metricValues?.[0]?.value),
+    views: safeNumber(row?.metricValues?.[0]?.value),
   };
+}
+
+async function runGaTopLocationsReport(params: {
+  providerConfigKey: string;
+  connectionId: string;
+  propertyId: string;
+  from: string;
+  to: string;
+}) {
+  const nango = getNango();
+
+  const res = await nango.post({
+    endpoint: `/v1beta/properties/${params.propertyId}:runReport`,
+    providerConfigKey: params.providerConfigKey,
+    connectionId: params.connectionId,
+    baseUrlOverride: "https://analyticsdata.googleapis.com",
+    data: {
+      dateRanges: [{ startDate: params.from, endDate: params.to }],
+      dimensions: [{ name: "country" }],
+      metrics: [{ name: "activeUsers" }],
+      orderBys: [
+        {
+          metric: {
+            metricName: "activeUsers",
+          },
+          desc: true,
+        },
+      ],
+      limit: 5,
+    },
+  });
+
+  const rows = Array.isArray(res?.data?.rows) ? res.data.rows : [];
+
+  return rows.map((row: any) => ({
+    country: row?.dimensionValues?.[0]?.value || "Unknown",
+    users: safeNumber(row?.metricValues?.[0]?.value),
+  }));
 }
 
 export async function GET(request: Request) {
@@ -238,7 +276,7 @@ export async function GET(request: Request) {
       });
     }
 
-    const [current, previous, topPage] = await Promise.all([
+    const [current, previous, topPage, topLocations] = await Promise.all([
       runGaModalSummaryReport({
         providerConfigKey,
         connectionId,
@@ -260,32 +298,35 @@ export async function GET(request: Request) {
         from,
         to,
       }),
+      runGaTopLocationsReport({
+        providerConfigKey,
+        connectionId,
+        propertyId,
+        from,
+        to,
+      }),
     ]);
 
-    const visitsDelta =
-      previous.sessions > 0
-        ? ((current.sessions - previous.sessions) / previous.sessions) * 100
-        : 0;
+    const payload: AnalyticsModalPayload = {
+      users: current.users,
+      sessions: current.sessions,
+      newUsers: current.newUsers,
+      topPage: topPage.pageLocation || "—",
+      topLocations,
+      selectedRangeLabel: formatRangeLabel(from, to),
+      previousRangeLabel: formatRangeLabel(prevFrom, prevTo),
+      comparison: {
+        users: {
+          current: current.users,
+          previous: previous.users,
+        },
+        sessions: {
+          current: current.sessions,
+          previous: previous.sessions,
+        },
+      },
+    };
 
-   const payload: AnalyticsModalPayload = {
-  selectedRangeLabel: formatRangeLabel(from, to),
-  previousRangeLabel: formatRangeLabel(prevFrom, prevTo),
-  totalVisits: current.sessions,
-  visitsDelta: Number(visitsDelta.toFixed(1)),
-  topPage: topPage.pageLocation || "—",
-  bounceRate: Number(current.bounceRate.toFixed(1)),
-  engagementRate: Number(current.engagementRate.toFixed(1)),
-  comparison: {
-    visits: {
-      current: current.sessions,
-      previous: previous.sessions,
-    },
-    bounceRate: {
-      current: Number(current.bounceRate.toFixed(1)),
-      previous: Number(previous.bounceRate.toFixed(1)),
-    },
-  },
-};
     return NextResponse.json(payload, {
       status: 200,
       headers: {
