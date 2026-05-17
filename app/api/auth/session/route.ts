@@ -113,18 +113,48 @@ export async function POST(req: Request) {
       const country = cleanString(p.country);
       if (country) update.country = country;
 
+      const role = cleanString(p.role);
+      if (role) update.role = role;
+
+      const billingStatus = cleanString(p.billingStatus);
+      if (
+    isNewUser &&
+    (billingStatus === "pending" ||
+    billingStatus === "active" ||
+    billingStatus === "past_due" ||
+    billingStatus === "cancelled")
+) {
+  update.billingStatus = billingStatus;
+}
+
       const initialLanguage = cleanLanguage(p.initialLanguage);
       if (initialLanguage) {
         update.initialLanguage = initialLanguage;
       }
 
+      const termsAccepted = p.termsAccepted === true;
+      const privacyAccepted = p.privacyAccepted === true;
+      const consentSource = cleanString(p.consentSource);
+
+    if (isNewUser && termsAccepted && privacyAccepted) {
+      update.termsAccepted = true;
+      update.termsAcceptedAt = FieldValue.serverTimestamp();
+      update.privacyAccepted = true;
+      update.privacyAcceptedAt = FieldValue.serverTimestamp();
+      update.consentSource = consentSource ?? "unknown";
+}
+
       if (!existingUser?.companyId && companyName) {
         const companyRef = adminDb.collection("companies").doc();
         await companyRef.set({
-          name: companyName,
-          ownerUid: uid,
-          createdAt: FieldValue.serverTimestamp(),
-        });
+        name: companyName,
+        ownerUid: uid,
+        companySize: update.companySize ?? null,
+        industry: update.industry ?? null,
+        country: update.country ?? null,
+        billingStatus: update.billingStatus ?? "pending",
+        createdAt: FieldValue.serverTimestamp(),
+});
         update.companyId = companyRef.id;
       }
     } else {

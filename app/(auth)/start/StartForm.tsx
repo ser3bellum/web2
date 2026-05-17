@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { useRouter } from "next/navigation";
+import { auth } from "@/lib/firebase/clients";
 
 type StartFormState = {
   name: string;
@@ -32,7 +35,11 @@ const initialState: StartFormState = {
 };
 
 export function StartForm() {
+    
   const [form, setForm] = useState<StartFormState>(initialState);
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function updateField<K extends keyof StartFormState>(
     key: K,
@@ -44,11 +51,78 @@ export function StartForm() {
     }));
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+  setError(null);
 
-    console.log("Start form submitted", form);
+  if (
+    !form.name.trim() ||
+    !form.email.trim() ||
+    !form.password.trim() ||
+    !form.confirmPassword.trim() ||
+    !form.companyName.trim() ||
+    !form.companySize.trim() ||
+    !form.industry.trim() ||
+    !form.country.trim()
+  ) {
+    setError("Please complete all required fields.");
+    return;
   }
+
+  if (form.password !== form.confirmPassword) {
+    setError("Passwords do not match.");
+    return;
+  }
+
+  if (!form.termsAccepted) {
+    setError("Please accept the Terms & Conditions and Privacy Policy.");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const cred = await createUserWithEmailAndPassword(
+      auth,
+      form.email,
+      form.password,
+    );
+
+    const idToken = await cred.user.getIdToken(true);
+
+    const sessionRes = await fetch("/api/auth/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idToken,
+        profile: {
+          name: form.name,
+          companyName: form.companyName,
+          companySize: form.companySize,
+          industry: form.industry,
+          country: form.country,
+          role: form.role,
+          initialLanguage: form.language,
+          billingStatus: "pending",
+          termsAccepted: true,
+          privacyAccepted: true,
+          consentSource: "website_start_form",
+        },
+      }),
+    });
+
+    if (!sessionRes.ok) {
+      throw new Error("Failed to create session.");
+    }
+
+    router.push("/billing");
+    router.refresh();
+  } catch (err: any) {
+    setError(err?.message ?? "Something went wrong.");
+  } finally {
+    setLoading(false);
+  }
+}
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#eee9ff] via-[#eef3ff] to-[#dcecff] px-6 py-12 text-slate-800">
@@ -174,12 +248,17 @@ export function StartForm() {
                 . Registration confirmation will be emailed to you.
               </span>
             </label>
-
+                {error && (
+              <p className="md:col-span-2 text-sm text-rose-600">
+                 {error}
+                </p>
+                )}
             <button
-              type="submit"
-              className="mt-4 h-12 rounded-xl bg-gradient-to-r from-violet-500 via-blue-400 to-violet-300 text-base font-semibold text-white shadow-lg shadow-blue-300/30 transition hover:scale-[1.01] md:col-span-2"
-            >
-              Register
+                type="submit"
+                disabled={loading}
+            className="mt-4 h-12 rounded-xl bg-gradient-to-r from-violet-500 via-blue-400 to-violet-300 text-base font-semibold text-white shadow-lg shadow-blue-300/30 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 md:col-span-2"
+                >
+                {loading ? "Creating your account..." : "Register"}
             </button>
           </div>
         </form>
