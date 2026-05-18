@@ -544,13 +544,21 @@ export default function IntegrationsClient({ dictionary }: Props) {
               key={integration.key}
               integration={integration}
               t={t}
-             onToggle={async (key, next) => {
-              if (next) {
-             await connect(key);
-            return;
-             }
+            onToggle={async (key, next) => {
+           const integration = integrations.find((i) => i.key === key);
 
-            console.warn("Disconnect not implemented yet:", key);
+          if (!integration) return;
+
+          // Already connected → do nothing for now
+        if (integration.connected) {
+       console.log("Integration already connected:", key);
+        return;
+         }
+
+  // Only start OAuth when not connected yet
+  if (next) {
+    await connect(key);
+  }
 }}
               onEdit={(key) => console.log("Edit integration:", key)}
             />
