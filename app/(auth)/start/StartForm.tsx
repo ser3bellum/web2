@@ -125,8 +125,8 @@ export function StartForm() {
 }
 
   return (
-    <main className="min-h-screen bg-white px-6 py-12 text-slate-800">
-      <div className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-6xl items-center justify-center">
+    <main className="min-h-screen bg-transparent px-6 py-12 text-slate-800">
+      <div className="mx-auto flex items-center justify-center">
         <form
           onSubmit={handleSubmit}
           className="w-full max-w-4xl bg-gradient-to-br from-[#eee9ff] via-[#eef3ff] to-[#dcecff] rounded-[2rem] border border-white/80 bg-white/40 px-10 py-10"
