@@ -5,9 +5,25 @@ import Stripe from "stripe";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "");
+function getStripe() {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? "";
+  if (!secretKey) {
+    throw new Error("Missing STRIPE_SECRET_KEY");
+  }
+
+  return new Stripe(secretKey);
+}
+
+function getWebhookSecret() {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!webhookSecret) {
+    throw new Error("Missing STRIPE_WEBHOOK_SECRET");
+  }
+
+  return webhookSecret;
+}
 
 export async function POST(req: Request) {
   const signature = req.headers.get("stripe-signature");
@@ -20,6 +36,9 @@ export async function POST(req: Request) {
   }
 
   const rawBody = await req.text();
+
+  const stripe = getStripe();
+const webhookSecret = getWebhookSecret();
 
   let event: Stripe.Event;
 
