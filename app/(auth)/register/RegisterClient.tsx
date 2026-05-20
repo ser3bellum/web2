@@ -155,7 +155,7 @@ export default function RegisterClient() {
         throw new Error("Failed to create session.");
       }
 
-      router.push("/dashboard");
+      router.push("/billing");
       router.refresh();
     } catch (err: any) {
       setError(err?.message ?? "Something went wrong.");
