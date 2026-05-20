@@ -37,10 +37,25 @@ export async function POST(req: Request) {
 
   const rawBody = await req.text();
 
-  const stripe = getStripe();
-const webhookSecret = getWebhookSecret();
+let stripe: Stripe;
+let webhookSecret: string;
 
-  let event: Stripe.Event;
+try {
+  stripe = getStripe();
+  webhookSecret = getWebhookSecret();
+} catch (err: any) {
+  console.error("STRIPE_ENV_ERROR:", err?.message);
+
+  return NextResponse.json(
+    {
+      ok: false,
+      error: err?.message ?? "Missing Stripe environment config",
+    },
+    { status: 500 },
+  );
+}
+
+let event: Stripe.Event;
 
   try {
     event = stripe.webhooks.constructEvent(
