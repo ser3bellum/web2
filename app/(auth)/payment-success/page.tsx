@@ -1,4 +1,50 @@
+"use client";
+
+import Link from "next/link";
+import { sendEmailVerification } from "firebase/auth";
+import { useEffect, useState } from "react";
+import { auth } from "@/lib/firebase/clients";
+
 export default function PaymentSuccessPage() {
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
+    "idle",
+  );
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function sendVerification() {
+    const user = auth.currentUser;
+
+    if (!user) {
+      setStatus("error");
+      setMessage("Please log in first, then request a verification email.");
+      return;
+    }
+
+    if (user.emailVerified) {
+      setStatus("sent");
+      setMessage("Your email is already verified.");
+      return;
+    }
+
+    setStatus("sending");
+
+    try {
+      await sendEmailVerification(user, {
+        url: `${window.location.origin}/login`,
+      });
+
+      setStatus("sent");
+      setMessage("Verification email sent. Please check your inbox.");
+    } catch (err: any) {
+      setStatus("error");
+      setMessage(err?.message ?? "Could not send verification email.");
+    }
+  }
+
+  useEffect(() => {
+    void sendVerification();
+  }, []);
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 flex items-center justify-center px-6">
       <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white/80 p-10 text-center shadow-sm backdrop-blur">
@@ -18,19 +64,35 @@ export default function PaymentSuccessPage() {
           Please verify your email address to secure your workspace.
         </p>
 
+        {message && (
+          <p
+            className={`mt-5 rounded-xl px-4 py-3 text-sm ${
+              status === "error"
+                ? "bg-rose-50 text-rose-700"
+                : "bg-emerald-50 text-emerald-700"
+            }`}
+          >
+            {message}
+          </p>
+        )}
+
         <div className="mt-8 space-y-3">
-          <a
+          <Link
             href="/login"
             className="flex h-11 w-full items-center justify-center rounded-xl bg-blue-600 text-sm font-medium text-white transition hover:bg-blue-700"
           >
             Go to login
-          </a>
+          </Link>
 
           <button
             type="button"
-            className="flex h-11 w-full items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            onClick={sendVerification}
+            disabled={status === "sending"}
+            className="flex h-11 w-full items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Resend verification email
+            {status === "sending"
+              ? "Sending..."
+              : "Resend verification email"}
           </button>
         </div>
 
