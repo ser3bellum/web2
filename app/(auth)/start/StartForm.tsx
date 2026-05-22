@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+} from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase/clients";
 
@@ -82,13 +85,18 @@ export function StartForm() {
   setLoading(true);
 
   try {
-    const cred = await createUserWithEmailAndPassword(
-      auth,
-      form.email,
-      form.password,
-    );
+   const cred = await createUserWithEmailAndPassword(
+  auth,
+  form.email,
+  form.password,
+  );
 
-    const idToken = await cred.user.getIdToken(true);
+  await sendEmailVerification(cred.user, {
+  url: `${window.location.origin}/login`,
+  handleCodeInApp: false,
+  });
+
+  const idToken = await cred.user.getIdToken(true);
 
     const sessionRes = await fetch("/api/auth/session", {
       method: "POST",
