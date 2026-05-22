@@ -159,7 +159,7 @@ export default function LoginForm() {
 					{loading ? "Signing in..." : "Continue"}
 				</button>
 
-				<p className="text-center text-sm text-slate-500">
+				{/*<p className="text-center text-sm text-slate-500">
 					Don&apos;t have an account?{" "}
 					<Link
 						href="/register"
@@ -167,7 +167,7 @@ export default function LoginForm() {
 					>
 						Register
 					</Link>
-				</p>
+				</p>*/}
 			</form>
 		</>
 	);
