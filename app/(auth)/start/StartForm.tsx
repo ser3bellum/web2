@@ -247,7 +247,7 @@ export function StartForm() {
               <span>
                 I have read and agree with the{" "}
                 <a
-                    href="https://www.ser3bellum.com/terms"
+                    href="https://www.ser3bellum.com/terms-and-conditions"
                    target="_top"
                   className="font-medium text-blue-600"
                     >
@@ -255,7 +255,7 @@ export function StartForm() {
                 </a>{" "}
                 and{" "}
                 <a
-                 href="https://www.ser3bellum.com/privacy"
+                 href="https://www.ser3bellum.com/privacy-policy"
                 target="_top"
                 className="font-medium text-blue-600"
                 >
