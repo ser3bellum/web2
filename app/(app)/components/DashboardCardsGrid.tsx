@@ -39,6 +39,23 @@ function renderIconSafe(icon: ReactNode) {
   if (!icon) return null;
   return icon;
 }
+function formatUpdatedLabel(updatedAt: string) {
+  const updatedTime = new Date(updatedAt).getTime();
+
+  if (Number.isNaN(updatedTime)) return "Updated just now";
+
+  const diffMinutes = Math.floor((Date.now() - updatedTime) / 60000);
+
+  if (diffMinutes < 1) return "Updated just now";
+  if (diffMinutes < 60) return `Updated ${diffMinutes}m ago`;
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `Updated ${diffHours}h ago`;
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `Updated ${diffDays}d ago`;
+
+}
 
 const HYDRATION_KEY_BY_CARD_ID: Record<string, string> = {
   analytics: "ga_overview",
@@ -205,9 +222,22 @@ if (cardId === "social") {
 
     return sources.length ? sources : undefined;
   }
+  if (cardId === "sales") {
+  const sources: HydratedSource[] = [];
+
+  if (has("shopify")) {
+    sources.push({
+      label: "Shopify",
+      variant: "success",
+    });
+  }
+
+  return sources.length ? sources : undefined;
+}
 
   return undefined;
 }
+
 
 export default function DashboardCardsGrid({
   hydrationCards,
@@ -227,8 +257,8 @@ export default function DashboardCardsGrid({
     recommendedAction: "",
     sourceNote: "",
   });
-
-  useEffect(() => {
+const [, forceTick] = useState(0);
+   useEffect(() => {
     setMounted(true);
 
     const syncEnabledCards = () => {
@@ -260,6 +290,14 @@ export default function DashboardCardsGrid({
         syncEnabledCards
       );
     };
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      forceTick((v) => v + 1);
+    }, 60000);
+
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -387,14 +425,23 @@ export default function DashboardCardsGrid({
               ? formatCurrency(salesRevenue, salesCurrency)
               : h?.value ?? "";
 
-          const updatedLabel =
-            hasHydratedData && typeof h?.meta?.updatedLabel === "string"
+          const updatedAt =
+             h?.meta &&
+            "updatedAt" in h.meta &&
+            typeof h.meta.updatedAt === "string"
+             ? h.meta.updatedAt
+            : undefined;
+
+         const updatedLabel =
+            hasHydratedData && typeof h?.meta?.updatedAt === "string"
+            ? formatUpdatedLabel(h.meta.updatedAt)
+            : hasHydratedData && typeof h?.meta?.updatedLabel === "string"
             ? h.meta.updatedLabel
             : hasHydratedData
-          ? "Updated just now"
-          : undefined;
-
+            ? "Updated just now"
+            : undefined;
           const hydratedSources = getHydratedSourcesForCard(c.id, hydrationCards);
+
 
           if (c.id === "aiInsights") {
             return (
@@ -440,28 +487,31 @@ export default function DashboardCardsGrid({
               allowRangeToggle
               initialRange="30d"
               />
-              ) : c.id === "sales" ? (
-                hasHydratedData ? (
-                  <div className="space-y-4">
-                    <div className="text-sm text-slate-600">
-                      {salesOrderCount !== null
-                        ? `${salesOrderCount} commande${
-                            salesOrderCount > 1 ? "s" : ""
-                          }`
-                        : h?.meta?.description ?? localizedSubtitle}
-                    </div>
+             ) : c.id === "sales" ? (
+          hasHydratedData ? (
+    <>
 
-                    <SalesMiniBarChart
-                      series={
-                        Array.isArray(h?.meta?.series) ? h.meta.series : []
-                      }
-                      currency={salesCurrency}
-                      height={190}
-                    />
-                  </div>
-                ) : (
-                  <EmptyCardState labels={labels} />
-                )
+      <div className="space-y-4">
+        <div className="text-sm text-slate-600">
+          {salesOrderCount !== null
+            ? `${salesOrderCount} commande${
+                salesOrderCount > 1 ? "s" : ""
+              }`
+            : h?.meta?.description ?? localizedSubtitle}
+        </div>
+
+        <SalesMiniBarChart
+          series={
+            Array.isArray(h?.meta?.series) ? h.meta.series : []
+          }
+          currency={salesCurrency}
+          height={190}
+        />
+      </div>
+    </>
+  ) : (
+    <EmptyCardState labels={labels} />
+  )
               ) : c.id === "marketing" ? (
               hasHydratedData ? (
               <div className="space-y-3 text-sm text-slate-600">

@@ -246,11 +246,11 @@ export function StartForm() {
               />
               <span>
                 I have read and agree with the{" "}
-                <Link href="/terms" className="font-medium text-blue-600">
+                <Link href="https://www.ser3bellum.com/terms-and-conditions" className="font-medium text-blue-600">
                   Terms & Conditions
                 </Link>{" "}
                 and{" "}
-                <Link href="/privacy" className="font-medium text-blue-600">
+                <Link href="https://www.ser3bellum.com/privacy-policy" className="font-medium text-blue-600">
                   Privacy Policy
                 </Link>
                 . Registration confirmation will be emailed to you.

@@ -30,6 +30,23 @@ function getDefaultPrimaryValue(providerConfigKey: string): string | null {
   }
 }
 
+type ConnectorStatus = "active" | "awaiting-data" | "failed" | "disconnected";
+function getConnectorStatus(providerConfigKey: string): ConnectorStatus {
+	switch (providerConfigKey) {
+		case "slack":
+		case "meta-marketing-api":
+			return "awaiting-data";
+
+		case "google-analytics":
+		case "shopify":
+		case "stripe-api-key":
+			return "active";
+
+		default:
+			return "active";
+	}
+}
+
 export async function POST(req: Request) {
   let body: unknown;
 
@@ -77,6 +94,7 @@ export async function POST(req: Request) {
         return {
           providerConfigKey: String(providerConfigKey),
           connected: false,
+          status: "disconnected",
           connectionId: null,
           primaryValue: null,
           secondaryValue: null,
@@ -104,26 +122,28 @@ export async function POST(req: Request) {
       const isStripe = normalizedProviderConfigKey === "stripe-api-key";
 
       return {
-        providerConfigKey: normalizedProviderConfigKey,
-        connected: true,
-        connectionId,
-        primaryValue: isMeta
-        ? "Basic OAuth connected"
-        : isStripe
-        ? "Payments connected"
-        : getDefaultPrimaryValue(normalizedProviderConfigKey),
-        secondaryValue: isMeta
-        ? "Limited access"
-       : isStripe
-        ? "Feeds Sales + Accounting"
-      : connectionId,
-      lastUpdate: null,
-      createdOn: null,
-    };
+	    providerConfigKey: normalizedProviderConfigKey,
+	    connected: true,
+	    status: getConnectorStatus(normalizedProviderConfigKey),
+	    connectionId,
+	    primaryValue: isMeta
+		  ? "Basic OAuth connected"
+		  : isStripe
+			? "Payments connected"
+			: getDefaultPrimaryValue(normalizedProviderConfigKey),
+	    secondaryValue: isMeta
+		  ? "Limited access"
+		  : isStripe
+			? "Feeds Sales + Accounting"
+			: connectionId,
+	    lastUpdate: null,
+	    createdOn: null,
+      };
       } catch {
         return {
           providerConfigKey: normalizedProviderConfigKey,
           connected: false,
+          status: "disconnected",
           connectionId: null,
           primaryValue: null,
           secondaryValue: null,

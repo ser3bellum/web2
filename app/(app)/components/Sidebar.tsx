@@ -9,7 +9,15 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 
 type NavItem = { label: string; href: string; icon: ReactNode };
-type AppId = "slack" | "google-analytics" | "shopify";
+type AppId = "slack" | "google-analytics" | "shopify" | "stripe" | "meta-ads";
+
+type ConnectorStatus = "active" | "awaiting-data" | "failed" | "disconnected";
+
+type ConnectorItem = {
+	id: AppId;
+	label: string;
+	status: ConnectorStatus;
+};
 
 /**
  * Glass system
@@ -34,9 +42,11 @@ type SidebarProps = {
 };
 
 type ConnectionState = {
-	slack: boolean;
-	googleAnalytics: boolean;
-	shopify: boolean;
+	slack: ConnectorStatus;
+	googleAnalytics: ConnectorStatus;
+	shopify: ConnectorStatus;
+	stripe: ConnectorStatus;
+	metaAds: ConnectorStatus;
 };
 
 export function Sidebar({
@@ -55,9 +65,11 @@ export function Sidebar({
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [companyOpen, setCompanyOpen] = useState(false);
 	const [connections, setConnections] = useState<ConnectionState>({
-		slack: false,
-		googleAnalytics: false,
-		shopify: false,
+	slack: "disconnected",
+	googleAnalytics: "disconnected",
+	shopify: "disconnected",
+	stripe: "disconnected",
+	metaAds: "disconnected",
 	});
 
 	useEffect(() => {
@@ -70,9 +82,14 @@ export function Sidebar({
 				const gaKey =
 					process.env.NEXT_PUBLIC_NANGO_GOOGLE_ANALYTICS_PROVIDER_CONFIG_KEY ||
 					"google-analytics";
+				const metaKey =
+					process.env.NEXT_PUBLIC_NANGO_META_PROVIDER_CONFIG_KEY ||
+					"meta-marketing-api";
 				const shopifyKey =
 					process.env.NEXT_PUBLIC_NANGO_SHOPIFY_PROVIDER_CONFIG_KEY || "shopify";
-
+				const stripeKey =
+				process.env.NEXT_PUBLIC_NANGO_STRIPE_PROVIDER_CONFIG_KEY || "stripe-api-key";
+				
 				const res = await fetch("/api/nango/connection-status", {
 					method: "POST",
 					headers: {
@@ -80,7 +97,7 @@ export function Sidebar({
 					},
 					body: JSON.stringify({
 						endUserId,
-						providerConfigKeys: [slackKey, gaKey, shopifyKey],
+						providerConfigKeys: [slackKey, gaKey, shopifyKey, stripeKey, metaKey],
 					}),
 				});
 
@@ -88,28 +105,25 @@ export function Sidebar({
 
 				if (cancelled || !Array.isArray(data?.results)) return;
 
-				setConnections({
-					slack: Boolean(
-						data.results.find(
-							(item: { providerConfigKey: string; connected: boolean }) =>
-								item.providerConfigKey === slackKey && item.connected,
-						),
-					),
-					googleAnalytics: Boolean(
-						data.results.find(
-							(item: { providerConfigKey: string; connected: boolean }) =>
-								item.providerConfigKey === gaKey && item.connected,
-						),
-					),
-					shopify: Boolean(
-						data.results.find(
-							(item: { providerConfigKey: string; connected: boolean }) =>
-								item.providerConfigKey === shopifyKey && item.connected,
-						),
-					),
-				});
+				const getStatus = (providerConfigKey: string): ConnectorStatus => {
+				const result = data.results.find(
+				(item: { providerConfigKey: string; status?: ConnectorStatus }) =>
+				item.providerConfigKey === providerConfigKey,
+				);
+
+				return result?.status ?? "disconnected";
+				};
+
+			setConnections({
+				slack: getStatus(slackKey),
+				googleAnalytics: getStatus(gaKey),
+				shopify: getStatus(shopifyKey),
+				stripe: getStatus(stripeKey),
+				metaAds: getStatus(metaKey),
+			});
 			} catch (error) {
 				console.error("SIDEBAR_CONNECTION_STATUS_FAILED", error);
+				
 			}
 		}
 
@@ -122,41 +136,42 @@ export function Sidebar({
 		};
 	}, [endUserId]);
 
-	const connectedApps = useMemo<AppId[]>(() => {
-		const apps: AppId[] = [];
-
-		if (connections.slack) {
-			apps.push("slack");
-		}
-
-		if (connections.googleAnalytics) {
-			apps.push("google-analytics");
-		}
-
-		if (connections.shopify) {
-			apps.push("shopify");
-		}
-
-		return apps;
-	}, [connections]);
 
 	const [activeApp, setActiveApp] = useState<AppId | null>(null);
 
-	useEffect(() => {
-		if (!activeApp && connectedApps.length > 0) {
-			setActiveApp(connectedApps[0]);
-		}
+	const connectors = useMemo<ConnectorItem[]>(() => {
+	return [
+		{
+			id: "google-analytics",
+			label: "Google Analytics",
+			status: connections.googleAnalytics,
+		},
+		{
+			id: "shopify",
+			label: "Shopify",
+			status: connections.shopify,
+		},
+		{
+			id: "stripe",
+			label: "Stripe",
+			status: connections.stripe,
+		},
+		{
+			id: "slack",
+			label: "Slack",
+			status: connections.slack,
+		},
+		{
+			id: "meta-ads",
+			label: "Meta Ads",
+			status: connections.metaAds,
+		},
+	];
+}, [connections]);
 
-		if (activeApp && !connectedApps.includes(activeApp)) {
-			setActiveApp(connectedApps[0] ?? null);
-		}
-	}, [connectedApps, activeApp]);
-
-	const appLabels: Record<AppId, string> = {
-		slack: "Slack",
-		"google-analytics": "Google Analytics",
-		shopify: "Shopify",
-	};
+	const connectedAppsCount = connectors.filter(
+	(connector) => connector.status !== "disconnected",
+	).length;
 
 	const appLinks: NavItem[] = useMemo(
 		() => [
@@ -178,13 +193,11 @@ export function Sidebar({
 	);
 
 	const companies = useMemo(
-		() => [
-			{ name: "Company A", href: "/dashboard?company=a" },
-			{ name: "Company B", href: "/dashboard?company=b" },
-			{ name: "Company C", href: "/dashboard?company=c" },
-		],
-		[],
+  () => [{ name: "Home", href: "/dashboard?company=a" }],
+  [],
 	);
+
+const hasMultipleCompanies = companies.length > 1;
 
 	const [_activeCompany, setActiveCompany] = useState(companies[0]);
 
@@ -367,6 +380,7 @@ const handleRefresh = async () => {
 					<DropdownHeader
 						label={t.apps}
 						open={appsOpen}
+						badge={`${connectedAppsCount}/${connectors.length}`}
 						onToggle={() => {
 							setAppsOpen((v) => {
 								const next = !v;
@@ -387,34 +401,32 @@ const handleRefresh = async () => {
 						)}
 					>
 						<div className="overflow-hidden">
-							<div className="mt-2 mb-2 flex flex-col gap-1">
-								{connectedApps.length > 0 ? (
-									connectedApps.map((app) => (
-										<button
-											type="button"
-											key={app}
-											onClick={() => setActiveApp(app)}
-											className={cn(
-												"relative w-full rounded-lg px-3 py-2 text-left text-sm transition-colors",
-												"text-slate-500 hover:bg-slate-100/60",
-												activeApp === app && "text-slate-700",
-											)}
-										>
-											{activeApp === app && (
-												<span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-blue-500" />
-											)}
-											<span className="pl-3">{appLabels[app]}</span>
-										</button>
-									))
-								) : (
-									<div className="px-3 py-2 text-sm text-slate-400">
-										{t.noAppsConnected}
-									</div>
-								)}
-							</div>
-						</div>
-					</div>
+							<div className="mt-2 mb-2 max-h-48 overflow-y-auto pr-1">
+	<div className="flex flex-col gap-1">
+		{connectors.map((connector) => (
+			<button
+				type="button"
+				key={connector.id}
+				onClick={() => setActiveApp(connector.id)}
+				className={cn(
+					"relative flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors",
+					"text-slate-500 hover:bg-slate-100/60",
+					activeApp === connector.id && "text-slate-700",
+				)}
+			>
+				{activeApp === connector.id && (
+					<span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-blue-500" />
+				)}
 
+				<ConnectorDot status={connector.status} />
+
+				<span className="truncate pl-1">{connector.label}</span>
+			</button>
+		))}
+	</div>
+</div>
+					</div>
+</div>
 					<ActionRow
 	label={isRefreshing ? "Actualisation..." : t.refreshData}
 	icon={
@@ -504,17 +516,19 @@ const handleRefresh = async () => {
 	);
 }
 
-function DropdownHeader({
+	function DropdownHeader({
 	label,
 	open,
 	onToggle,
 	icon,
-}: {
+	badge,
+	}: {
 	label: string;
 	open: boolean;
 	onToggle: () => void;
 	icon: ReactNode;
-}) {
+	badge?: string;
+	}) {
 	return (
 		<button
 			type="button"
@@ -533,13 +547,19 @@ function DropdownHeader({
 				</span>
 				{label}
 			</span>
+				{badge ? (
+		<span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
+		{badge}
+	</span>
+	) : null}
 
-			<ChevronIcon
-				className={cn(
-					"ml-auto opacity-80 transition-transform duration-200",
-					open && "rotate-180",
-				)}
-			/>
+	<ChevronIcon
+	className={cn(
+		"opacity-80 transition-transform duration-200",
+		open && "rotate-180",
+	)}
+	/>	
+
 		</button>
 	);
 }
@@ -668,6 +688,8 @@ function AppsIcon() {
 		</svg>
 	);
 }
+
+
 
 export function SettingsIcon({ className = "" }: { className?: string }) {
 	return (
@@ -828,4 +850,25 @@ function KeyIcon() {
 			/>
 		</svg>
 	);
+}
+function ConnectorDot({ status }: { status: ConnectorStatus }) {
+	if (status === "active") {
+		return (
+			<span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.12)]" />
+		);
+	}
+
+	if (status === "awaiting-data") {
+		return (
+			<span className="h-2.5 w-2.5 rounded-full border-2 border-emerald-500 bg-transparent" />
+		);
+	}
+
+	if (status === "failed") {
+		return (
+			<span className="h-2.5 w-2.5 rounded-full bg-orange-400 shadow-[0_0_0_3px_rgba(251,146,60,0.14)]" />
+		);
+	}
+
+	return <span className="h-2.5 w-2.5 rounded-full border border-slate-300 bg-white" />;
 }

@@ -790,7 +790,7 @@ export async function getDashboardHydration(params: {
       };
     }
   }
-
+  const updatedAt = new Date().toISOString();
   const anyConnected =
     gaConnected || shopifyConnected || metaConnected || stripeConnected ||
   googleAdsConnected;
@@ -881,59 +881,72 @@ export async function getDashboardHydration(params: {
         status: gaStatus,
         value: gaValue,
         delta: gaDelta,
-        meta: gaMeta,
+        meta:{ ...gaMeta,
+        updatedAt,
+        },
       },
       {
-        key: "sales",
-        title: "Sales",
-        status: salesStatus,
-        value: salesValue,
-        delta: salesDelta,
-        meta: salesMeta,
+         key: "sales",
+          title: "Sales",
+          status: salesStatus,
+          value: salesValue,
+          delta: salesDelta,
+           meta: {
+           ...salesMeta,
+          updatedAt,
+        },
       },
       {
         key: "stripe_sales",
-        title: "Stripe Payments",
-        status: stripeSalesStatus,
-        value: stripeSalesValue,
-        delta: stripeSalesDelta,
-        meta: stripeSalesMeta,
+          title: "Stripe Payments",
+          status: stripeSalesStatus,
+          value: stripeSalesValue,
+          delta: stripeSalesDelta,
+          meta: {
+         ...stripeSalesMeta,
+          updatedAt,
+      },
       },
       {
         key: "accounting",
         title: "Accounting",
         status: accountingStatus,
         value: accountingValue,
-        meta: accountingMeta,
+        meta:{
+          ...accountingMeta,
+          updatedAt,
+        } 
       },
       {
-        key: "google_ads",
-        title: "Marketing",
-        status: googleAdsConnected ? "warn" : "disabled",
-        value: googleAdsConnected ? "Google Ads connected" : "Connect Google Ads",
-        delta: googleAdsConnected ? "Awaiting campaign data" : undefined,
-        meta: {
-        providerConfigKey: googleAdsProviderConfigKey,
-        connectionId: googleAdsConnectionId,
-        accessLevel: googleAdsConnected ? "oauth_connected" : "not_connected",
-        from,
-        to,
-        },
-      },
-      {
-        key: "meta_ads",
-        title: "Social Network",
-        status: metaConnected ? "warn" : "disabled",
-        value: metaConnected ? "Basic OAuth connected" : "Connect Meta Ads",
-        delta: metaConnected ? "Limited access" : undefined,
-        meta: {
-          providerConfigKey: metaProviderConfigKey,
-          connectionId: metaConnectionId,
-          accessLevel: metaConnected ? "basic_oauth" : "not_connected",
-          from,
-          to,
-        },
-      },
+  key: "google_ads",
+  title: "Marketing",
+  status: googleAdsConnected ? "warn" : "disabled",
+  value: googleAdsConnected ? "Google Ads connected" : "Connect Google Ads",
+  delta: googleAdsConnected ? "Awaiting campaign data" : undefined,
+  meta: {
+    providerConfigKey: googleAdsProviderConfigKey,
+    connectionId: googleAdsConnectionId,
+    accessLevel: googleAdsConnected ? "oauth_connected" : "not_connected",
+    from,
+    to,
+    updatedAt,
+  },
+},
+{
+  key: "meta_ads",
+  title: "Social Network",
+  status: metaConnected ? "warn" : "disabled",
+  value: metaConnected ? "Basic OAuth connected" : "Connect Meta Ads",
+  delta: metaConnected ? "Limited access" : undefined,
+  meta: {
+    providerConfigKey: metaProviderConfigKey,
+    connectionId: metaConnectionId,
+    accessLevel: metaConnected ? "basic_oauth" : "not_connected",
+    from,
+    to,
+    updatedAt,
+  },
+    },
     ],
   };
 
