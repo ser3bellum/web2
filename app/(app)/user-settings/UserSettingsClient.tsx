@@ -38,6 +38,21 @@ async function saveProfile(payload: { name?: string; jobTitle?: string }) {
   };
 }
 
+async function openCustomerPortal() {
+  const res = await fetch("/api/stripe/customer-portal", {
+    method: "POST",
+    credentials: "include",
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok || !data?.url) {
+    throw new Error(data?.error || "Unable to open billing portal");
+  }
+
+  window.location.href = data.url;
+}
+
 async function saveCompany(company: {
   companyName?: string;
   website?: string;
@@ -595,6 +610,40 @@ export default function UserSettingsClient({
               </button>
               <p className="mt-2 text-xs text-slate-500">{t.adminOnly}</p>
             </div>
+            <div className="mt-6 border-t border-slate-200 pt-6">
+  <h3 className="text-sm font-semibold text-slate-900">Subscription</h3>
+  <p className="mt-1 text-sm text-slate-500">
+    Manage your subscription or cancel your plan.
+  </p>
+
+  <button
+  type="button"
+  onClick={async () => {
+    try {
+      await openCustomerPortal();
+    } catch (e) {
+      console.error(e);
+    }
+  }}
+  className="mt-4 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-50"
+>
+  Cancel subscription
+</button>
+</div>
+
+<div className="mt-6 border-t border-red-100 pt-6">
+  <h3 className="text-sm font-semibold text-red-700">Danger zone</h3>
+  <p className="mt-1 text-sm text-slate-500">
+    Permanently delete your account and workspace data.
+  </p>
+
+  <button
+    type="button"
+    className="mt-4 rounded-xl border border-red-200 bg-red-50 px-5 py-2.5 text-sm font-medium text-red-700 hover:bg-red-100"
+  >
+    Delete account
+  </button>
+</div>
           </SettingsCard>
         </div>
       </div>
