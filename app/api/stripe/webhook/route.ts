@@ -1,172 +1,48 @@
-export const runtime = "nodejs";
-
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { FieldValue } from "firebase-admin/firestore";
+import { cookies } from "next/headers";
+import admin from "@/lib/firebase/admin";
 import { adminDb } from "@/lib/firebase/admin";
 
-function getStripe() {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
+export const runtime = "nodejs";
 
-  if (!secretKey) {
-    throw new Error("Missing STRIPE_SECRET_KEY");
-  }
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-  return new Stripe(secretKey);
-}
-
-function getWebhookSecret() {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  if (!webhookSecret) {
-    throw new Error("Missing STRIPE_WEBHOOK_SECRET");
-  }
-
-  return webhookSecret;
-}
-
-export async function POST(req: Request) {
-  const signature = req.headers.get("stripe-signature");
-
-  if (!signature) {
-    return NextResponse.json(
-      { ok: false, error: "Missing Stripe signature" },
-      { status: 400 },
-    );
-  }
-
-  const rawBody = await req.text();
-
-let stripe: Stripe;
-let webhookSecret: string;
-
-try {
-  stripe = getStripe();
-  webhookSecret = getWebhookSecret();
-} catch (err: any) {
-  console.error("STRIPE_ENV_ERROR:", err?.message);
-
-  return NextResponse.json(
-    {
-      ok: false,
-      error: err?.message ?? "Missing Stripe environment config",
-    },
-    { status: 500 },
-  );
-}
-
-let event: Stripe.Event;
-
+export async function POST() {
   try {
-    event = stripe.webhooks.constructEvent(
-      rawBody,
-      signature,
-      webhookSecret,
-    );
-  } catch (err: any) {
-    console.error("STRIPE_SIGNATURE_ERROR:", err.message);
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get("__Host-sb_auth")?.value;
 
-    return NextResponse.json(
-      { ok: false, error: "Invalid Stripe signature" },
-      { status: 400 },
-    );
-  }
-
-  try {
-    switch (event.type) {
-      case "checkout.session.completed": {
-        const session = event.data.object as Stripe.Checkout.Session;
-
-        const customerEmail =
-          session.customer_details?.email ??
-          session.customer_email ??
-          null;
-
-        if (!customerEmail) {
-          console.warn("NO_CUSTOMER_EMAIL");
-          break;
-        }
-
-        const userSnap = await adminDb
-          .collection("users")
-          .where("email", "==", customerEmail)
-          .limit(1)
-          .get();
-
-        if (userSnap.empty) {
-          console.warn("NO_USER_FOUND_FOR_EMAIL:", customerEmail);
-          break;
-        }
-
-        const userDoc = userSnap.docs[0];
-        const userData = userDoc.data();
-
-        await userDoc.ref.set(
-          {
-            billingStatus: "active",
-
-            stripeCustomerId:
-              typeof session.customer === "string"
-                ? session.customer
-                : null,
-
-            stripeSubscriptionId:
-              typeof session.subscription === "string"
-                ? session.subscription
-                : null,
-
-            billingActivatedAt: FieldValue.serverTimestamp(),
-            updatedAt: FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        );
-
-        if (userData.companyId) {
-          await adminDb
-            .collection("companies")
-            .doc(userData.companyId)
-            .set(
-              {
-                billingStatus: "active",
-
-                stripeCustomerId:
-                  typeof session.customer === "string"
-                    ? session.customer
-                    : null,
-
-                stripeSubscriptionId:
-                  typeof session.subscription === "string"
-                    ? session.subscription
-                    : null,
-
-                billingActivatedAt: FieldValue.serverTimestamp(),
-                updatedAt: FieldValue.serverTimestamp(),
-              },
-              { merge: true },
-            );
-        }
-
-        console.log(
-          "STRIPE_CHECKOUT_COMPLETED:",
-          customerEmail,
-        );
-
-        break;
-      }
-
-      default:
-        console.log("Unhandled Stripe event:", event.type);
+    if (!sessionCookie) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    return NextResponse.json({ ok: true });
-  } catch (err: any) {
-    console.error("STRIPE_WEBHOOK_HANDLER_ERROR:", err);
+    const decoded = await admin.auth().verifySessionCookie(sessionCookie, true);
 
+    const userSnap = await adminDb.collection("users").doc(decoded.uid).get();
+    const stripeCustomerId = userSnap.data()?.stripeCustomerId;
+
+    if (!stripeCustomerId) {
+      console.warn("NO_STRIPE_CUSTOMER_FOR_USER:", decoded.uid, userSnap.data());
+
+      return NextResponse.json(
+        { error: "No Stripe customer found" },
+        { status: 404 },
+      );
+    }
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: stripeCustomerId,
+      return_url: `${appUrl}/user-settings`,
+    });
+
+    return NextResponse.json({ url: portalSession.url });
+  } catch (error) {
+    console.error("[stripe/customer-portal]", error);
     return NextResponse.json(
-      {
-        ok: false,
-        error: err?.message ?? "Webhook processing failed",
-      },
+      { error: "Unable to open billing portal" },
       { status: 500 },
     );
   }

@@ -59,12 +59,10 @@ function BadgePill({ children }: { children: React.ReactNode }) {
 
 function Toggle({
   checked,
-  onChange,
   connectedLabel,
   disconnectedLabel,
 }: {
   checked: boolean;
-  onChange: (next: boolean) => void;
   connectedLabel: string;
   disconnectedLabel: string;
 }) {
@@ -76,24 +74,25 @@ function Toggle({
         </div>
       </div>
 
-      <button
-        type="button"
-        aria-pressed={checked}
-        onClick={() => onChange(!checked)}
-        className={[
-          "relative inline-flex h-7 w-14 items-center rounded-full border transition",
-          checked
-            ? "border-blue-700/30 bg-blue-700"
-            : "border-zinc-300 bg-zinc-100",
-        ].join(" ")}
-      >
-        <span
+      <div className="pointer-events-none">
+        <button
+          type="button"
+          aria-pressed={checked}
           className={[
-            "inline-block h-6 w-6 transform rounded-full bg-white shadow transition",
-            checked ? "translate-x-7" : "translate-x-1",
+            "relative inline-flex h-7 w-14 items-center rounded-full border transition",
+            checked
+              ? "border-blue-700/30 bg-blue-700"
+              : "border-zinc-300 bg-zinc-100",
           ].join(" ")}
-        />
-      </button>
+        >
+          <span
+            className={[
+              "inline-block h-6 w-6 transform rounded-full bg-white shadow transition",
+              checked ? "translate-x-7" : "translate-x-1",
+            ].join(" ")}
+          />
+        </button>
+      </div>
     </div>
   );
 }
@@ -133,10 +132,9 @@ function IntegrationCard({
 
         <div className="flex flex-col items-end gap-1">
           <Toggle
-            checked={integration.connected}
-            onChange={(next) => onToggle(integration.key, next)}
-            connectedLabel={t.connected}
-            disconnectedLabel={t.disconnected}
+          checked={integration.connected}
+          connectedLabel={t.connected}
+          disconnectedLabel={t.disconnected}
           />
           <div className="text-[11px] text-zinc-500">
             {t.lastUpdate} {integration.lastUpdate ?? "—"}
@@ -182,7 +180,65 @@ function IntegrationCard({
     </div>
   );
 }
+function IntegrationManagementModal({
+  integration,
+  onClose,
+  }: {
+  integration: Integration;
+  onClose: () => void;
+  }) {
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-3xl border border-white/60 bg-white p-6 shadow-2xl">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-zinc-900">
+              Manage {integration.name}
+            </h2>
+            <p className="mt-1 text-sm text-zinc-500">
+              Control how this integration is connected to Ser3bellum.
+            </p>
+          </div>
 
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full px-3 py-1 text-sm text-zinc-500 hover:bg-zinc-100"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+          <div className="text-sm font-medium text-zinc-800">
+            Connection status
+          </div>
+          <div className="mt-1 text-sm text-zinc-500">
+            {integration.connected ? "Connected" : "Disconnected"}
+          </div>
+        </div>
+
+        <div className="mt-6 flex flex-col gap-3">
+          <button
+            type="button"
+            disabled={!integration.connected}
+            className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-left text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Disconnect integration
+          </button>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 export default function IntegrationsClient({ dictionary }: Props) {
   const t = dictionary.integrations;
 
@@ -296,6 +352,8 @@ export default function IntegrationsClient({ dictionary }: Props) {
   );
 
   const [integrations, setIntegrations] = useState<Integration[]>(initial);
+
+  const [manageOpen, setManageOpen] = useState<Integration | null>(null);
 
   type ConnectTarget = IntegrationKey | "picker" | null;
   const [connectOpen, setConnectOpen] = useState<ConnectTarget>(null);
@@ -544,33 +602,42 @@ export default function IntegrationsClient({ dictionary }: Props) {
               key={integration.key}
               integration={integration}
               t={t}
-            onToggle={async (key, next) => {
-           const integration = integrations.find((i) => i.key === key);
+              onToggle={async (key, next) => {
+              const integration = integrations.find((i) => i.key === key);
 
-          if (!integration) return;
+              if (!integration) return;
 
-          // Already connected → do nothing for now
-        if (integration.connected) {
-       console.log("Integration already connected:", key);
-        return;
-         }
+              // Already connected → do nothing for now
+              if (integration.connected) {
+              console.log("Integration already connected:", key);
+              return;
+              }
 
-  // Only start OAuth when not connected yet
-  if (next) {
-    await connect(key);
-  }
-}}
-              onEdit={(key) => console.log("Edit integration:", key)}
+              // Only start OAuth when not connected yet
+              if (next) {
+              await connect(key);
+              }
+              }}
+             onEdit={(key) => {
+            const selected = integrations.find((i) => i.key === key);
+            if (selected) setManageOpen(selected);
+            }}
             />
           ))}
         </div>
       </section>
+{connectOpen && (
+  <ConnectIntegrationModal
+    integration={connectOpen === "picker" ? undefined : connectOpen}
+    onClose={() => setConnectOpen(null)}
+  />
+)}
 
-      {connectOpen && (
-        <ConnectIntegrationModal
-          integration={connectOpen === "picker" ? undefined : connectOpen}
-          onClose={() => setConnectOpen(null)}
-        />
+{manageOpen && (
+  <IntegrationManagementModal
+    integration={manageOpen}
+    onClose={() => setManageOpen(null)}
+  />
       )}
     </PageShell>
   );
