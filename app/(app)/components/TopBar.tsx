@@ -573,9 +573,15 @@ const mailCount = messages.filter((item) => item.unread).length;
 							<PrinterIcon />
 						</IconButton>
 
-						<IconButton label={t.help}>
-							<HelpIcon />
-						</IconButton>
+						<Link
+							href="/help"
+  							aria-label={t.help}
+  							className="relative inline-flex h-10 w-10 items-center justify-center leading-none text-zinc-500 rounded-lg border border-white/50 bg-white/70 shadow-[0_2px_4px_rgba(0,0,0,0.08)] transition-colors hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-black/10"
+							>
+ 						 	<span className="block h-5 w-5">
+    						<HelpIcon />
+  							</span>
+						</Link>
 
 						{/* Avatar */}
 						<div className="mt-auto p-3">

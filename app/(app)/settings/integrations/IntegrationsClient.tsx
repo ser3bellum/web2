@@ -43,6 +43,7 @@ type Integration = {
   lastUpdate: string | null;
   createdOn: string | null;
   connected: boolean;
+  connectionId: string | null;
 };
 
 type Props = {
@@ -183,9 +184,11 @@ function IntegrationCard({
 function IntegrationManagementModal({
   integration,
   onClose,
+  onDisconnected,
   }: {
   integration: Integration;
   onClose: () => void;
+  onDisconnected: () => Promise<void>;
   }) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm">
@@ -222,6 +225,32 @@ function IntegrationManagementModal({
           <button
             type="button"
             disabled={!integration.connected}
+             onClick={async () => {
+        try {
+          const res = await fetch("/api/nango/disconnect", {
+          method: "POST",
+          headers: {
+          "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+          connectionId: integration.connectionId,
+          providerConfigKey:
+            NANGO_INTEGRATION_ID[integration.key],
+         }),
+        });
+
+        if (!res.ok) {
+        alert("Failed to disconnect integration");
+        return;
+      }
+
+      await onDisconnected();
+      onClose();
+    } catch (error) {
+      console.error(error);
+      alert("Failed to disconnect integration");
+    }
+  }}
             className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-left text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Disconnect integration
@@ -263,6 +292,7 @@ export default function IntegrationsClient({ dictionary }: Props) {
         lastUpdate: null,
         createdOn: null,
         connected: false,
+         connectionId: null,
       },
       {
         key: "shopify",
@@ -273,6 +303,7 @@ export default function IntegrationsClient({ dictionary }: Props) {
         lastUpdate: null,
         createdOn: null,
         connected: false,
+        connectionId: null,
       },
       {
         key: "stripe",
@@ -285,6 +316,7 @@ export default function IntegrationsClient({ dictionary }: Props) {
         lastUpdate: null,
         createdOn: null,
         connected: false,
+        connectionId: null,
       },
       {
         key: "google",
@@ -297,6 +329,7 @@ export default function IntegrationsClient({ dictionary }: Props) {
         lastUpdate: null,
         createdOn: null,
         connected: false,
+        connectionId: null,
       },
       {
         key: "googleAds",
@@ -309,6 +342,7 @@ export default function IntegrationsClient({ dictionary }: Props) {
         lastUpdate: null,
         createdOn: null,
         connected: false,
+        connectionId: null,
       },
       {
         key: "slack",
@@ -321,6 +355,7 @@ export default function IntegrationsClient({ dictionary }: Props) {
         lastUpdate: null,
         createdOn: null,
         connected: false,
+        connectionId: null,
       },
       {
         key: "github",
@@ -333,6 +368,7 @@ export default function IntegrationsClient({ dictionary }: Props) {
         lastUpdate: null,
         createdOn: null,
         connected: false,
+        connectionId: null,
       },
 
       {
@@ -346,6 +382,7 @@ export default function IntegrationsClient({ dictionary }: Props) {
       lastUpdate: null,
       createdOn: null,
       connected: false,
+      connectionId: null,
     },
     ],
     [t]
@@ -419,6 +456,7 @@ export default function IntegrationsClient({ dictionary }: Props) {
       string,
       {
         connected: boolean;
+        connectionId: string | null;
         primaryValue: string | null;
         secondaryValue: string | null;
         lastUpdate: string | null;
@@ -435,6 +473,7 @@ export default function IntegrationsClient({ dictionary }: Props) {
           return {
             ...i,
             connected: false,
+            connectionId: null,
             primaryValue: null,
             secondaryValue: null,
             lastUpdate: null,
@@ -445,6 +484,7 @@ export default function IntegrationsClient({ dictionary }: Props) {
         return {
           ...i,
           connected: status.connected,
+          connectionId: status.connectionId,
           primaryValue: status.primaryValue,
           secondaryValue: status.secondaryValue,
           lastUpdate: status.lastUpdate,
@@ -635,9 +675,10 @@ export default function IntegrationsClient({ dictionary }: Props) {
 
 {manageOpen && (
   <IntegrationManagementModal
-    integration={manageOpen}
-    onClose={() => setManageOpen(null)}
-  />
+  integration={manageOpen}
+  onClose={() => setManageOpen(null)}
+  onDisconnected={loadStatus}
+/>
       )}
     </PageShell>
   );
