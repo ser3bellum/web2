@@ -1,5 +1,6 @@
 // app/(app)/help/page.tsx
 
+import { SupportForm } from "./SupportForm";
 import Link from "next/link";
 import { ArrowRight, LifeBuoy, Rocket, Sparkles } from "lucide-react";
 
@@ -81,49 +82,8 @@ export default function HelpPage() {
       soon as possible.
     </p>
   </div>
-
-  <form className="space-y-4">
-    <div>
-      <label
-        htmlFor="subject"
-        className="mb-2 block text-sm font-medium text-slate-700"
-      >
-        Subject
-      </label>
-
-      <input
-        id="subject"
-        type="text"
-        placeholder="Brief description of your request"
-        className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-    </div>
-
-    <div>
-      <label
-        htmlFor="message"
-        className="mb-2 block text-sm font-medium text-slate-700"
-      >
-        Message
-      </label>
-
-      <textarea
-        id="message"
-        rows={6}
-        placeholder="Describe your issue or question..."
-        className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-    </div>
-
-    <div className="flex justify-end">
-      <button
-        type="submit"
-        className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-medium text-white hover:bg-slate-800"
-      >
-        Send Message
-      </button>
-    </div>
-  </form>
+        <SupportForm />
+  
 </section>
     </main>
   );
