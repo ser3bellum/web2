@@ -111,10 +111,29 @@ export async function POST(request: Request) {
           subscription: session.subscription,
         });
 
-        const firebaseUid =
-          session.metadata?.firebaseUid ??
-          session.client_reference_id ??
-          undefined;
+        let firebaseUid =
+  session.metadata?.firebaseUid ??
+  session.client_reference_id ??
+  undefined;
+
+if (!firebaseUid) {
+  const checkoutEmail =
+    session.customer_details?.email ??
+    session.customer_email ??
+    undefined;
+
+  if (checkoutEmail) {
+    const userByEmailSnap = await db
+      .collection("users")
+      .where("email", "==", checkoutEmail)
+      .limit(1)
+      .get();
+
+    if (!userByEmailSnap.empty) {
+      firebaseUid = userByEmailSnap.docs[0].id;
+    }
+  }
+}
 
         const stripeCustomerId =
           typeof session.customer === "string"
@@ -127,14 +146,16 @@ export async function POST(request: Request) {
             : session.subscription?.id;
 
         if (!firebaseUid || !stripeCustomerId || !stripeSubscriptionId) {
-          console.warn("[stripe/webhook] Missing checkout mapping data", {
-            firebaseUid,
-            stripeCustomerId,
-            stripeSubscriptionId,
-            metadata: session.metadata,
-            clientReferenceId: session.client_reference_id,
-          });
-          break;
+         console.warn("[stripe/webhook] Missing checkout mapping data", {
+         firebaseUid,
+         stripeCustomerId,
+         stripeSubscriptionId,
+        metadata: session.metadata,
+         clientReferenceId: session.client_reference_id,
+        customerEmail: session.customer_email,
+         customerDetailsEmail: session.customer_details?.email,
+        });
+         break;
         }
 
         const subscription =
