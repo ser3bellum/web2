@@ -33,6 +33,7 @@ export async function POST() {
     if (!stripeCustomerId) {
       return NextResponse.json(
         { error: "No Stripe customer found" },
+        
         { status: 404 },
       );
     }
