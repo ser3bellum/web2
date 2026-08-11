@@ -8,6 +8,16 @@ export type UserDoc = {
   name?: string | null;
   jobTitle?: string | null;
 
+  // billing / subscription
+  billingStatus?: string | null;
+  subscriptionStatus?: string | null;
+  cancelAtPeriodEnd?: boolean | null;
+  trialEnd?: Date | string | null;
+  currentPeriodEnd?: Date | string | null;
+  accessUntil?: Date | string | null;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+
   // workspace model
   lastWorkspaceId?: string | null;
 

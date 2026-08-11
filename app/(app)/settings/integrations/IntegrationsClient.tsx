@@ -138,7 +138,7 @@ function IntegrationCard({
           disconnectedLabel={t.disconnected}
           />
           <div className="text-[11px] text-zinc-500">
-            {t.lastUpdate} {integration.lastUpdate ?? "—"}
+            {t.lastUpdate} {integration.lastUpdate ?? ""}
           </div>
         </div>
       </div>
@@ -148,7 +148,7 @@ function IntegrationCard({
           {integration.primaryLabel}
         </div>
         <div className="mt-1 text-sm text-zinc-600">
-          {integration.primaryValue ?? "—"}
+          {integration.primaryValue ?? ""}
         </div>
 
         {integration.secondaryLabel ? (
@@ -157,7 +157,7 @@ function IntegrationCard({
               {integration.secondaryLabel}
             </div>
             <div className="mt-1 text-sm text-zinc-600">
-              {integration.secondaryValue ?? "—"}
+              {integration.secondaryValue ?? ""}
             </div>
           </div>
         ) : null}
@@ -175,7 +175,7 @@ function IntegrationCard({
         <div className="flex items-center gap-2 text-xs text-zinc-300">
           <span>{t.createdOn}</span>
           <span className="inline-block h-3.5 w-3.5 rounded border border-zinc-200 bg-white" />
-          <span className="text-zinc-300">{integration.createdOn ?? "—"}</span>
+          <span className="text-zinc-300">{integration.createdOn ?? ""}</span>
         </div>
       </div>
     </div>
@@ -190,6 +190,46 @@ function IntegrationManagementModal({
   onClose: () => void;
   onDisconnected: () => Promise<void>;
   }) {
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [disconnectError, setDisconnectError] = useState<string | null>(null);
+
+  async function disconnectIntegration() {
+    if (!integration.connectionId || isDisconnecting) return;
+
+    setIsDisconnecting(true);
+    setDisconnectError(null);
+
+    try {
+      const res = await fetch("/api/nango/disconnect", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+        providerConfigKey: NANGO_INTEGRATION_ID[integration.key],
+        }),
+      });
+
+      const payload: { error?: string } = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(payload.error || "Failed to disconnect integration");
+      }
+
+      await onDisconnected();
+      onClose();
+    } catch (error) {
+      console.error("Failed to disconnect integration", error);
+      setDisconnectError(
+        error instanceof Error
+          ? error.message
+          : "Failed to disconnect integration"
+      );
+    } finally {
+      setIsDisconnecting(false);
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-3xl border border-white/60 bg-white p-6 shadow-2xl">
@@ -208,7 +248,7 @@ function IntegrationManagementModal({
             onClick={onClose}
             className="rounded-full px-3 py-1 text-sm text-zinc-500 hover:bg-zinc-100"
           >
-            ✕
+            âœ•
           </button>
         </div>
 
@@ -224,41 +264,27 @@ function IntegrationManagementModal({
         <div className="mt-6 flex flex-col gap-3">
           <button
             type="button"
-            disabled={!integration.connected}
-             onClick={async () => {
-        try {
-          const res = await fetch("/api/nango/disconnect", {
-          method: "POST",
-          headers: {
-          "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-          connectionId: integration.connectionId,
-          providerConfigKey:
-            NANGO_INTEGRATION_ID[integration.key],
-         }),
-        });
-
-        if (!res.ok) {
-        alert("Failed to disconnect integration");
-        return;
-      }
-
-      await onDisconnected();
-      onClose();
-    } catch (error) {
-      console.error(error);
-      alert("Failed to disconnect integration");
-    }
-  }}
+            disabled={
+              !integration.connected ||
+              !integration.connectionId ||
+              isDisconnecting
+            }
+            onClick={disconnectIntegration}
             className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-left text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Disconnect integration
+            {isDisconnecting ? "Disconnectingâ€¦" : "Disconnect integration"}
           </button>
+
+          {disconnectError ? (
+            <p role="alert" className="text-sm text-red-600">
+              {disconnectError}
+            </p>
+          ) : null}
 
           <button
             type="button"
             onClick={onClose}
+            disabled={isDisconnecting}
             className="rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
           >
             Cancel
@@ -647,7 +673,7 @@ export default function IntegrationsClient({ dictionary }: Props) {
 
               if (!integration) return;
 
-              // Already connected → do nothing for now
+              // Already connected â†’ do nothing for now
               if (integration.connected) {
               console.log("Integration already connected:", key);
               return;

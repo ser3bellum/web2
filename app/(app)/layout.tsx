@@ -11,6 +11,7 @@ import { getUserCompanyContext } from "@/lib/data/getUserCompanyContext";
 import { adminAuth } from "@/lib/firebase/admin";
 import { findNangoConnectionId } from "@/lib/nango/findConnectionId";
 import { getDictionary } from "@/lib/i18n/getDictionary";
+import { TrialBanner } from "@/app/(app)/components/billing/trialBanner";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
@@ -57,7 +58,25 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   } catch {
     googleAnalyticsConnected = false;
   }
+function serializeDate(value: unknown): string | null {
+  if (!value) return null;
 
+  if (typeof value === "string") return value;
+
+  if (value instanceof Date) return value.toISOString();
+
+  if (
+    typeof value === "object" &&
+    "toDate" in value &&
+    typeof value.toDate === "function"
+  ) {
+    return value.toDate().toISOString();
+  }
+
+  return null;
+}
+
+const trialEnd = serializeDate(user.trialEnd ?? user.accessUntil);
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar
@@ -73,14 +92,26 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <DailyReportModalController
 	workspaceId={company?.id ?? user.id}
 />
-        <TopBar
-          companyName={company?.name ?? user?.companyName ?? "Ser3bellum"}
-          dictionary={dictionary}
-        />
+      <TopBar
+  companyName={company?.name ?? user?.companyName ?? "Ser3bellum"}
+  dictionary={dictionary}
+/>
 
-        <main className="flex-1 overflow-y-auto bg-transparent -mt-[72px] pt-[72px]">
-          {children}
-        </main>
+<main className="flex-1 overflow-y-auto bg-transparent -mt-[72px] pt-[72px]">
+
+  <div className="px-4 pt-6 lg:px-8">
+
+    <TrialBanner
+  billingStatus={user.billingStatus ?? user.subscriptionStatus ?? ""}
+  trialEnd={trialEnd}
+  cancelAtPeriodEnd={user.cancelAtPeriodEnd ?? false}
+/>
+
+  </div>
+
+  {children}
+
+</main>
       </div>
     </div>
   );

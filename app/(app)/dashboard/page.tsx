@@ -13,6 +13,7 @@ import { KpiStrip } from "./KpiStrip";
 import { getDashboardHydration } from "app/(app)/dashboard/getDashboardHydration";
 import { DashboardOnboardingEmptyState } from "./DashboardOnboardingEmptyState";
 import { findNangoConnectionId } from "@/lib/nango/findConnectionId";
+import { TrialBanner } from "../components/billing/trialBanner";
 
 type DashboardSearchParams = { from?: string; to?: string };
 
@@ -48,6 +49,7 @@ export default async function DashboardPage({
     if (!user?.id) {
       return (
         <div className="px-4 pb-8 pt-6 lg:px-8">
+          
           <DashboardOnboardingEmptyState
             hasCompany={true}
             hasIntegration={false}
@@ -125,18 +127,28 @@ const kpis = await getDashboardKpis({
   hydration,
 });
 
-    return (
-      <div className="flex flex-col">
-        <div className="flex flex-col gap-6 px-4 pb-8 pt-6 lg:px-8">
-         <KpiStrip kpis={kpis} labels={dictionary.dashboard.kpis} />
+   return (
+  <div className="flex flex-col">
+    <div className="flex flex-col gap-6 px-4 pb-8 pt-6 lg:px-8">
 
-          <section>
-            <DashboardCardsGrid
-  hydrationCards={hydration?.cards ?? []}
-  labels={dictionary.dashboard}
-  endUserId={endUserId}
+     <TrialBanner
+  billingStatus={user.billingStatus ?? user.subscriptionStatus ?? ""}
+  trialEnd={user.trialEnd ?? user.accessUntil ?? null}
+  cancelAtPeriodEnd={user.cancelAtPeriodEnd ?? false}
 />
-          </section>
+
+      <KpiStrip
+        kpis={kpis}
+        labels={dictionary.dashboard.kpis}
+      />
+
+      <section>
+        <DashboardCardsGrid
+          hydrationCards={hydration?.cards ?? []}
+          labels={dictionary.dashboard}
+          endUserId={endUserId}
+        />
+      </section>
 
           {isDev && (
             <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
