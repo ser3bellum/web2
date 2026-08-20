@@ -1,5 +1,5 @@
 "use client";
-
+import DailyReportModalController from "./DailyReportModalController";
 import { useEffect, useMemo, useState } from "react";
 import { AnalyticsMiniChart } from "app/(app)/components/AnalyticsMiniChart";
 import { AIInsightsCard } from "app/(app)/components/AIInsightsCard";
@@ -243,10 +243,12 @@ export default function DashboardCardsGrid({
   hydrationCards,
   labels,
   endUserId,
+  workspaceId,
 }: {
   hydrationCards?: HydrationCard[];
   labels: DashboardCardsGridLabels;
   endUserId: string;
+  workspaceId: string | null;
 }) {
   const [mounted, setMounted] = useState(false);
   const [enabledIds, setEnabledIds] = useState<DashboardCardId[] | null>(null);
@@ -374,6 +376,11 @@ const [, forceTick] = useState(0);
 
   return (
     <section>
+
+    {workspaceId ? (
+      <DailyReportModalController workspaceId={workspaceId} />
+    ) : null}
+
       <SortableDashboardGrid
         defs={visibleCards}
         renderCard={(c) => {

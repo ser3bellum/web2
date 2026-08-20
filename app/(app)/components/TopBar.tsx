@@ -21,6 +21,7 @@ type UiDateRange = {
 
 type TopBarProps = {
 	companyName?: string;
+	workspaceId?: string | null;
 	rightSlot?: ReactNode;
 	dictionary: Dictionary;
 };
@@ -93,7 +94,7 @@ function DashboardHomeLink({
 		</Link>
 	);
 }
-	export function TopBar({ companyName, rightSlot, dictionary }: TopBarProps) {
+	export function TopBar({ companyName, workspaceId, rightSlot, dictionary }: TopBarProps) {
 		 const t = dictionary.topbar;
 		const router = useRouter();
 	const pathname = usePathname();
@@ -253,48 +254,54 @@ function DashboardHomeLink({
 }, []);
 
 	useEffect(() => {
-	let cancelled = false;
+  let cancelled = false;
 
-	async function loadSummaryNotification() {
-		try {
-			const workspaceId =
-				searchParams.get("company") ?? auth.currentUser?.uid;
+  async function loadSummaryNotification() {
+    if (!workspaceId) return;
 
-			if (!workspaceId) return;
+    try {
+      const res = await fetch(
+        `/api/dashboard/latest-summary?workspaceId=${encodeURIComponent(
+          workspaceId,
+        )}`,
+        {
+          cache: "no-store",
+        },
+      );
 
-			const res = await fetch(
-				`/api/dashboard/latest-summary?workspaceId=${workspaceId}`
-			);
+      const data = await res.json();
 
-			const data = await res.json();
+      if (!res.ok) {
+        throw new Error(
+          data?.error || "Failed to load latest summary",
+        );
+      }
 
-			if (!res.ok) {
-				throw new Error(data?.error || "Failed to load latest summary");
-			}
+      if (!cancelled && data.report) {
+        setSummaryNotification({
+          id: data.report.reportId,
+          kind: "summary",
+          title: data.report.headline,
+          description:
+            data.report.bullets?.[0] ??
+            "Your daily operational summary is ready to review.",
+          timeLabel: "Today",
+          unread: true,
+        });
+      }
+    } catch (error) {
+      if (!cancelled) {
+        console.error("SUMMARY_NOTIFICATION_FETCH_FAILED", error);
+      }
+    }
+  }
 
-			if (!cancelled && data.report) {
-				setSummaryNotification({
-					id: data.report.reportId,
-					kind: "summary",
-					title: data.report.headline,
-					description:
-						data.report.bullets?.[0] ??
-						"Your daily operational summary is ready to review.",
-					timeLabel: "Today",
-					unread: true,
-				});
-			}
-		} catch (error) {
-			console.error("SUMMARY_NOTIFICATION_FETCH_FAILED", error);
-		}
-	}
+  void loadSummaryNotification();
 
-	loadSummaryNotification();
-
-	return () => {
-		cancelled = true;
-	};
-}, [searchParams]);
+  return () => {
+    cancelled = true;
+  };
+}, [workspaceId]);
 
 	const notifications: NotificationItem[] = [
 	...(summaryNotification ? [summaryNotification] : []),

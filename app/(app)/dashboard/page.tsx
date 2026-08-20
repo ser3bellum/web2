@@ -147,6 +147,7 @@ const kpis = await getDashboardKpis({
           hydrationCards={hydration?.cards ?? []}
           labels={dictionary.dashboard}
           endUserId={endUserId}
+          workspaceId={endUserId}
         />
       </section>
 

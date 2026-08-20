@@ -1,80 +1,91 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import DailyReportModal from "./DailyReportModal";
+import { useCallback, useEffect, useRef, useState } from "react";
+import DailyReportModal, { type DailyReport } from "./DailyReportModal";
 
-type DailyReport = {
-	date: string;
-	headline: string;
-	bullets: string[];
-	reportId: string;
-};
+const STORAGE_PREFIX = "ser3bellum.dailyReport.lastSeen";
 
-function todayKey() {
-	const d = new Date();
-	const yyyy = d.getFullYear();
-	const mm = String(d.getMonth() + 1).padStart(2, "0");
-	const dd = String(d.getDate()).padStart(2, "0");
-	return `${yyyy}-${mm}-${dd}`;
-}
-
-const STORAGE_KEY = "ser3bellum.dailyReport.lastSeen";
-
-export default function DailyReportModalController({
-	workspaceId,
-}: {
-	workspaceId: string;
-}) {
+export default function DailyReportModalController({ workspaceId }: { workspaceId: string }) {
 	const [open, setOpen] = useState(false);
+	const [closing, setClosing] = useState(false);
 	const [report, setReport] = useState<DailyReport | null>(null);
-	const today = useMemo(() => todayKey(), []);
+	const pendingActionRef = useRef<"view" | null>(null);
+	const storageKey = `${STORAGE_PREFIX}.${workspaceId}`;
 
 	useEffect(() => {
-		let cancelled = false;
+		const abortController = new AbortController();
 
 		async function loadSummary() {
 			try {
-				const lastSeen = localStorage.getItem(STORAGE_KEY);
-
-				if (lastSeen === today) return;
-
-				const res = await fetch(
-					`/api/dashboard/latest-summary?workspaceId=${workspaceId}`
+				const response = await fetch(
+					`/api/dashboard/latest-summary?workspaceId=${encodeURIComponent(workspaceId)}`,
+					{ cache: "no-store", signal: abortController.signal },
 				);
+				const data = await response.json();
+				if (!response.ok) throw new Error(data?.error || "Failed to load summary");
+				if (!data.report) return;
 
-				const data = await res.json();
+				const lastSeenReportId = localStorage.getItem(storageKey);
+				if (lastSeenReportId === data.report.reportId) return;
 
-				if (!res.ok) {
-					throw new Error(data?.error || "Failed to load summary");
-				}
-
-				if (!cancelled && data.report) {
-					setReport(data.report);
-					setOpen(true);
-				}
+				setReport(data.report);
+				setOpen(true);
 			} catch (error) {
+				if (error instanceof DOMException && error.name === "AbortError") return;
 				console.error("Failed to hydrate daily summary modal:", error);
 			}
 		}
 
-		loadSummary();
+		void loadSummary();
+		return () => abortController.abort();
+	}, [storageKey, workspaceId]);
 
-		return () => {
-			cancelled = true;
-		};
-	}, [today, workspaceId]);
-
-	const close = () => {
-		setOpen(false);
-
+	const markSeen = useCallback(() => {
+		if (!report) return;
 		try {
-			localStorage.setItem(STORAGE_KEY, today);
-		} catch {}
-	};
+			localStorage.setItem(storageKey, report.reportId);
+		} catch {
+			// Storage can be unavailable in hardened/private browser contexts.
+		}
+	}, [report, storageKey]);
+
+	const requestClose = useCallback((reason: "close" | "view") => {
+		if (closing) return;
+		pendingActionRef.current = reason === "view" ? "view" : null;
+		setClosing(true);
+	}, [closing]);
+
+	const handleClosed = useCallback(() => {
+		markSeen();
+		setOpen(false);
+		setClosing(false);
+
+		if (pendingActionRef.current === "view" && report) {
+			window.location.assign(`/reports/${encodeURIComponent(report.reportId)}`);
+		}
+		pendingActionRef.current = null;
+	}, [markSeen, report]);
+
+	const handlePrint = useCallback(() => {
+		if (!report) return;
+		markSeen();
+		window.open(
+			`/reports/${encodeURIComponent(report.reportId)}/print`,
+			"_blank",
+			"noopener,noreferrer",
+		);
+		requestClose("close");
+	}, [markSeen, report, requestClose]);
 
 	if (!open || !report) return null;
 
 	return (
-		<DailyReportModal report={report} onClose={close} onMarkSeen={close} />
+		<DailyReportModal
+			report={report}
+			closing={closing}
+			onRequestClose={requestClose}
+			onClosed={handleClosed}
+			onPrint={handlePrint}
+		/>
 	);
 }
