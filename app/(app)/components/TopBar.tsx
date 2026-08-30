@@ -87,9 +87,9 @@ function DashboardHomeLink({
 		<Link
 			href={href}
 			title="Return to dashboard"
-			className="inline-flex max-w-[260px] items-center gap-2.5 rounded-lg px-2 py-1 text-2xl font-semibold tracking-tight text-slate-900 transition hover:bg-slate-100 hover:text-blue-600"
+			className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-lg px-1 py-1 text-lg font-semibold tracking-tight text-slate-900 transition hover:bg-slate-100 hover:text-blue-600 md:max-w-[260px] md:gap-2.5 md:px-2 md:text-2xl"
 		>
-			<Home size={22} className="shrink-0 text-slate-500" />
+			<Home size={22} className="hidden shrink-0 text-slate-500 md:block" />
 			{hasCompanyName && <span className="truncate">{companyName}</span>}
 		</Link>
 	);
@@ -378,11 +378,11 @@ const mailCount = messages.filter((item) => item.unread).length;
 			)}
 
 			<header className="sb-topbar sticky top-0 z-50 w-full border-b border-white/40 bg-white/60 backdrop-blur">
-				<div className="mx-auto flex h-[72px] w-full items-center gap-3 px-4">
+				<div className="mx-auto flex h-16 w-full min-w-0 items-center gap-2 px-3 pl-14 md:h-[72px] md:gap-3 md:px-4">
 					
 					{/* Left: Company (clickable → dashboard) */}
 
-					<div className="min-w-[180px]">
+					<div className="min-w-0 flex-1 md:min-w-[180px] md:flex-none">
 					<DashboardHomeLink
 						companyId={searchParams.get("company")}
 						companyName={companyName}
@@ -392,7 +392,7 @@ const mailCount = messages.filter((item) => item.unread).length;
 					</div>
 
 					{/* Middle: Search */}
-					<div className="flex flex-1 items-center">
+					<div className="hidden min-w-0 flex-1 items-center md:flex">
 						<div className="relative w-full max-w-md">
 							<span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 opacity-60">
 								<SearchIcon />
@@ -406,7 +406,7 @@ const mailCount = messages.filter((item) => item.unread).length;
 					</div>
 
 					{/* Right: Date + icons */}
-					<div className="relative flex items-center gap-2" ref={popoverRef}>
+					<div className="relative flex shrink-0 items-center gap-1 sm:gap-2" ref={popoverRef}>
 						<button
 							type="button"
 							onClick={() => setOpen((v) => !v)}
@@ -572,18 +572,20 @@ const mailCount = messages.filter((item) => item.unread).length;
 						<BellIcon />
 						</IconButton>
 
-						<IconButton
-							label={t.printReport}
-							onClick={() => window.print()}
-							className="no-print"
-						>
-							<PrinterIcon />
-						</IconButton>
+						<div className="hidden lg:block">
+							<IconButton
+								label={t.printReport}
+								onClick={() => window.print()}
+								className="no-print"
+							>
+								<PrinterIcon />
+							</IconButton>
+						</div>
 
 						<Link
 							href="/help"
   							aria-label={t.help}
-  							className="relative inline-flex h-10 w-10 items-center justify-center leading-none text-zinc-500 rounded-lg border border-white/50 bg-white/70 shadow-[0_2px_4px_rgba(0,0,0,0.08)] transition-colors hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-black/10"
+							className="relative hidden h-10 w-10 items-center justify-center leading-none rounded-lg border border-white/50 bg-white/70 text-zinc-500 shadow-[0_2px_4px_rgba(0,0,0,0.08)] transition-colors hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-black/10 lg:inline-flex"
 							>
  						 	<span className="block h-5 w-5">
     						<HelpIcon />
@@ -591,7 +593,7 @@ const mailCount = messages.filter((item) => item.unread).length;
 						</Link>
 
 						{/* Avatar */}
-						<div className="mt-auto p-3">
+						<div className="ml-1 hidden lg:block">
 							<LogoutButton
   							label={dictionary.navigation.logout}
   							loadingLabel={dictionary.navigation.loggingOut}

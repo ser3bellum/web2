@@ -47,10 +47,9 @@ function saveOrder(order: DashboardCardId[]) {
 }
 
 function getSizeClass(size?: DashboardCardDef["size"]) {
-  if (size === "large") return "md:col-span-2 xl:col-span-2";
-  if (size === "extraLarge") return "md:col-span-2 xl:col-span-2";
-  if (size === "small") return "col-span-1";
-  return "col-span-1";
+  if (size === "large") return "min-w-0 col-span-1 md:col-span-2";
+  if (size === "extraLarge") return "min-w-0 col-span-1 md:col-span-2";
+  return "min-w-0 col-span-1";
 }
 
 export function SortableDashboardGrid({
@@ -63,7 +62,6 @@ export function SortableDashboardGrid({
   className?: string;
 }) {
   const ids = useMemo(() => defs.map((d) => d.id), [defs]);
-
   const [order, setOrder] = useState<DashboardCardId[]>(ids);
 
   useEffect(() => {
@@ -96,8 +94,7 @@ export function SortableDashboardGrid({
 
   const onDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over) return;
-    if (active.id === over.id) return;
+    if (!over || active.id === over.id) return;
 
     setOrder((prev) => {
       const oldIndex = prev.indexOf(active.id as DashboardCardId);
@@ -117,7 +114,12 @@ export function SortableDashboardGrid({
       onDragEnd={onDragEnd}
     >
       <SortableContext items={orderedIds} strategy={rectSortingStrategy}>
-        <div className={cn("grid gap-4 md:grid-cols-2 xl:grid-cols-3", className)}>
+        <div
+          className={cn(
+            "grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3",
+            className
+          )}
+        >
           {orderedIds.map((id) => {
             const def = defById.get(id)!;
             return (
@@ -164,15 +166,15 @@ function SortableItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={cn(className, isDragging && "opacity-70")}
+      className={cn("min-w-0", className, isDragging && "opacity-70")}
       {...attributes}
     >
-      <div className="relative">
+      <div className="relative min-w-0">
         <button
           type="button"
           ref={setActivatorNodeRef}
           {...listeners}
-          className="absolute right-3 top-3 z-10 cursor-grab active:cursor-grabbing rounded-md border border-black/10 bg-white/70 px-2 py-1 text-zinc-500 hover:bg-white"
+          className="absolute right-3 top-3 z-10 touch-none select-none cursor-grab rounded-md border border-black/10 bg-white/70 px-2 py-1 text-zinc-500 hover:bg-white active:cursor-grabbing"
           aria-label="Drag to reorder"
           title="Drag to reorder"
         >

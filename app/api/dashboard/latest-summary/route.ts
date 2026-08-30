@@ -47,32 +47,31 @@ function integer(value: number) {
 	return new Intl.NumberFormat("en", { maximumFractionDigits: 0 }).format(value);
 }
 
-		export async function GET(request: Request) {
-		try {
+		export async function GET() {
+	try {
 		const session = (await cookies()).get("__Host-sb_auth")?.value;
-		if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-		const { user } = await getUserCompanyContext(session);
-
-		const { searchParams } = new URL(request.url);
-		const workspaceId = searchParams.get("workspaceId");
-
-		if (!workspaceId) {
-  		return NextResponse.json(
-    	{ error: "Missing workspaceId" },
-    	{ status: 400 },
-  			);
+		if (!session) {
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401 },
+			);
 		}
 
-		if (!user?.id || workspaceId !== user.id) {
-  		return NextResponse.json(
-   		{ error: "Forbidden" },
-    	{ status: 403 },
-  			);
+		const { uid, user } = await getUserCompanyContext(session);
+
+		if (!user?.id || user.id !== uid) {
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401 },
+			);
 		}
+
+		const summaryOwnerId = uid;
+
 		const snapshot = await getAdminDb()
 			.collection("workspaces")
-			.doc(workspaceId)
+			.doc(summaryOwnerId)
 			.collection("syncSummaries")
 			.orderBy("generatedAt", "desc")
 			.limit(1)

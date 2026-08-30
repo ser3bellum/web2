@@ -371,11 +371,11 @@ const [, forceTick] = useState(0);
   }, [enabledIds]);
 
   if (!mounted) {
-    return <section className="min-h-[420px]" />;
+    return <section className="min-h-[420px] min-w-0" />;
   }
 
   return (
-    <section>
+    <section className="min-w-0">
 
     {workspaceId ? (
       <DailyReportModalController workspaceId={workspaceId} />
@@ -472,7 +472,7 @@ const [, forceTick] = useState(0);
             sources={hydratedSources}
             updatedLabel={updatedLabel}
             rightSlot={renderIconSafe((c as any).icon)}
-            className="h-[408px]"
+            className="min-h-[408px] md:h-[408px]"
               >
               {h && (
                 <div className="mb-3 flex items-center justify-between">

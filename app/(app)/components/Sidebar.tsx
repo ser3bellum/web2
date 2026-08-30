@@ -2,10 +2,12 @@
 
 import { CustomizeDashboardModal } from "app/(app)/components/CustomizeDashboardModal";
 import { DASHBOARD_CARDS } from "app/(app)/components/DashboardCards";
+import { LogoutButton } from "app/(app)/components/LogoutButton";
 import { cn } from "app/(app)/lib/cn";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Menu, X } from "lucide-react";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 
 type NavItem = { label: string; href: string; icon: ReactNode };
@@ -60,6 +62,7 @@ export function Sidebar({
 	const t = dictionary.navigation;
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
+	const [mobileOpen, setMobileOpen] = useState(false);
 	const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
 	const [appsOpen, setAppsOpen] = useState(false);
 	const [settingsOpen, setSettingsOpen] = useState(false);
@@ -255,9 +258,60 @@ const handleRefresh = async () => {
 	}
 };
 
+	useEffect(() => {
+		setMobileOpen(false);
+	}, [pathname]);
+
+	useEffect(() => {
+		if (!mobileOpen) return;
+
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = "hidden";
+
+		return () => {
+			document.body.style.overflow = previousOverflow;
+		};
+	}, [mobileOpen]);
+
 	return (
-		<aside className="z-50 h-full w-72 border-r border-white/40 bg-white/80 backdrop-blur-xl shadow-[0_2px_4px_rgba(0,0,0,0.08)]">
-			<div className="flex h-screen flex-col px-6 pt-5 pb-3">
+		<>
+			<button
+				type="button"
+				onClick={() => setMobileOpen(true)}
+				aria-label="Open navigation"
+				aria-controls="app-sidebar"
+				aria-expanded={mobileOpen}
+				className="fixed left-3 top-3 z-[90] inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/50 bg-white/90 text-slate-600 shadow-sm backdrop-blur transition hover:bg-white md:hidden"
+			>
+				<Menu size={20} />
+			</button>
+
+			{mobileOpen && (
+				<button
+					type="button"
+					aria-label="Close navigation"
+					onClick={() => setMobileOpen(false)}
+					className="fixed inset-0 z-[95] bg-slate-950/30 backdrop-blur-[2px] md:hidden"
+				/>
+			)}
+
+			<aside
+				id="app-sidebar"
+				className={cn(
+					"fixed inset-y-0 left-0 z-[100] h-dvh w-[min(18rem,calc(100vw-3rem))] border-r border-white/40 bg-white/90 backdrop-blur-xl shadow-[0_2px_12px_rgba(0,0,0,0.12)] transition-transform duration-200 ease-out",
+					"md:static md:z-50 md:h-full md:w-72 md:translate-x-0 md:bg-white/80 md:shadow-[0_2px_4px_rgba(0,0,0,0.08)]",
+					mobileOpen ? "translate-x-0" : "-translate-x-full",
+				)}
+			>
+			<div className="relative flex h-dvh flex-col px-6 pb-3 pt-5 md:h-screen">
+				<button
+					type="button"
+					onClick={() => setMobileOpen(false)}
+					aria-label="Close navigation"
+					className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 md:hidden"
+				>
+					<X size={20} />
+				</button>
 				<div className="mb-6 flex h-20 items-center justify-center">
 					<img
 						src="/brand/ser3bellum-logo-final.svg"
@@ -504,6 +558,13 @@ const handleRefresh = async () => {
 						<GridIcon />
 						<span className="text-sm">{t.customizeDashboard}</span>
 					</button>
+
+					<div className="mt-2 md:hidden">
+						<LogoutButton
+							label={dictionary.navigation.logout}
+							loadingLabel={dictionary.navigation.loggingOut}
+						/>
+					</div>
 				</div>
 
 				<CustomizeDashboardModal
@@ -512,7 +573,8 @@ const handleRefresh = async () => {
 					cards={DASHBOARD_CARDS}
 				/>
 			</div>
-		</aside>
+			</aside>
+		</>
 	);
 }
 

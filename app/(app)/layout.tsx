@@ -58,27 +58,27 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   } catch {
     googleAnalyticsConnected = false;
   }
-function serializeDate(value: unknown): string | null {
-  if (!value) return null;
 
-  if (typeof value === "string") return value;
+  function serializeDate(value: unknown): string | null {
+    if (!value) return null;
+    if (typeof value === "string") return value;
+    if (value instanceof Date) return value.toISOString();
 
-  if (value instanceof Date) return value.toISOString();
+    if (
+      typeof value === "object" &&
+      "toDate" in value &&
+      typeof value.toDate === "function"
+    ) {
+      return value.toDate().toISOString();
+    }
 
-  if (
-    typeof value === "object" &&
-    "toDate" in value &&
-    typeof value.toDate === "function"
-  ) {
-    return value.toDate().toISOString();
+    return null;
   }
 
-  return null;
-}
+  const trialEnd = serializeDate(user.trialEnd ?? user.accessUntil);
 
-const trialEnd = serializeDate(user.trialEnd ?? user.accessUntil);
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-dvh min-w-0 overflow-hidden">
       <Sidebar
         companyName={company?.name ?? user?.companyName ?? "Company"}
         userEmail={user?.email ?? ""}
@@ -88,30 +88,27 @@ const trialEnd = serializeDate(user.trialEnd ?? user.accessUntil);
         dictionary={dictionary}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col app-gradient">
-      <DailyReportModalController
-	workspaceId={company?.id ?? user.id}
-/>
-      <TopBar
-  companyName={company?.name ?? user?.companyName ?? "Ser3bellum"}
-  dictionary={dictionary}
-/>
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden app-gradient">
+        <DailyReportModalController workspaceId={company?.id ?? user.id} />
 
-<main className="flex-1 overflow-y-auto bg-transparent -mt-[72px] pt-[72px]">
+        <TopBar
+          companyName={company?.name ?? user?.companyName ?? "Ser3bellum"}
+          dictionary={dictionary}
+        />
 
-  <div className="px-4 pt-6 lg:px-8">
+        <main className="-mt-16 min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-transparent pt-16 md:-mt-[72px] md:pt-[72px]">
+          <div className="px-4 pt-6 lg:px-8">
+            <TrialBanner
+              billingStatus={
+                user.billingStatus ?? user.subscriptionStatus ?? ""
+              }
+              trialEnd={trialEnd}
+              cancelAtPeriodEnd={user.cancelAtPeriodEnd ?? false}
+            />
+          </div>
 
-    <TrialBanner
-  billingStatus={user.billingStatus ?? user.subscriptionStatus ?? ""}
-  trialEnd={trialEnd}
-  cancelAtPeriodEnd={user.cancelAtPeriodEnd ?? false}
-/>
-
-  </div>
-
-  {children}
-
-</main>
+          {children}
+        </main>
       </div>
     </div>
   );
