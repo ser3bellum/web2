@@ -12,9 +12,25 @@ export default function DailyReportModalController({ workspaceId }: { workspaceI
 	const pendingActionRef = useRef<"view" | null>(null);
 	const storageKey = `${STORAGE_PREFIX}.${workspaceId}`;
 
+
+function getDashboardReportUrl(preview: boolean) {
+		const currentParams = new URLSearchParams(window.location.search);
+		const reportParams = new URLSearchParams();
+
+		const from = currentParams.get("from");
+		const to = currentParams.get("to");
+
+		if (from) reportParams.set("from", from);
+		if (to) reportParams.set("to", to);
+		if (preview) reportParams.set("preview", "1");
+
+	const query = reportParams.toString();
+
+	return `/dashboard/print${query ? `?${query}` : ""}`;
+}
+
 	useEffect(() => {
 		const abortController = new AbortController();
-
 		async function loadSummary() {
 			try {
 				const response = await fetch(
@@ -55,27 +71,31 @@ export default function DailyReportModalController({ workspaceId }: { workspaceI
 		setClosing(true);
 	}, [closing]);
 
-	const handleClosed = useCallback(() => {
+		const handleClosed = useCallback(() => {
 		markSeen();
 		setOpen(false);
 		setClosing(false);
 
-		if (pendingActionRef.current === "view" && report) {
-			window.location.assign(`/reports/${encodeURIComponent(report.reportId)}`);
-		}
-		pendingActionRef.current = null;
-	}, [markSeen, report]);
+		if (pendingActionRef.current === "view") {
+		window.location.assign(getDashboardReportUrl(true));
+	}
+
+	pendingActionRef.current = null;
+}, [markSeen]);
 
 	const handlePrint = useCallback(() => {
-		if (!report) return;
-		markSeen();
-		window.open(
-			`/reports/${encodeURIComponent(report.reportId)}/print`,
-			"_blank",
-			"noopener,noreferrer",
-		);
-		requestClose("close");
-	}, [markSeen, report, requestClose]);
+	if (!report) return;
+
+	markSeen();
+
+	window.open(
+		getDashboardReportUrl(false),
+		"_blank",
+		"noopener,noreferrer",
+	);
+
+	requestClose("close");
+}, [markSeen, report, requestClose]);
 
 	if (!open || !report) return null;
 
