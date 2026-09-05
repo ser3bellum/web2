@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import DailyReportModal, { type DailyReport } from "./DailyReportModal";
-
+import DailyReportModal from "./DailyReportModal";
+import type { DailyReport } from "@/types/reports";
 const STORAGE_PREFIX = "ser3bellum.dailyReport.lastSeen";
 
 export default function DailyReportModalController({ workspaceId }: { workspaceId: string }) {

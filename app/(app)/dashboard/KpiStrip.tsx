@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Card } from "app/(app)/components/Card";
 import { BaseModal } from "app/(app)/components/ui/Modal";
 import type { AnalyticsModalPayload } from "@/lib/analytics/types";
-import type { DashboardKpi } from "./dashboardKpis";
 import { SalesMiniBarChart } from "app/(app)/components/SalesMiniBarChart";
+import type { DashboardKpi } from "@/types/dashboard";
 
 function toneClass(tone?: "up" | "down" | "neutral") {
   if (tone === "down") return "text-red-600";

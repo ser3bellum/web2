@@ -1,23 +1,8 @@
 import { findNangoConnectionId } from "@/lib/nango/findConnectionId";
 import { getNango } from "@/lib/nango/server";
+import type { DashboardHydration } from "@/types/dashboard";
 
-export type DashboardHydration = {
-  range: { from: string; to: string };
-  integrations: Array<{
-    key: string;
-    providerConfigKey: string;
-    connected: boolean;
-    connectionId?: string;
-  }>;
-  cards: Array<{
-    key: string;
-    title: string;
-    status: "ok" | "warn" | "error" | "disabled";
-    value: string;
-    delta?: string;
-    meta?: Record<string, any>;
-  }>;
-};
+
 
 type CardStatus = "ok" | "warn" | "error" | "disabled";
 

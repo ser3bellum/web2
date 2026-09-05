@@ -1,3 +1,5 @@
+
+import type { DashboardCardId } from "./DashboardCards";
 export const DASHBOARD_MVP_KEY = "sb.dashboard.mvp.v1";
 export const DASHBOARD_ENABLED_KEY = "sb.dashboard.enabled.v1";
 export const DASHBOARD_ORDER_KEY = "sb.dashboard.cardOrder.v2";
@@ -18,4 +20,21 @@ export function saveJson<T>(key: string, value: T) {
   } catch {
     // ignore
   }
+  
+}
+
+export function resolveDashboardCardOrder(
+  availableIds: DashboardCardId[],
+  savedOrder: DashboardCardId[] | null,
+): DashboardCardId[] {
+  const validSavedIds = (savedOrder ?? []).filter(
+    (id, index, items) =>
+      availableIds.includes(id) && items.indexOf(id) === index,
+  );
+
+  const missingIds = availableIds.filter(
+    (id) => !validSavedIds.includes(id),
+  );
+
+  return [...validSavedIds, ...missingIds];
 }

@@ -12,6 +12,9 @@ type SalesMiniBarChartProps = {
   height?: number;
   currency?: string;
   className?: string;
+  allowRangeToggle?: boolean;
+  showFullSeries?: boolean;
+  animate?: boolean;
 };
 
 const ranges = ["7d", "30d", "60d"] as const;
@@ -46,15 +49,20 @@ export function SalesMiniBarChart({
   height = 210,
   currency,
   className,
+  allowRangeToggle = true,
+  showFullSeries = false,
+  animate = true,
 }: SalesMiniBarChartProps) {
   const [range, setRange] = useState<ChartRange>("30d");
 
   const safeSeries = Array.isArray(series) ? series : [];
 
   const visibleSeries = useMemo(() => {
-    const limit = getRangeLimit(range);
-    return safeSeries.slice(-limit);
-  }, [safeSeries, range]);
+  if (showFullSeries) return safeSeries;
+
+  const limit = getRangeLimit(range);
+  return safeSeries.slice(-limit);
+}, [safeSeries, range, showFullSeries]);
 
   const maxValue = Math.max(...visibleSeries.map((point) => point.value), 0);
   const hasBars = visibleSeries.length > 0 && maxValue > 0;
@@ -95,9 +103,10 @@ export function SalesMiniBarChart({
             <div className="flex flex-1 items-end">
               <div
                 className={[
-                  "w-full rounded-t-md transition-all duration-300",
-                  isLast ? "bg-indigo-600" : "bg-indigo-500/85",
-                ].join(" ")}
+                      "w-full rounded-t-md",
+                        animate ? "transition-all duration-300" : "",
+                        isLast ? "bg-indigo-600" : "bg-indigo-500/85",
+                        ].join(" ")}
                 style={{ height: `${barHeight}%` }}
               />
             </div>
@@ -110,21 +119,23 @@ export function SalesMiniBarChart({
       })}
     </div>
 
-    <div className="mt-1 flex shrink-0 justify-end gap-5 pr-2 text-[11px] font-medium">
-      {ranges.map((item) => (
-        <button
-          key={item}
-          type="button"
-          onClick={() => setRange(item)}
-          className={[
-            "transition-colors hover:text-slate-500",
-            range === item ? "text-indigo-500" : "text-slate-300",
-          ].join(" ")}
-        >
-          {item}
-        </button>
-      ))}
-    </div>
+{allowRangeToggle ? (
+  <div className="mt-1 flex shrink-0 justify-end gap-5 pr-2 text-[11px] font-medium">
+    {ranges.map((item) => (
+      <button
+        key={item}
+        type="button"
+        onClick={() => setRange(item)}
+        className={[
+          "transition-colors hover:text-slate-500",
+          range === item ? "text-indigo-500" : "text-slate-300",
+        ].join(" ")}
+      >
+        {item}
+      </button>
+    ))}
+  </div>
+) : null}
   </div>
 );
 }

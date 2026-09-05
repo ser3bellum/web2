@@ -1,17 +1,10 @@
 import type { DashboardRange } from "@/app/(app)/lib/dateRange";
-import type { DashboardHydration } from "./getDashboardHydration";
+import type {
+  DashboardHydration, DashboardKpi,
+} from "@/types/dashboard";
 
-export type DashboardKpi = {
-  id: string;
-  title: string;
-  value: string;
-  subtitle?: string;
-  delta?: {
-    value: string;
-    tone?: "up" | "down" | "neutral";
-  };
-  meta?: Record<string, any>;
-};
+export type { DashboardKpi } from "@/types/dashboard";
+
 
 function toneFromDelta(delta?: string): "up" | "down" | "neutral" {
   if (!delta) return "neutral";

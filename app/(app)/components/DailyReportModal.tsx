@@ -4,30 +4,10 @@ import { Portal } from "app/(app)/components/Portal";
 import { Activity, AlertTriangle, Cpu, Sparkles, X } from "lucide-react";
 import { useEffect, useId, useRef } from "react";
 
-export type DailyActivityMetric = {
-	label: string;
-	value: number;
-	displayValue: string;
-};
-
-export type DailyHealthMetric = {
-	label: string;
-	value: number;
-	max: number;
-	displayValue: string;
-	tone: "good" | "warning" | "critical" | "neutral";
-};
-
-export type DailyReport = {
-	date: string;
-	headline: string;
-	summary: string;
-	summaryLabel: "AI summary" | "Operational summary";
-	bullets: string[];
-	activity: DailyActivityMetric[];
-	health: DailyHealthMetric[];
-	reportId: string;
-};
+import type {
+  DailyHealthMetric,
+  DailyReport,
+} from "@/types/reports";
 
 type CloseReason = "close" | "view";
 

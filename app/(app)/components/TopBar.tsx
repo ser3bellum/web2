@@ -27,9 +27,12 @@ type TopBarProps = {
 };
 
 
-function toISODate(d: Date) {
-	// YYYY-MM-DD
-	return d.toISOString().slice(0, 10);
+function toISODate(date: Date) {
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+
+	return `${year}-${month}-${day}`;
 }
 
 function startOfToday() {
@@ -366,6 +369,18 @@ const mailCount = messages.filter((item) => item.unread).length;
 				: "Custom range"
 			: range.label;
 
+			const handlePrintReport = () => {
+		const params = new URLSearchParams({
+		from: toISODate(range.from),
+		to: toISODate(range.to),
+		});
+
+		window.open(
+		`/dashboard/print?${params.toString()}`,
+		"_blank",
+		"noopener,noreferrer",
+	);
+};
 	return (
 		<>
 			{/* ✅ Backdrop OUTSIDE the header so it can't interfere with popover clicks */}
@@ -574,12 +589,12 @@ const mailCount = messages.filter((item) => item.unread).length;
 
 						<div className="hidden lg:block">
 							<IconButton
-								label={t.printReport}
-								onClick={() => window.print()}
-								className="no-print"
-							>
-								<PrinterIcon />
-							</IconButton>
+							label={t.printReport}
+							onClick={handlePrintReport}
+							className="no-print"
+								>
+							<PrinterIcon />
+						</IconButton>
 						</div>
 
 						<Link

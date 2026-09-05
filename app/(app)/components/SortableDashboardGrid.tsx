@@ -25,26 +25,13 @@ import { cn } from "app/(app)/lib/cn";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 
-const STORAGE_KEY = "sb.dashboard.cardOrder.v2";
+import {
+  DASHBOARD_ORDER_KEY,
+  loadJson,
+  resolveDashboardCardOrder,
+  saveJson,
+} from "app/(app)/components/dashboardPreferences";
 
-function loadOrder(): DashboardCardId[] | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as DashboardCardId[]) : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveOrder(order: DashboardCardId[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(order));
-  } catch {
-    // ignore
-  }
-}
 
 function getSizeClass(size?: DashboardCardDef["size"]) {
   if (size === "large") return "min-w-0 col-span-1 md:col-span-2";
@@ -65,17 +52,12 @@ export function SortableDashboardGrid({
   const [order, setOrder] = useState<DashboardCardId[]>(ids);
 
   useEffect(() => {
-    const stored = loadOrder();
+  const savedOrder = loadJson<DashboardCardId[]>(
+    DASHBOARD_ORDER_KEY,
+  );
 
-    if (!stored) {
-      setOrder(ids);
-      return;
-    }
-
-    const filtered = stored.filter((id) => ids.includes(id));
-    const missing = ids.filter((id) => !filtered.includes(id));
-    setOrder([...filtered, ...missing]);
-  }, [ids]);
+  setOrder(resolveDashboardCardOrder(ids, savedOrder));
+}, [ids]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -101,8 +83,8 @@ export function SortableDashboardGrid({
       const newIndex = prev.indexOf(over.id as DashboardCardId);
       if (oldIndex < 0 || newIndex < 0) return prev;
 
-      const next = arrayMove(prev, oldIndex, newIndex) as DashboardCardId[];
-      saveOrder(next);
+    const next = arrayMove(prev, oldIndex, newIndex) as DashboardCardId[];
+     saveJson(DASHBOARD_ORDER_KEY, next);
       return next;
     });
   };

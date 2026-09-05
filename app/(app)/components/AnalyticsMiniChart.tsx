@@ -41,6 +41,8 @@ type AnalyticsMiniChartProps = {
   series?: Point[];
   allowRangeToggle?: boolean;
   initialRange?: RangeKey;
+  showFullSeries?: boolean;
+  animate?: boolean;
 };
 
 function niceNumber(n: number) {
@@ -65,12 +67,18 @@ export function AnalyticsMiniChart({
   series = [],
   allowRangeToggle = true,
   initialRange = "30d",
+  showFullSeries = false,
+  animate = true,
 }: AnalyticsMiniChartProps) {
   const [range, setRange] = useState<RangeKey>(initialRange);
   const [hover, setHover] = useState<Point | null>(null);
 
-  const data = useMemo(() => filterSeriesByRange(series, range), [series, range]);
-
+  const data = useMemo(
+  () => showFullSeries
+    ? series
+    : filterSeriesByRange(series, range),
+  [series, range, showFullSeries],
+);
   const hasData = data.length > 0;
 
   const totalViews = useMemo(
@@ -120,7 +128,7 @@ export function AnalyticsMiniChart({
                 content={<TopPagesTooltip />}
                 cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
               />
-              <Bar dataKey="views" radius={[0, 8, 8, 0]}>
+              <Bar dataKey="views" radius={[0, 8, 8, 0]} isAnimationActive={animate} >
                 {topPages.map((entry) => (
                   <Cell key={entry.path} fill="#7db7e8" />
                 ))}
@@ -216,6 +224,7 @@ export function AnalyticsMiniChart({
                 strokeWidth={2}
                 dot={false}
                 activeDot={{ r: 4 }}
+                isAnimationActive={animate}
               />
             </AreaChart>
           </ResponsiveContainer>
