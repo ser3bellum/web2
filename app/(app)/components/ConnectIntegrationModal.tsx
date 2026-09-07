@@ -1,29 +1,26 @@
+
 "use client";
 
 import { cn } from "app/(app)/lib/cn";
+import type { IntegrationKey } from "app/(app)/lib/integrations";
 import { BaseModal } from "./ui/Modal";
 
-type IntegrationKey =
-	| "notion"
-	| "shopify"
-	| "stripe"
-	| "google"
-	| "googleAds"
-	| "slack"
-	| "github"
-	| "meta"
-	;
-
 const INTEGRATIONS: Record<IntegrationKey, { name: string }> = {
-	notion: { name: "Notion" },
-	shopify: { name: "Shopify" },
-	stripe: { name: "Stripe" },
-	google: { name: "Google" },
-	googleAds: { name: "Google Ads" },
-	slack: { name: "Slack" },
-	github: { name: "GitHub" },
-	meta: { name: "Meta Ads" },
-
+  brevo: { name: "Brevo" },
+  calendly: { name: "Calendly" },
+  google: { name: "Google Analytics" },
+  googleAds: { name: "Google Ads" },
+  googleCalendar: { name: "Google Calendar" },
+  hubspot: { name: "HubSpot" },
+  meta: { name: "Meta Ads" },
+  notion: { name: "Notion" },
+  quickbooks: { name: "QuickBooks" },
+  salesforce: { name: "Salesforce" },
+  shopify: { name: "Shopify" },
+  slack: { name: "Slack" },
+  stripe: { name: "Stripe" },
+  woocommerce: { name: "WooCommerce" },
+  github: { name: "GitHub" },
 };
 
 export function ConnectIntegrationModal({

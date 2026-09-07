@@ -6,30 +6,13 @@ import PageShell from "app/(app)/components/PageShell";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
-
-type IntegrationKey =
-  | "notion"
-  | "shopify"
-  | "stripe"
-  | "google"
-  | "slack"
-  | "github"
-  | "meta"
-  | "googleAds";
+import { NANGO_INTEGRATION_ID,
+  type IntegrationKey,
+} from "app/(app)/lib/integrations";
 
   type HydratedSource = {
   label: string;
   variant?: "default" | "success" | "warning" | "danger";
-};
-const NANGO_INTEGRATION_ID: Record<IntegrationKey, string> = {
-  github: "github-app",
-  google: "google-analytics",
-  googleAds: "google-ads",
-  notion: "notion",
-  shopify: "shopify",
-  slack: "slack",
-  stripe: "stripe-api-key",
-  meta: "meta-marketing-api",
 };
 
 type Integration = {
@@ -121,17 +104,21 @@ function IntegrationCard({
   return (
     <div className="rounded-3xl border border-white/60 bg-white/70 p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur">
       <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-4">
-          <LogoMark name={integration.name} />
-          <div>
-            <div className="text-lg font-semibold text-zinc-900">
-              {integration.name}
-            </div>
-            <div className="text-sm text-zinc-500">{integration.subtitle}</div>
-          </div>
+        <div className="flex min-w-0 items-start gap-4">
+         <div className="shrink-0">
+        <LogoMark name={integration.name} />
         </div>
 
-        <div className="flex flex-col items-end gap-1">
+       <div className="min-w-0">
+       <div className="truncate text-lg font-semibold text-zinc-900">
+      {integration.name}
+       </div>
+       <div className="text-sm text-zinc-500">
+      {integration.subtitle}
+      </div>
+      </div>
+    </div>
+        <div className="flex shrink-0 flex-col items-end gap-1">
           <Toggle
           checked={integration.connected}
           connectedLabel={t.connected}
@@ -248,7 +235,7 @@ function IntegrationManagementModal({
             onClick={onClose}
             className="rounded-full px-3 py-1 text-sm text-zinc-500 hover:bg-zinc-100"
           >
-            âœ•
+           X
           </button>
         </div>
 
@@ -308,96 +295,61 @@ export default function IntegrationsClient({ dictionary }: Props) {
   } | null>(null);
 
   const initial = useMemo<Integration[]>(
-    () => [
-      {
-        key: "notion",
-        name: "Notion",
-        subtitle: t.autoTrackOn,
-        primaryLabel: t.workspace,
-        primaryValue: null,
-        lastUpdate: null,
-        createdOn: null,
-        connected: false,
-         connectionId: null,
-      },
-      {
-        key: "shopify",
-        name: "Shopify",
-        subtitle: t.autoTrackOn,
-        primaryLabel: t.store,
-        primaryValue: null,
-        lastUpdate: null,
-        createdOn: null,
-        connected: false,
-        connectionId: null,
-      },
-      {
-        key: "stripe",
-        name: "Stripe",
-        subtitle: t.autoTrackOn,
-        primaryLabel: "Payments account",
-        primaryValue: null,
-        secondaryLabel: "Revenue source",
-        secondaryValue: null,
-        lastUpdate: null,
-        createdOn: null,
-        connected: false,
-        connectionId: null,
-      },
-      {
-        key: "google",
-        name: "Google Analytics",
-        subtitle: t.autoTrackOn,
-        primaryLabel: t.property,
-        primaryValue: null,
-        secondaryLabel: t.propertyId,
-        secondaryValue: null,
-        lastUpdate: null,
-        createdOn: null,
-        connected: false,
-        connectionId: null,
-      },
-      {
-        key: "googleAds",
-        name: "Google Ads",
-        subtitle: t.autoTrackOn,
-        primaryLabel: "Campaigns",
-        primaryValue: null,
-        secondaryLabel: "Customer ID",
-        secondaryValue: null,
-        lastUpdate: null,
-        createdOn: null,
-        connected: false,
-        connectionId: null,
-      },
-      {
-        key: "slack",
-        name: "Slack",
-        subtitle: t.autoTrackOn,
-        primaryLabel: t.workspace,
-        primaryValue: null,
-        secondaryLabel: t.teamId,
-        secondaryValue: null,
-        lastUpdate: null,
-        createdOn: null,
-        connected: false,
-        connectionId: null,
-      },
-      {
-        key: "github",
-        name: "GitHub",
-        subtitle: t.autoTrackOn,
-        primaryLabel: t.organization,
-        primaryValue: null,
-        secondaryLabel: t.orgId,
-        secondaryValue: null,
-        lastUpdate: null,
-        createdOn: null,
-        connected: false,
-        connectionId: null,
-      },
+  () => [
+    // Analytics
+    {
+      key: "google",
+      name: "Google Analytics",
+      subtitle: t.autoTrackOn,
+      primaryLabel: t.property,
+      primaryValue: null,
+      secondaryLabel: t.propertyId,
+      secondaryValue: null,
+      lastUpdate: null,
+      createdOn: null,
+      connected: false,
+      connectionId: null,
+    },
 
-      {
+    // Sales / commerce
+    {
+      key: "shopify",
+      name: "Shopify",
+      subtitle: t.autoTrackOn,
+      primaryLabel: t.store,
+      primaryValue: null,
+      lastUpdate: null,
+      createdOn: null,
+      connected: false,
+      connectionId: null,
+    },
+    {
+      key: "woocommerce",
+      name: "WooCommerce",
+      subtitle: t.autoTrackOn,
+      primaryLabel: "Store",
+      primaryValue: null,
+      lastUpdate: null,
+      createdOn: null,
+      connected: false,
+      connectionId: null,
+    },
+
+    // Marketing
+    {
+      key: "googleAds",
+      name: "Google Ads",
+      subtitle: t.autoTrackOn,
+      primaryLabel: "Campaigns",
+      primaryValue: null,
+      secondaryLabel: "Customer ID",
+      secondaryValue: null,
+      lastUpdate: null,
+      createdOn: null,
+      connected: false,
+      connectionId: null,
+    },
+    {
       key: "meta",
       name: "Meta Ads",
       subtitle: t.autoTrackOn,
@@ -410,9 +362,135 @@ export default function IntegrationsClient({ dictionary }: Props) {
       connected: false,
       connectionId: null,
     },
-    ],
-    [t]
-  );
+    {
+      key: "brevo",
+      name: "Brevo",
+      subtitle: t.autoTrackOn,
+      primaryLabel: "Marketing account",
+      primaryValue: null,
+      lastUpdate: null,
+      createdOn: null,
+      connected: false,
+      connectionId: null,
+    },
+
+    // CRM
+    {
+      key: "hubspot",
+      name: "HubSpot",
+      subtitle: t.autoTrackOn,
+      primaryLabel: "CRM account",
+      primaryValue: null,
+      lastUpdate: null,
+      createdOn: null,
+      connected: false,
+      connectionId: null,
+    },
+    {
+      key: "salesforce",
+      name: "Salesforce",
+      subtitle: t.autoTrackOn,
+      primaryLabel: "CRM account",
+      primaryValue: null,
+      lastUpdate: null,
+      createdOn: null,
+      connected: false,
+      connectionId: null,
+    },
+
+    // Finance
+    {
+      key: "stripe",
+      name: "Stripe",
+      subtitle: t.autoTrackOn,
+      primaryLabel: "Payments account",
+      primaryValue: null,
+      secondaryLabel: "Revenue source",
+      secondaryValue: null,
+      lastUpdate: null,
+      createdOn: null,
+      connected: false,
+      connectionId: null,
+    },
+    {
+      key: "quickbooks",
+      name: "QuickBooks",
+      subtitle: t.autoTrackOn,
+      primaryLabel: "Accounting account",
+      primaryValue: null,
+      lastUpdate: null,
+      createdOn: null,
+      connected: false,
+      connectionId: null,
+    },
+
+    // Booking / scheduling
+    {
+      key: "calendly",
+      name: "Calendly",
+      subtitle: t.autoTrackOn,
+      primaryLabel: "Scheduling account",
+      primaryValue: null,
+      lastUpdate: null,
+      createdOn: null,
+      connected: false,
+      connectionId: null,
+    },
+    {
+      key: "googleCalendar",
+      name: "Google Calendar",
+      subtitle: t.autoTrackOn,
+      primaryLabel: "Calendar",
+      primaryValue: null,
+      lastUpdate: null,
+      createdOn: null,
+      connected: false,
+      connectionId: null,
+    },
+
+    // Communication / workspace utilities
+    {
+      key: "slack",
+      name: "Slack",
+      subtitle: t.autoTrackOn,
+      primaryLabel: t.workspace,
+      primaryValue: null,
+      secondaryLabel: t.teamId,
+      secondaryValue: null,
+      lastUpdate: null,
+      createdOn: null,
+      connected: false,
+      connectionId: null,
+    },
+    {
+      key: "notion",
+      name: "Notion",
+      subtitle: t.autoTrackOn,
+      primaryLabel: t.workspace,
+      primaryValue: null,
+      lastUpdate: null,
+      createdOn: null,
+      connected: false,
+      connectionId: null,
+    },
+
+    // Developer utility
+    {
+      key: "github",
+      name: "GitHub",
+      subtitle: t.autoTrackOn,
+      primaryLabel: t.organization,
+      primaryValue: null,
+      secondaryLabel: t.orgId,
+      secondaryValue: null,
+      lastUpdate: null,
+      createdOn: null,
+      connected: false,
+      connectionId: null,
+    },
+  ],
+  [t]
+);
 
   const [integrations, setIntegrations] = useState<Integration[]>(initial);
 
@@ -600,49 +678,19 @@ export default function IntegrationsClient({ dictionary }: Props) {
             </p>
 
             <div className="mt-4 flex flex-wrap gap-2">
-      
-              <BadgePill>
-              <button type="button" onClick={() => connect("meta")}>
-               Meta Ads
+             {integrations.map((integration) => (
+             <BadgePill key={integration.key}>
+             <button
+               type="button"
+               onClick={() => connect(integration.key)}
+                >
+              {integration.name}
               </button>
-              </BadgePill>
-              <BadgePill>
-                <button type="button" onClick={() => connect("google")}>
-                  Google
-                </button>
-              </BadgePill>
-              <BadgePill>
-              <button type="button" onClick={() => connect("googleAds")}>
-                Google Ads
-               </button>
-              </BadgePill>
-              <BadgePill>
-                <button type="button" onClick={() => connect("shopify")}>
-                  Shopify
-                </button>
-              </BadgePill>
-              <BadgePill>
-                <button type="button" onClick={() => connect("notion")}>
-                  Notion
-                </button>
-              </BadgePill>
-              <BadgePill>
-                <button type="button" onClick={() => connect("slack")}>
-                  Slack
-                </button>
-              </BadgePill>
-              <BadgePill>
-                <button type="button" onClick={() => connect("github")}>
-                  GitHub
-                </button>
-              </BadgePill>
-              <BadgePill>
-                <button type="button" onClick={() => connect("stripe")}>
-                  Stripe
-                </button>
-              </BadgePill>
-              <BadgePill>{t.moreComingSoon}</BadgePill>
-            </div>
+            </BadgePill>
+            ))}
+
+            <BadgePill>{t.moreComingSoon}</BadgePill>
+          </div>
           </div>
 
           <button
