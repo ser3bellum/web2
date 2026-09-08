@@ -102,10 +102,31 @@ function getHydratedSourcesForCard(
     );
 
   if (cardId === "marketing") {
-    return has("googleAds")
-      ? [{ label: "Google Ads", variant: "success" }]
-      : undefined;
+  const sources: DashboardCardSource[] = [];
+
+  if (has("googleAds")) {
+    sources.push({
+      label: "Google Ads",
+      variant: "success",
+    });
   }
+
+  if (has("meta")) {
+    sources.push({
+      label: "Meta Ads",
+      variant: "success",
+    });
+  }
+
+  if (has("brevo")) {
+    sources.push({
+      label: "Brevo",
+      variant: "success",
+    });
+  }
+
+  return sources.length ? sources : undefined;
+}
 
   if (cardId === "social") {
     return has("meta")
@@ -120,39 +141,86 @@ function getHydratedSourcesForCard(
   }
 
   if (cardId === "sales") {
-    return has("shopify")
-      ? [{ label: "Shopify", variant: "success" }]
-      : undefined;
+  const sources: DashboardCardSource[] = [];
+
+  if (has("shopify")) {
+    sources.push({
+      label: "Shopify",
+      variant: "success",
+    });
   }
 
-  if (cardId === "accounting") {
-    const sources: DashboardCardSource[] = [];
-
-    if (has("stripe")) {
-      sources.push({
-        label: "Stripe",
-        variant: "success",
-      });
-    }
-
-    if (has("quickbooks")) {
-      sources.push({
-        label: "QuickBooks",
-        variant: "success",
-      });
-    }
-
-    if (has("xero")) {
-      sources.push({
-        label: "Xero",
-        variant: "success",
-      });
-    }
-
-    return sources.length ? sources : undefined;
+  if (has("woocommerce")) {
+    sources.push({
+      label: "WooCommerce",
+      variant: "success",
+    });
   }
 
-  return undefined;
+  return sources.length ? sources : undefined;
+}
+
+if (cardId === "crm") {
+  const sources: DashboardCardSource[] = [];
+
+  if (has("hubspot")) {
+    sources.push({
+      label: "HubSpot",
+      variant: "success",
+    });
+  }
+
+  if (has("salesforce")) {
+    sources.push({
+      label: "Salesforce",
+      variant: "success",
+    });
+  }
+
+  return sources.length ? sources : undefined;
+}
+
+if (cardId === "finance") {
+  const sources: DashboardCardSource[] = [];
+
+  if (has("stripe")) {
+    sources.push({
+      label: "Stripe",
+      variant: "success",
+    });
+  }
+
+  if (has("quickbooks")) {
+    sources.push({
+      label: "QuickBooks",
+      variant: "success",
+    });
+  }
+
+  return sources.length ? sources : undefined;
+}
+
+if (cardId === "booking") {
+  const sources: DashboardCardSource[] = [];
+
+  if (has("calendly")) {
+    sources.push({
+      label: "Calendly",
+      variant: "success",
+    });
+  }
+
+  if (has("googleCalendar")) {
+    sources.push({
+      label: "Google Calendar",
+      variant: "success",
+    });
+  }
+
+  return sources.length ? sources : undefined;
+}
+
+return undefined;
 }
 
 function StatusPill({
@@ -220,7 +288,10 @@ const HYDRATION_KEY_BY_CARD_ID: Partial<
   social: "meta_ads",
   marketing: "google_ads",
   sales: "sales",
-  accounting: "accounting",
+
+  // Keep using the existing hydration payload for now.
+  finance: "accounting",
+
   aiInsights: "ai_insights",
 };
 
@@ -247,12 +318,8 @@ export function DashboardCardView({
     sales: labels.cards.sales,
     marketing: labels.cards.marketing,
     downtime: labels.cards.downtime,
-    cpu: labels.cards.cpu,
-    threats: labels.cards.threats,
-    accounting: labels.cards.accounting,
     social: labels.cards.social,
     booking: labels.cards.booking,
-    productivity: labels.cards.productivity,
     aiInsights: {
       title: "AI Insights",
       subtitle: "Résumé intelligent",
@@ -426,7 +493,7 @@ export function DashboardCardView({
             variant={variant}
           />
         )
-      ) : definition.id === "accounting" ? (
+      ) : definition.id === "finance" ? (
         hasHydratedData ? (
           <AccountingBalanceBreakdown
             availableBalance={

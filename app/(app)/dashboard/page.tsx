@@ -9,7 +9,7 @@ import { parseDashboardRange } from "app/(app)/lib/dateRange";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getUserCompanyContext } from "@/lib/data/getUserCompanyContext";
-import { KpiStrip } from "./KpiStrip";
+import { SelectableKpiStrip } from "./SelectableKpiStrip";
 import { getDashboardHydration } from "app/(app)/dashboard/getDashboardHydration";
 import { DashboardOnboardingEmptyState } from "./DashboardOnboardingEmptyState";
 import { findNangoConnectionId } from "@/lib/nango/findConnectionId";
@@ -137,10 +137,10 @@ const kpis = await getDashboardKpis({
   cancelAtPeriodEnd={user.cancelAtPeriodEnd ?? false}
 />
 
-      <KpiStrip
-        kpis={kpis}
-        labels={dictionary.dashboard.kpis}
-      />
+    <SelectableKpiStrip
+  kpis={kpis}
+  labels={dictionary.dashboard.kpis}
+/>
 
       <section>
         <DashboardCardsGrid

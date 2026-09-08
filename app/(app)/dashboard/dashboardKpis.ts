@@ -136,23 +136,5 @@ const averageOrderValue =
   		averageOrderValue,
       },
     },
-    {
-	id: "kpi-marketing",
-	title: "Marketing",
-	value: "—",
-	subtitle: "Connect Meta Ads or Google Ads",
-},
-{
-	id: "kpi-downtime",
-	title: "Downtime",
-	value: "—",
-	subtitle: "Connect uptime monitoring",
-},
-{
-	id: "kpi-cpu-usage",
-	title: "CPU Usage",
-	value: "—",
-	subtitle: "Connect infrastructure monitoring",
-},
   ];
 }

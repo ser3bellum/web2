@@ -9,6 +9,9 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Menu, X } from "lucide-react";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
+import {
+  DASHBOARD_KPI_DEFINITIONS,
+} from "app/(app)/dashboard/DashboardKpiDefinitions";
 
 type NavItem = { label: string; href: string; icon: ReactNode };
 type AppId = "slack" | "google-analytics" | "shopify" | "stripe" | "meta-ads";
@@ -568,10 +571,11 @@ const handleRefresh = async () => {
 				</div>
 
 				<CustomizeDashboardModal
-					open={isCustomizeOpen}
-					onClose={() => setIsCustomizeOpen(false)}
-					cards={DASHBOARD_CARDS}
-				/>
+  					open={isCustomizeOpen}
+  					onClose={() => setIsCustomizeOpen(false)}
+  					cards={DASHBOARD_CARDS}
+  					kpis={DASHBOARD_KPI_DEFINITIONS}
+					/>
 			</div>
 			</aside>
 		</>

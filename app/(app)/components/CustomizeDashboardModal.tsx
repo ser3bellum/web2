@@ -1,29 +1,40 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
+
 import type {
   DashboardCardDef,
   DashboardCardId,
 } from "app/(app)/components/DashboardCards";
-import { Modal } from "app/(app)/components/Modal";
-import { cn } from "app/(app)/lib/cn";
-import { useEffect, useMemo, useState } from "react";
 
 import {
-  DASHBOARD_MVP_KEY,
   DASHBOARD_ENABLED_KEY,
+  DASHBOARD_MVP_KEY,
   loadJson,
   saveJson,
 } from "app/(app)/components/dashboardPreferences";
+
+import { Modal } from "app/(app)/components/Modal";
+import { cn } from "app/(app)/lib/cn";
+
+import type {
+  DashboardKpiDefinition,
+  DashboardKpiId,
+} from "app/(app)/dashboard/DashboardKpiDefinitions";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   cards: DashboardCardDef[];
-  onSaved?: (v: { mvp: DashboardCardId[]; enabled: DashboardCardId[] }) => void;
+  kpis: DashboardKpiDefinition[];
+  onSaved?: (value: {
+    mvp: DashboardKpiId[];
+    enabled: DashboardCardId[];
+  }) => void;
 };
 
-const ROW_CLASS =
-  "min-h-[42px] rounded-lg px-2 py-1.5";
+const ROW_CLASS = "min-h-[42px] rounded-lg px-2 py-1.5";
+
 const HEADER_CLASS =
   "min-h-[40px] flex items-center justify-between";
 
@@ -31,81 +42,160 @@ export function CustomizeDashboardModal({
   open,
   onClose,
   cards,
+  kpis,
   onSaved,
 }: Props) {
-  const allIds = useMemo(() => cards.map((c) => c.id), [cards]);
+  const allCardIds = useMemo(
+    () => cards.map((card) => card.id),
+    [cards],
+  );
 
-  const defaultEnabled = useMemo(
-    () => cards.filter((c) => c.defaultEnabled).map((c) => c.id),
+  const allKpiIds = useMemo(
+    () => kpis.map((kpi) => kpi.id),
+    [kpis],
+  );
+
+  const defaultEnabledCards = useMemo(
+    () =>
+      cards
+        .filter((card) => card.defaultEnabled)
+        .map((card) => card.id),
     [cards],
   );
 
   const defaultMvp = useMemo(
-    () => (defaultEnabled.length ? defaultEnabled : allIds).slice(0, 5),
-    [defaultEnabled, allIds],
+    () =>
+      kpis
+        .filter((kpi) => kpi.defaultEnabled)
+        .map((kpi) => kpi.id)
+        .slice(0, 5),
+    [kpis],
   );
 
   const defaultEnabled9 = useMemo(
-    () => (defaultEnabled.length ? defaultEnabled : allIds).slice(0, 9),
-    [defaultEnabled, allIds],
+    () =>
+      (
+        defaultEnabledCards.length
+          ? defaultEnabledCards
+          : allCardIds
+      ).slice(0, 9),
+    [defaultEnabledCards, allCardIds],
   );
 
-  const [mvp, setMvp] = useState<DashboardCardId[]>(defaultMvp);
-  const [enabled, setEnabled] = useState<DashboardCardId[]>(defaultEnabled9);
+  const [mvp, setMvp] =
+    useState<DashboardKpiId[]>(defaultMvp);
+
+  const [enabled, setEnabled] =
+    useState<DashboardCardId[]>(defaultEnabled9);
 
   useEffect(() => {
     if (!open) return;
 
-    const savedMvp = loadJson<DashboardCardId[]>(DASHBOARD_MVP_KEY);
-    const savedEnabled = loadJson<DashboardCardId[]>(DASHBOARD_ENABLED_KEY);
+    const savedMvp =
+      loadJson<DashboardKpiId[]>(DASHBOARD_MVP_KEY);
 
-    const clean = (arr: DashboardCardId[] | null) =>
-      (arr ?? []).filter((id) => allIds.includes(id));
+    const savedEnabled =
+      loadJson<DashboardCardId[]>(DASHBOARD_ENABLED_KEY);
 
-    const nextMvp = clean(savedMvp);
-    const nextEnabled = clean(savedEnabled);
+    const cleanMvp = (savedMvp ?? []).filter((id) =>
+      allKpiIds.includes(id),
+    );
 
-    setMvp(nextMvp.length ? nextMvp.slice(0, 5) : defaultMvp);
-    setEnabled(nextEnabled.length ? nextEnabled.slice(0, 9) : defaultEnabled9);
-  }, [open, allIds, defaultMvp, defaultEnabled9]);
+    const cleanEnabled = (savedEnabled ?? []).filter((id) =>
+      allCardIds.includes(id),
+    );
+
+    setMvp(
+      cleanMvp.length
+        ? cleanMvp.slice(0, 5)
+        : defaultMvp,
+    );
+
+    setEnabled(
+      cleanEnabled.length
+        ? cleanEnabled.slice(0, 9)
+        : defaultEnabled9,
+    );
+  }, [
+    open,
+    allKpiIds,
+    allCardIds,
+    defaultMvp,
+    defaultEnabled9,
+  ]);
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
+    };
   }, [open, onClose]);
 
   const enabledCount = enabled.length;
 
-  const toggleMvp = (id: DashboardCardId) => {
-    setMvp((prev) => {
-      const has = prev.includes(id);
-      if (has) return prev.filter((x) => x !== id);
-      if (prev.length >= 5) return prev;
-      return [...prev, id];
+  const toggleMvp = (id: DashboardKpiId) => {
+    setMvp((previous) => {
+      const selected = previous.includes(id);
+
+      if (selected) {
+        return previous.filter((item) => item !== id);
+      }
+
+      if (previous.length >= 5) {
+        return previous;
+      }
+
+      return [...previous, id];
     });
   };
 
   const toggleEnabled = (id: DashboardCardId) => {
-    setEnabled((prev) => {
-      const has = prev.includes(id);
-      if (has) return prev.filter((x) => x !== id);
-      if (prev.length >= 9) return prev;
-      return [...prev, id];
+    setEnabled((previous) => {
+      const selected = previous.includes(id);
+
+      if (selected) {
+        return previous.filter((item) => item !== id);
+      }
+
+      if (previous.length >= 9) {
+        return previous;
+      }
+
+      return [...previous, id];
     });
   };
 
   const done = () => {
-    const finalMvp = mvp.length === 5 ? mvp : defaultMvp;
-    const finalEnabled = enabled.length ? enabled : defaultEnabled9;
+    const finalMvp =
+      mvp.length === 5 ? mvp : defaultMvp;
+
+    const finalEnabled =
+      enabled.length > 0 ? enabled : defaultEnabled9;
 
     saveJson(DASHBOARD_MVP_KEY, finalMvp);
     saveJson(DASHBOARD_ENABLED_KEY, finalEnabled);
 
-    window.dispatchEvent(new Event("sb-dashboard-preferences-updated"));
+    window.dispatchEvent(
+      new Event("sb-dashboard-preferences-updated"),
+    );
 
-    onSaved?.({ mvp: finalMvp, enabled: finalEnabled });
+    onSaved?.({
+      mvp: finalMvp,
+      enabled: finalEnabled,
+    });
+
     onClose();
   };
 
@@ -121,62 +211,72 @@ export function CustomizeDashboardModal({
     >
       <div className="px-6 pb-6 pt-1">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-          {/* LEFT: MVP */}
+          {/* LEFT: KPI / MVP selection */}
           <div className="space-y-1">
-  			<div className={HEADER_CLASS}>
-    		<div className="text-sm font-semibold text-blue-700">
-      		Select your 5 MVP
-    		</div>
+            <div className={HEADER_CLASS}>
+              <div className="text-sm font-semibold text-blue-700">
+                Select your 5 MVP
+              </div>
 
               <div
-      			className="flex items-center gap-2"
-      			aria-label="MVP selection progress"
-      			role="progressbar"
-      			aria-valuemin={0}
-      			aria-valuemax={5}
-      			aria-valuenow={mvp.length}>
+                className="flex items-center gap-2"
+                aria-label="MVP selection progress"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={5}
+                aria-valuenow={mvp.length}
+              >
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <span
+                    key={`mvp-dot-${index}`}
+                    className={cn(
+                      "h-3 w-3 rounded-full transition-colors",
+                      index < mvp.length
+                        ? "bg-indigo-600"
+                        : "bg-slate-300",
+                    )}
+                  />
+                ))}
+              </div>
+            </div>
 
-      			{Array.from({ length: 5 }).map((_, i) => (
-        		<span
-          		key={`mvp-dot-${i}`}
-          		className={cn(
-           		 "h-3 w-3 rounded-full transition-colors",
-            	i < mvp.length ? "bg-indigo-600" : "bg-slate-300",
-         		 )}
-        		/>
-      			))}
-    		</div>
-  </div>
-
-  			<div className="text-[11px] text-zinc-400">
-    			If you don’t choose an MVP, Ser3bellum will apply sensible defaults.
-  			</div>
-
+            <div className="text-[11px] text-zinc-400">
+              Choose the 5 KPIs you want to monitor at a glance.
+            </div>
 
             <div className="mt-2 space-y-1">
-              {cards.map((c) => {
-                const selected = mvp.includes(c.id);
-                const disabled = !selected && mvp.length >= 5;
+              {kpis.map((kpi) => {
+                const selected = mvp.includes(kpi.id);
+
+                const disabled =
+                  !selected && mvp.length >= 5;
 
                 return (
                   <button
                     type="button"
-                    key={c.id}
-                    onClick={() => toggleMvp(c.id)}
+                    key={kpi.id}
+                    onClick={() => toggleMvp(kpi.id)}
                     disabled={disabled}
                     className={cn(
                       "flex w-full items-center gap-3 text-left transition",
                       ROW_CLASS,
                       "hover:bg-zinc-50",
-                      disabled && "cursor-not-allowed opacity-50 hover:bg-transparent",
+                      disabled &&
+                        "cursor-not-allowed opacity-50 hover:bg-transparent",
                     )}
                   >
                     <div className="flex h-5 w-5 shrink-0 items-center justify-center">
                       <RadioDot checked={selected} />
                     </div>
 
-                    <div className="min-w-0 text-[13px] text-zinc-900">
-                      {c.title}
+                    <div className="min-w-0">
+                      <div className="text-[13px] text-zinc-900">
+                        {kpi.title}
+                      </div>
+
+                      <div className="text-[11px] text-zinc-400">
+                        {kpi.subtitle}
+                      </div>
                     </div>
                   </button>
                 );
@@ -184,38 +284,42 @@ export function CustomizeDashboardModal({
             </div>
 
             <div className="mt-3 text-xs text-zinc-500">
-              {mvp.length < 5 ? `Pick ${5 - mvp.length} more.` : "MVP complete."}
+              {mvp.length < 5
+                ? `Pick ${5 - mvp.length} more.`
+                : "MVP complete."}
             </div>
           </div>
 
-          {/* RIGHT: enabled cards */}
+          {/* RIGHT: dashboard card selection */}
           <div className="relative">
             <div className="absolute -left-4 top-0 hidden h-full w-px bg-zinc-200 md:block" />
 
             <div className="space-y-1">
- 			 <div className={HEADER_CLASS}>
-    		<div className="text-sm font-semibold text-blue-700">
-     		 Choose your 9 cards
-    		</div>
+              <div className={HEADER_CLASS}>
+                <div className="text-sm font-semibold text-blue-700">
+                  Choose your 9 cards
+                </div>
 
-    		<div className="text-xs text-zinc-500">
-      		{enabledCount}/9 selected
-    		</div>
-  			</div>
+                <div className="text-xs text-zinc-500">
+                  {enabledCount}/9 selected
+                </div>
+              </div>
 
-  			<div className="text-[11px] text-zinc-400">
-   			You can change this anytime.
- 			</div>
-			</div>
+              <div className="text-[11px] text-zinc-400">
+                You can change this anytime.
+              </div>
+            </div>
 
             <div className="mt-2 space-y-1">
-              {cards.map((c) => {
-                const on = enabled.includes(c.id);
-                const disabled = !on && enabled.length >= 9;
+              {cards.map((card) => {
+                const selected = enabled.includes(card.id);
+
+                const disabled =
+                  !selected && enabled.length >= 9;
 
                 return (
                   <div
-                    key={c.id}
+                    key={card.id}
                     className={cn(
                       "flex items-center justify-between gap-4",
                       ROW_CLASS,
@@ -223,14 +327,16 @@ export function CustomizeDashboardModal({
                     )}
                   >
                     <div className="min-w-0 text-[13px] text-zinc-900">
-                      {c.title}
+                      {card.title}
                     </div>
 
                     <div className="flex h-7 w-12 shrink-0 items-center justify-center">
                       <Toggle
-                        checked={on}
+                        checked={selected}
                         disabled={disabled}
-                        onChange={() => toggleEnabled(c.id)}
+                        onChange={() =>
+                          toggleEnabled(card.id)
+                        }
                       />
                     </div>
                   </div>
@@ -249,25 +355,32 @@ export function CustomizeDashboardModal({
             </div>
           </div>
         </div>
-
       </div>
     </Modal>
   );
 }
 
-function RadioDot({ checked }: { checked: boolean }) {
+function RadioDot({
+  checked,
+}: {
+  checked: boolean;
+}) {
   return (
     <span
       className={cn(
         "grid h-5 w-5 place-items-center rounded-full border transition-colors",
-        checked ? "border-blue-700" : "border-zinc-300",
+        checked
+          ? "border-blue-700"
+          : "border-zinc-300",
       )}
       aria-hidden
     >
       <span
         className={cn(
           "h-2.5 w-2.5 rounded-full transition-colors",
-          checked ? "bg-blue-700" : "bg-transparent",
+          checked
+            ? "bg-blue-700"
+            : "bg-transparent",
         )}
       />
     </span>
@@ -291,14 +404,18 @@ function Toggle({
       aria-pressed={checked}
       className={cn(
         "relative inline-flex h-7 w-12 items-center rounded-full border transition-colors",
-        checked ? "border-blue-700 bg-blue-700" : "border-zinc-200 bg-zinc-200",
+        checked
+          ? "border-blue-700 bg-blue-700"
+          : "border-zinc-200 bg-zinc-200",
         disabled && "cursor-not-allowed",
       )}
     >
       <span
         className={cn(
           "inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
-          checked ? "translate-x-6" : "translate-x-1",
+          checked
+            ? "translate-x-6"
+            : "translate-x-1",
         )}
       />
     </button>
