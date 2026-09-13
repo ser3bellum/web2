@@ -6,6 +6,7 @@ import type { DashboardHydrationCard } from "@/types/dashboard";
 import { AccountingBalanceBreakdown } from "./AccountingBalanceBreakdown";
 import { AIInsightsCard } from "./AIInsightsCard";
 import { AIInsightsReportCard } from "./AIInsightsReportCard";
+import { SocialMediaChart } from "./SocialMediaChart";
 import { AnalyticsMiniChart } from "./AnalyticsMiniChart";
 import { Card } from "./Card";
 import type {
@@ -14,6 +15,10 @@ import type {
   DashboardCardSource,
 } from "./DashboardCards";
 import { SalesMiniBarChart } from "./SalesMiniBarChart";
+import { MarketingConversionsChart } from "./MarketingConversionsChart";
+import { CrmPipelineChart } from "./CrmPipelineChart";
+import { BookingActivityChart } from "./BookingActivityChart";
+import { DowntimeActivityChart } from "./DowntimeActivityChart";
 
 type DashboardLabels = Dictionary["dashboard"];
 type DashboardCardVariant = "dashboard" | "report";
@@ -465,34 +470,148 @@ export function DashboardCardView({
           />
         )
       ) : definition.id === "marketing" ? (
-        hasHydratedData ? (
-          <div className="space-y-3 text-sm text-slate-600">
-            <div>Google Ads data will appear here.</div>
-          </div>
-        ) : (
-          <EmptyCardState
-            labels={labels}
-            variant={variant}
-          />
-        )
+  <div className="space-y-4">
+    <MarketingConversionsChart
+      series={
+        Array.isArray(hydration?.meta?.series)
+          ? hydration.meta.series
+          : []
+      }
+      preview={!hasHydratedData}
+      animate={!isReport}
+    />
+
+    {!hasHydratedData && !isReport ? (
+      <div className="text-xs text-slate-400">
+        Campaign data will appear here once available.
+      </div>
+    ) : null}
+  </div>
+        
       ) : definition.id === "social" ? (
-        hasHydratedData ? (
-          <div className="space-y-3 text-sm text-slate-600">
-            {typeof hydration?.meta?.accessLevel === "string" ? (
-              <div>
-                <span className="font-medium text-slate-800">
-                  Access:
-                </span>{" "}
-                {hydration.meta.accessLevel}
-              </div>
-            ) : null}
-          </div>
-        ) : (
-          <EmptyCardState
-            labels={labels}
-            variant={variant}
-          />
-        )
+  <div className="space-y-4">
+    <SocialMediaChart
+      series={
+        Array.isArray(hydration?.meta?.series)
+          ? hydration.meta.series
+          : []
+      }
+      reach={toNumber(hydration?.meta?.reach) ?? 0}
+      engagementRate={
+        toNumber(hydration?.meta?.engagementRate) ?? 0
+      }
+      preview={!hasHydratedData}
+      animate={!isReport}
+    />
+
+    {!hasHydratedData && !isReport ? (
+      <div className="text-xs text-slate-400">
+        Social performance data will appear here once available.
+      </div>
+    ) : null}
+    </div>
+
+) : definition.id === "crm" ? (
+  <div className="space-y-4">
+    <CrmPipelineChart
+      pipelineValue={
+        toNumber(hydration?.meta?.pipelineValue) ?? 0
+      }
+      opportunities={
+        toNumber(hydration?.meta?.opportunities) ?? 0
+      }
+      qualifiedLeads={
+        toNumber(hydration?.meta?.qualifiedLeads) ?? 0
+      }
+      winRate={
+        toNumber(hydration?.meta?.winRate) ?? 0
+      }
+     
+      stages={
+        Array.isArray(hydration?.meta?.stages)
+          ? hydration.meta.stages
+          : []
+      }
+      currency={
+        typeof hydration?.meta?.currency === "string"
+          ? hydration.meta.currency
+          : "EUR"
+      }
+      preview={!hasHydratedData}
+      animate={!isReport}
+    />
+
+    {!hasHydratedData && !isReport ? (
+      <div className="text-xs text-slate-400">
+        CRM performance data will appear here once available.
+      </div>
+    ) : null}
+  </div>
+
+  ) : definition.id === "downtime" ? (
+  <div className="space-y-4">
+    <DowntimeActivityChart
+      currentStatus={
+        typeof hydration?.meta?.currentStatus === "string"
+          ? hydration.meta.currentStatus
+          : "No monitoring data"
+      }
+      uptime={
+        toNumber(hydration?.meta?.uptime) ?? 0
+      }
+      incidents={
+        toNumber(hydration?.meta?.incidents) ?? 0
+      }
+      downtimeMinutes={
+        toNumber(hydration?.meta?.downtimeMinutes) ?? 0
+      }
+      series={
+        Array.isArray(hydration?.meta?.series)
+          ? hydration.meta.series
+          : []
+      }
+      preview={!hasHydratedData}
+      animate={!isReport}
+    />
+
+    {!hasHydratedData && !isReport ? (
+      <div className="text-xs text-slate-400">
+        Monitoring data will appear here once available.
+      </div>
+    ) : null}
+  </div>
+
+) : definition.id === "booking" ? (
+  <div className="space-y-4">
+    <BookingActivityChart
+      totalBookings={
+        toNumber(hydration?.meta?.totalBookings) ?? 0
+      }
+      upcomingBookings={
+        toNumber(hydration?.meta?.upcomingBookings) ?? 0
+      }
+      cancellationRate={
+        toNumber(hydration?.meta?.cancellationRate) ?? 0
+      }
+      noShowRate={
+        toNumber(hydration?.meta?.noShowRate) ?? 0
+      }
+      series={
+        Array.isArray(hydration?.meta?.series)
+          ? hydration.meta.series
+          : []
+      }
+      preview={!hasHydratedData}
+      animate={!isReport}
+    />
+
+    {!hasHydratedData && !isReport ? (
+      <div className="text-xs text-slate-400">
+        Booking activity will appear here once available.
+      </div>
+    ) : null}
+  </div>
+
       ) : definition.id === "finance" ? (
         hasHydratedData ? (
           <AccountingBalanceBreakdown

@@ -54,7 +54,7 @@ export const DASHBOARD_KPI_DEFINITIONS: DashboardKpiDefinition[] = [
   },
   {
     id: "kpi-social",
-    title: "Social networks",
+    title: "Social Media",
     subtitle: "Reach and engagement",
     defaultEnabled: false,
   },

@@ -105,7 +105,7 @@ export const DASHBOARD_CARDS: DashboardCardDef[] = [
 
   {
     id: "social",
-    title: "Social networks",
+    title: "Social Media",
     subtitle: "Social reach and engagement signals",
     defaultEnabled: true,
     size: "medium",
