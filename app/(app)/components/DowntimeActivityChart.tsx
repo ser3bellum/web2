@@ -27,6 +27,7 @@ type DowntimeActivityChartProps = {
   preview?: boolean;
   animate?: boolean;
   className?: string;
+  showMetrics?: boolean;
 };
 
 const EMPTY_SERIES: DowntimeDatum[] = [
@@ -48,6 +49,7 @@ export function DowntimeActivityChart({
   preview = false,
   animate = true,
   className,
+  showMetrics = true,
 }: DowntimeActivityChartProps) {
   const data = useMemo(
     () => (series.length ? series : EMPTY_SERIES),
@@ -61,32 +63,34 @@ export function DowntimeActivityChart({
         className,
       )}
     >
-      <div className="grid grid-cols-2 gap-x-5 gap-y-3">
-        <Metric
-          label="Current status"
-          value={currentStatus}
-          preview={preview}
-          compact
-        />
+      {showMetrics ? (
+  <div className="grid grid-cols-2 gap-x-5 gap-y-3">
+    <Metric
+      label="Current status"
+      value={currentStatus}
+      preview={preview}
+      compact
+    />
 
-        <Metric
-          label="Uptime"
-          value={`${uptime.toFixed(2)}%`}
-          preview={preview}
-        />
+    <Metric
+      label="Uptime"
+      value={`${uptime.toFixed(2)}%`}
+      preview={preview}
+    />
 
-        <Metric
-          label="Incidents"
-          value={String(incidents)}
-          preview={preview}
-        />
+    <Metric
+      label="Incidents"
+      value={String(incidents)}
+      preview={preview}
+    />
 
-        <Metric
-          label="Downtime"
-          value={`${downtimeMinutes} min`}
-          preview={preview}
-        />
-      </div>
+    <Metric
+      label="Downtime"
+      value={`${downtimeMinutes} min`}
+      preview={preview}
+    />
+  </div>
+) : null}
 
       <div className="h-[175px] min-w-0">
         <ResponsiveContainer width="100%" height="100%">

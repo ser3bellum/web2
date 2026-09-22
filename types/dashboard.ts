@@ -38,5 +38,7 @@ export type DashboardKpi = {
     value: string;
     tone?: "up" | "down" | "neutral";
   };
+
   meta?: Record<string, any>;
+  isPlaceholder?: boolean;
 };

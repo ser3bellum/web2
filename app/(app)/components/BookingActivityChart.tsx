@@ -27,6 +27,7 @@ type BookingActivityChartProps = {
   preview?: boolean;
   animate?: boolean;
   className?: string;
+  showMetrics?: boolean;
 };
 
 const EMPTY_SERIES: BookingDatum[] = [
@@ -48,6 +49,7 @@ export function BookingActivityChart({
   preview = false,
   animate = true,
   className,
+  showMetrics = true,
 }: BookingActivityChartProps) {
   const data = useMemo(
     () => (series.length ? series : EMPTY_SERIES),
@@ -61,31 +63,33 @@ export function BookingActivityChart({
         className,
       )}
     >
-      <div className="grid grid-cols-2 gap-x-5 gap-y-3">
-        <Metric
-          label="Bookings"
-          value={String(totalBookings)}
-          preview={preview}
-        />
+      {showMetrics ? (
+  <div className="grid grid-cols-2 gap-x-5 gap-y-3">
+    <Metric
+      label="Bookings"
+      value={String(totalBookings)}
+      preview={preview}
+    />
 
-        <Metric
-          label="Upcoming"
-          value={String(upcomingBookings)}
-          preview={preview}
-        />
+    <Metric
+      label="Upcoming"
+      value={String(upcomingBookings)}
+      preview={preview}
+    />
 
-        <Metric
-          label="Cancellation rate"
-          value={`${cancellationRate.toFixed(0)}%`}
-          preview={preview}
-        />
+    <Metric
+      label="Cancellation rate"
+      value={`${cancellationRate.toFixed(0)}%`}
+      preview={preview}
+    />
 
-        <Metric
-          label="No-show rate"
-          value={`${noShowRate.toFixed(0)}%`}
-          preview={preview}
-        />
-      </div>
+    <Metric
+      label="No-show rate"
+      value={`${noShowRate.toFixed(0)}%`}
+      preview={preview}
+    />
+  </div>
+) : null}
 
       <div className="h-[175px] min-w-0">
         <ResponsiveContainer width="100%" height="100%">

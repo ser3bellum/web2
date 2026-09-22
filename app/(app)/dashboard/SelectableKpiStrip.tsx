@@ -19,6 +19,35 @@ type Props = {
   labels: Parameters<typeof KpiStrip>[0]["labels"];
 };
 
+function getZeroStateValue(id: DashboardKpiId): string {
+  switch (id) {
+    case "kpi-sales":
+    case "kpi-finance":
+      return "0 €";
+
+    case "kpi-marketing":
+      return "0";
+
+    case "kpi-social":
+      return "0";
+
+    case "kpi-booking":
+      return "0";
+
+    case "kpi-downtime":
+      return "0 min";
+
+    case "kpi-crm":
+      return "0";
+
+    case "kpi-analytics":
+      return "0 users";
+
+    default:
+      return "0";
+  }
+}
+
 export function SelectableKpiStrip({
   kpis,
   labels,
@@ -88,11 +117,12 @@ export function SelectableKpiStrip({
       if (hydrated) return hydrated;
 
       return {
-        id,
-        title: definition?.title ?? id,
-        subtitle: definition?.subtitle ?? "",
-        value: "—",
-      } satisfies DashboardKpi;
+  id,
+  title: definition?.title ?? id,
+  subtitle: definition?.subtitle ?? "",
+  value: getZeroStateValue(id),
+  isPlaceholder: true,
+  } satisfies DashboardKpi;
     });
   }, [kpis, selectedIds]);
 
