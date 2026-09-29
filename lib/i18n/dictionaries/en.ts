@@ -86,6 +86,7 @@ export const en: Dictionary = {
     dashboard: "Dashboard",
     logout: "Log out",
     loggingOut: "Logging out...",
+    history: "History",
   },
 
   integrations: {
