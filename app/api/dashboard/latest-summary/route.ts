@@ -1,31 +1,9 @@
 import { getUserCompanyContext } from "@/lib/data/getUserCompanyContext";
-import { cert, getApps, initializeApp } from "firebase-admin/app";
-import { getFirestore, type Timestamp } from "firebase-admin/firestore";
+import { type Timestamp } from "firebase-admin/firestore";
+import { adminDb } from "@/lib/firebase/admin";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-function getAdminDb() {
-	const appName = "ser3bellum-admin";
-	const existingApp = getApps().find((app) => app.name === appName);
-	const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-
-	if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !privateKey) {
-		throw new Error("Firebase Admin environment is incomplete");
-	}
-
-	const app = existingApp ?? initializeApp(
-		{
-			credential: cert({
-				projectId: process.env.FIREBASE_PROJECT_ID,
-				clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-				privateKey: privateKey.replace(/\\n/g, "\n"),
-			}),
-		},
-		appName,
-	);
-
-	return getFirestore(app, "ser3bellum");
-}
 
 function finiteNumber(value: unknown) {
 	const number = typeof value === "number" ? value : Number(value);
@@ -69,7 +47,7 @@ function integer(value: number) {
 
 		const summaryOwnerId = uid;
 
-		const snapshot = await getAdminDb()
+		const snapshot = await adminDb
 			.collection("workspaces")
 			.doc(summaryOwnerId)
 			.collection("syncSummaries")
