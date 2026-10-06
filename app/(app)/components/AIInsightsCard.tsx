@@ -1,10 +1,13 @@
 import type * as React from "react";
+import { useState } from "react";
+
 import { ArrowRight, Sparkles } from "lucide-react";
 import type { AIInsightStatus } from "@/types/ai";
 import {
 	AIInsightChart,
 	type AIInsightTrendPoint,
 } from "./AIInsightChart";
+import { AIRecommendationsModal } from "./AIRecommendationsModal";
 
 type AIInsightsCardProps = React.HTMLAttributes<HTMLDivElement> & {
 	status?: AIInsightStatus;
@@ -25,8 +28,8 @@ export function AIInsightsCard({
 
 	// Keep these because DashboardCardView still supplies them.
 	// We'll use them in the actions view later.
-	whyItMatters: _whyItMatters,
-	recommendedAction: _recommendedAction,
+	whyItMatters,
+	recommendedAction,
 
 	metric = "Conversions",
 	trend,
@@ -39,8 +42,10 @@ export function AIInsightsCard({
 	const isError = status === "error";
 	const isLoading = status === "loading";
 	const isReady = status === "ready";
+	const [recommendationsOpen, setRecommendationsOpen] = useState(false);
 
 	return (
+		<>
 		<section
 			className={[
 				"relative h-[408px] overflow-hidden rounded-2xl",
@@ -90,17 +95,17 @@ export function AIInsightsCard({
 						</h4>
 
 						<p className="mt-4 max-w-3xl text-base font-semibold leading-7 text-white/90">
-							AI Insights will appear once enough connector activity is available.
+							There isn&apos;t enough usable data in this period to generate a meaningful insight.
 						</p>
 
 						<p className="mt-4 max-w-3xl text-sm leading-7 text-white/75">
-							Connect more sources or wait for fresh events so the system can identify a meaningful trend.
+							We&apos;ll keep monitoring your data and surface an insight when enough information is available.
 						</p>
 					</div>
 				) : isError ? (
 					<div className="flex flex-1 flex-col justify-center">
 						<h4 className="text-xs font-semibold uppercase tracking-[0.14em] text-white/75">
-							Insight unavailable
+							Insight temporarily unavailable
 						</h4>
 
 						<p className="mt-4 max-w-2xl text-[1.05rem] font-semibold leading-snug text-white">
@@ -108,7 +113,7 @@ export function AIInsightsCard({
 						</p>
 
 						<p className="mt-4 max-w-2xl text-sm leading-7 text-white/75">
-							Please retry in a moment or check whether your connected sources are returning fresh data.
+							Your dashboard data is still available. Please try again shortly.
 						</p>
 					</div>
 				) : isReady ? (
@@ -129,7 +134,10 @@ export function AIInsightsCard({
 
 							<button
 								type="button"
-								onClick={onViewActions}
+								onClick={() => {
+								setRecommendationsOpen(true);
+								onViewActions?.();
+								}}
 								className={[
 								"group flex shrink-0 items-center gap-2",
 								"rounded-xl px-5 py-3",
@@ -152,5 +160,14 @@ export function AIInsightsCard({
 				) : null}
 			</div>
 		</section>
+		<AIRecommendationsModal
+			open={recommendationsOpen}
+			onClose={() => setRecommendationsOpen(false)}
+			headline={headline}
+			whyItMatters={whyItMatters}
+			recommendedAction={recommendedAction}
+			sourceNote={sourceNote}
+		/>
+	</>
 	);
 }
