@@ -19,7 +19,7 @@ function getEnv(key: string): string | undefined {
 }
 
 export function getModel(): string {
-  return getEnv("GEMINI_MODEL") ?? "gemini-2.0-flash";
+  return getEnv("GEMINI_MODEL") ?? "gemini-3.8-flash";
 }
 
 export function hasApiKey(): boolean {

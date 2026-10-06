@@ -69,26 +69,41 @@ Required JSON fields:
 Rules:
 - status must be one of: "ready", "empty", "error"
 - severity must be one of: "low", "medium", "high"
-- Keep the insight concise and operational
-- recommendedAction must be concrete
-- sourceNote must mention the signals used
-- If there is not enough meaningful signal, return:
+- Keep the insight concise and operational.
+- recommendedAction must be concrete.
+- sourceNote must mention the signals used.
+- Zero is a valid observed value. Do not treat a value of 0 as missing data.
+- Null or absent values mean the signal is unavailable.
+- If usable signals are present, evaluate them and return "ready"
+  when they support a meaningful operational observation.
+- Do not return "empty" merely because activity is low, zero,
+  stable, or unchanged.
+- Return "empty" only when the provided input contains insufficient
+  usable signals to make a responsible operational observation.
+- Never infer that a connector is disconnected unless the input
+  explicitly provides connector status information.
+
+If status is "empty", return:
 {
   "status": "empty",
   "headline": "",
   "whyItMatters": "",
   "recommendedAction": "",
-  "sourceNote": ""
+  "sourceNote": "",
+  "severity": "low"
 }
 
 Dashboard input:
 ${JSON.stringify(input, null, 2)}
 `.trim();
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: prompt,
-  });
+const model =
+  process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash";
+
+const response = await ai.models.generateContent({
+  model,
+  contents: prompt,
+});
 
   const rawText = response.text ?? "";
   const jsonText = extractJsonObject(rawText);
