@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { cert, getApps, initializeApp } from "firebase-admin/app";
-import { FieldValue, getFirestore } from "firebase-admin/firestore";
+import { FieldValue } from "firebase-admin/firestore";
+import { adminDb } from "@/lib/firebase/admin";
 import type { AIInsightPayload } from "@/types/ai";
 
 export type SavedAIInsightDoc = AIInsightPayload & {
@@ -11,27 +11,6 @@ export type SavedAIInsightDoc = AIInsightPayload & {
   createdAtIso: string;
   expiresAt: string;
 };
-
-function getAdminDb() {
-  const appName = "ser3bellum-admin";
-
-  const existingApp = getApps().find((app) => app.name === appName);
-
-  const app =
-    existingApp ??
-    initializeApp(
-      {
-        credential: cert({
-          projectId: process.env.FIREBASE_PROJECT_ID!,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, "\n"),
-        }),
-      },
-      appName
-    );
-
-  return getFirestore(app, "ser3bellum");
-}
 
 function isoDaysFromNow(days: number): string {
   const d = new Date();
@@ -65,7 +44,7 @@ export async function saveAIInsight(args: {
   source: "gemini" | "fallback";
   payload: AIInsightPayload;
 }) {
-  const db = getAdminDb();
+  const db = adminDb;
 
   const insightId = randomUUID();
   const createdAtIso = new Date().toISOString();
