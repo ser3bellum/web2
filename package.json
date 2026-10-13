@@ -6,7 +6,8 @@
 		"node": "22.x"
 	},
 	"overrides": {
-		"minimatch": "^10.2.1"
+		"minimatch": "^10.2.1",
+		"@grpc/grpc-js": "1.14.6"
 	},
 	"scripts": {
 		"dev": "next dev",
