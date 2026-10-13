@@ -5,9 +5,11 @@ const webappConfig = process.env.FIREBASE_WEBAPP_CONFIG
 	: null;
 
 const nextConfig: NextConfig = {
+	serverExternalPackages: ["@google/adk"],
 	// Expose Firebase Web config to the browser bundle on Firebase App Hosting.
 	// Locally, you can still override with .env.local if you want.
 	env: {
+		
 		NEXT_PUBLIC_FIREBASE_API_KEY:
 			process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? webappConfig?.apiKey,
 		NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:
