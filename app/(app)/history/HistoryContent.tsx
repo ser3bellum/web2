@@ -11,18 +11,91 @@ type HistoryContentProps = {
 export default function HistoryContent({
 	reports,
 }: HistoryContentProps) {
+	const [searchQuery, setSearchQuery] = useState("");
+	const [timeframe, setTimeframe] = useState("all");
+	const [customStartDate, setCustomStartDate] = useState("");
+	const [customEndDate, setCustomEndDate] = useState("");
+
 	const [selectedReportIds, setSelectedReportIds] = useState<string[]>([]);
+	const [isPrintDropdownOpen, setIsPrintDropdownOpen] = useState(false);
 	const [activeReportId, setActiveReportId] = useState<string>(
 		reports[0]?.reportId ?? "",
 	);
 
+	const filteredReports = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    const today = new Date();
+    const todayString = [
+        today.getFullYear(),
+        String(today.getMonth() + 1).padStart(2, "0"),
+        String(today.getDate()).padStart(2, "0"),
+    ].join("-");
+
+    let startDate = "";
+
+    if (["7", "30", "90"].includes(timeframe)) {
+        const days = Number(timeframe);
+        const start = new Date(today);
+        start.setHours(12, 0, 0, 0);
+        start.setDate(start.getDate() - (days - 1));
+
+        startDate = [
+            start.getFullYear(),
+            String(start.getMonth() + 1).padStart(2, "0"),
+            String(start.getDate()).padStart(2, "0"),
+        ].join("-");
+    }
+
+    return reports.filter((report) => {
+        const reportDate = report.period.to;
+
+        const matchesTimeframe =
+            timeframe === "custom"
+                ? (!customStartDate || reportDate >= customStartDate) &&
+                  (!customEndDate || reportDate <= customEndDate)
+                : timeframe === "all" ||
+                  (reportDate >= startDate && reportDate <= todayString);
+
+        const searchableText = [
+            report.headline,
+            report.summary,
+            report.insight?.recommendedAction,
+        ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+
+        return matchesTimeframe && searchableText.includes(query);
+    		});
+		}, [
+    		reports,
+    		searchQuery,
+   			timeframe,
+    		customStartDate,
+    		customEndDate,
+			]);
+	
+	const selectedReports = useMemo(
+    () =>
+        selectedReportIds
+            .map((id) =>
+                reports.find((report) => report.reportId === id),
+            )
+            .filter(
+                (report): report is DailyReportDoc =>
+                    report !== undefined,
+            ),
+    [selectedReportIds, reports],
+);
+
 	const activeReport = useMemo(
-		() =>
-			reports.find(
-				(report) => report.reportId === activeReportId,
-			) ?? reports[0],
-		[activeReportId, reports],
-	);
+    () =>
+        filteredReports.find(
+            (report) => report.reportId === activeReportId,
+        ) ?? filteredReports[0],
+    [activeReportId, filteredReports],
+		);
 
 	function toggleReport(reportId: string) {
 		setSelectedReportIds((current) =>
@@ -72,6 +145,87 @@ export default function HistoryContent({
 			</div>
 		</div>
 
+							{/* History filters */}
+<div className="mb-6 flex flex-wrap items-end gap-3">
+    <div className="min-w-[220px] flex-1">
+        <label
+            htmlFor="history-search"
+            className="mb-1.5 block text-xs font-medium text-slate-600"
+        >
+            Search reports
+        </label>
+        <input
+            id="history-search"
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search reports..."
+            className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+        />
+    </div>
+
+    <div className="min-w-[170px]">
+        <label
+            htmlFor="history-timeframe"
+            className="mb-1.5 block text-xs font-medium text-slate-600"
+        >
+            Timeframe
+        </label>
+        <select
+            id="history-timeframe"
+            value={timeframe}
+            onChange={(event) => setTimeframe(event.target.value)}
+            className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+        >
+            <option value="all">All time</option>
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="custom">Custom range</option>
+        </select>
+    </div>
+
+    {timeframe === "custom" && (
+        <>
+            <div>
+                <label
+                    htmlFor="history-start-date"
+                    className="mb-1.5 block text-xs font-medium text-slate-600"
+                >
+                    From
+                </label>
+                <input
+                    id="history-start-date"
+                    type="date"
+                    value={customStartDate}
+                    onChange={(event) =>
+                        setCustomStartDate(event.target.value)
+                    }
+                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700"
+                />
+            </div>
+
+            <div>
+                <label
+                    htmlFor="history-end-date"
+                    className="mb-1.5 block text-xs font-medium text-slate-600"
+                >
+                    To
+                </label>
+                <input
+                    id="history-end-date"
+                    type="date"
+                    value={customEndDate}
+                    onChange={(event) =>
+                        setCustomEndDate(event.target.value)
+                    }
+                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700"
+                />
+            </div>
+        </>
+    )}
+</div>
+
 		{/* Reports toolbar */}
 		<div className="mb-4 flex min-h-10 items-center justify-between gap-4">
 			<div>
@@ -80,30 +234,110 @@ export default function HistoryContent({
 				</h2>
 
 				<p className="mt-0.5 text-xs text-slate-500">
-					{reports.length} {reports.length === 1 ? "report" : "reports"}
+					{filteredReports.length} of {reports.length} reports
 				</p>
 			</div>
 
-			<button
-	            type="button"
-	            onClick={printSelectedReports}
-	            disabled={selectedReportIds.length === 0}
-	            className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+			<div className="relative">
+    <button
+        type="button"
+        onClick={() =>
+            setIsPrintDropdownOpen((current) => !current)
+        }
+        disabled={selectedReports.length === 0}
+        aria-expanded={isPrintDropdownOpen}
+        aria-haspopup="true"
+        className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+    >
+        <PrintIcon />
+        Print selected ({selectedReports.length})
+        <span className="text-xs text-slate-400">▾</span>
+   
+    </button>
+
+    {isPrintDropdownOpen && selectedReports.length > 0 && (
+        <div className="absolute right-0 top-full z-30 mt-2 w-80 max-w-[calc(100vw-3rem)] rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Selected reports
+            </p>
+
+            <div className="max-h-64 space-y-2 overflow-y-auto">
+                {selectedReports.map((report) => (
+                    <div
+                        key={report.reportId}
+                        className="flex items-center gap-3 rounded-lg bg-slate-50 p-3"
+                    >
+                        <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-slate-700">
+                                {formatReportDate(report.period.to)}
+                            </p>
+
+                            <p
+                                className="mt-1 truncate text-xs text-slate-500"
+                                title={report.headline}
+                            >
+                                {report.headline}
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => toggleReport(report.reportId)}
+                            aria-label={`Remove report from ${report.period.to}`}
+                            title="Remove from selection"
+                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-200 hover:text-slate-700"
+                        >
+                            ×
+                        </button>
+                    </div>
+                ))}
+            </div>
+
+            <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+                <button
+                    type="button"
+                    onClick={() => {
+                        setSelectedReportIds([]);
+                        setIsPrintDropdownOpen(false);
+                    }}
+                    className="text-xs font-medium text-slate-500 hover:text-slate-800"
                 >
-				<PrintIcon />
-				Print selected
-				{selectedReportIds.length > 0 && (
-					<span className="text-slate-400">
-						({selectedReportIds.length})
-					</span>
-				)}
-			</button>
+                    Clear all
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => {
+                        printSelectedReports();
+                        setIsPrintDropdownOpen(false);
+                    }}
+                    className="inline-flex h-9 items-center gap-2 rounded-lg bg-blue-600 px-3 text-xs font-semibold text-white transition hover:bg-blue-700"
+                >
+                    <PrintIcon />
+                    Print {selectedReports.length}{" "}
+                    {selectedReports.length === 1 ? "report" : "reports"}
+                </button>
+            </div>
+        </div>
+    )}
+</div>
 		</div>
 
 		<div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
 			{/* Report list */}
 			<div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-				{reports.map((report, index) => {
+				{filteredReports.length === 0 && (
+  			  <div className="px-6 py-12 text-center">
+        		<p className="text-sm font-semibold text-slate-900">
+           		 No matching reports
+        		</p>
+        		<p className="mt-2 text-sm text-slate-500">
+           		 Try a different search term or adjust your timeframe.
+       			 </p>
+    			</div>
+				)}
+				
+				{filteredReports.map((report, index) => {
 					const isSelected =
 						selectedReportIds.includes(report.reportId);
 

@@ -95,4 +95,4 @@ export async function saveAIInsight(args: {
   );
 
   return doc;
-}
+}``

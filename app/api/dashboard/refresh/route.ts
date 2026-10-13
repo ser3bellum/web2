@@ -36,6 +36,7 @@ export async function POST(req: Request) {
       workspaceId: endUserId,
       syncSource: "manual_refresh",
       hydrationCards,
+      businessSources: hydration.businessSources,
       dateWindow: {
         from: hydration.range.from,
         to: hydration.range.to,

@@ -35,13 +35,14 @@ export async function runDailyReportCycle(args: {
 	 * 2. Build and persist the normalized snapshot.
 	 */
 	const summary = buildSyncSummaryFromHydrationCards({
-		workspaceId,
-		syncSource: "scheduled",
-		hydrationCards,
-		dateWindow: {
-			from: hydration.range.from,
-			to: hydration.range.to,
-		},
+  	workspaceId,
+  	syncSource: "scheduled",
+  	hydrationCards,
+  	businessSources: hydration.businessSources,
+  	dateWindow: {
+    from: hydration.range.from,
+    to: hydration.range.to,
+  	},
 	});
 
 	const savedSummary = await saveSyncSummary(summary);

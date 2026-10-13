@@ -1,10 +1,13 @@
+
 import "server-only";
 
+import { Timestamp } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 
 export type DailyReportUser = {
   uid: string;
   workspaceId: string;
+  createdAt: Date;
 };
 
 export async function getDailyReportUsers(): Promise<
@@ -22,7 +25,12 @@ export async function getDailyReportUsers(): Promise<
         ? data.lastWorkspaceId.trim()
         : "";
 
-    if (!workspaceId) {
+    const createdAt =
+      data.createdAt instanceof Timestamp
+        ? data.createdAt.toDate()
+        : null;
+
+    if (!workspaceId || !createdAt) {
       return [];
     }
 
@@ -30,6 +38,7 @@ export async function getDailyReportUsers(): Promise<
       {
         uid: doc.id,
         workspaceId,
+        createdAt,
       },
     ];
   });

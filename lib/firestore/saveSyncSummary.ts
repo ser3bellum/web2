@@ -9,30 +9,69 @@ export type SyncSummaryDoc = {
   connectorIds: string[];
   generatedAt: string;
   expiresAt: string;
+
   dateWindow: {
     from: string;
     to: string;
   };
+
   signals: {
     sales?: {
       revenue?: number | null;
       orderCount?: number | null;
       currency?: string | null;
     };
+
     analytics?: {
       sessions?: number | null;
     };
+
     marketing?: {
       traffic?: number | null;
       delta?: string | null;
     };
+
+    crm?: {
+      leads?: number | null;
+      opportunities?: number | null;
+    };
+
+    finance?: {
+      amount?: number | null;
+      currency?: string | null;
+    };
+
+    socialMedia?: {
+      reach?: number | null;
+      engagement?: number | null;
+    };
+
+    booking?: {
+      reservations?: number | null;
+      appointments?: number | null;
+    };
+
     downtime?: {
       minutes?: number | null;
     };
-    cpu?: {
-      usage?: number | null;
-    };
   };
+
+  businessSources?: {
+  category:
+    | "analytics"
+    | "sales"
+    | "marketing"
+    | "crm"
+    | "finance"
+    | "socialMedia"
+    | "booking"
+    | "downtime";
+  provider: string;
+  providerConfigKey: string;
+  status: "ok" | "warn" | "error" | "disabled";
+  metrics: Record<string, number | string | null>;
+}[];
+
   connectorStatus: Record<
     string,
     {
