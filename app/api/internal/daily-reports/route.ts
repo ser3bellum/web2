@@ -28,10 +28,7 @@ export async function POST(req: Request) {
   const reportDate = today.toISOString().slice(0, 10);
 
   try {
-    const results = await runDailyReportsForUsers({
-      from: reportDate,
-      to: reportDate,
-    });
+  const results = await runDailyReportsForUsers();
 
     const created = results.filter(
       (result) => result.status === "created",
@@ -47,7 +44,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ok: failed === 0,
-      date: reportDate,
+      date: new Date().toISOString().slice(0, 10),
       summary: {
         total: results.length,
         created,

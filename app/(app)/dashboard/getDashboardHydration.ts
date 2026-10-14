@@ -3,6 +3,23 @@ import { getNango } from "@/lib/nango/server";
 import type { DashboardHydration } from "@/types/dashboard";
 
 
+type BusinessCategory =
+  | "analytics"
+  | "sales"
+  | "marketing"
+  | "crm"
+  | "finance"
+  | "socialMedia"
+  | "booking"
+  | "downtime";
+
+type BusinessSource = {
+  category: BusinessCategory;
+  provider: string;
+  providerConfigKey: string;
+  status: CardStatus;
+  metrics: Record<string, number | string | null>;
+};
 
 type CardStatus = "ok" | "warn" | "error" | "disabled";
 
@@ -776,12 +793,77 @@ export async function getDashboardHydration(params: {
     }
   }
   const updatedAt = new Date().toISOString();
+  const businessSources: BusinessSource[] = [
+  {
+    category: "analytics",
+    provider: "google-analytics",
+    providerConfigKey: gaProviderConfigKey,
+    status: gaStatus,
+    metrics: {
+      sessions: gaStatus === "ok" ? gaMeta.sessions ?? null : null,
+      users: gaStatus === "ok" ? gaMeta.users ?? null : null,
+      views: gaStatus === "ok" ? gaMeta.views ?? null : null,
+    },
+  },
+  {
+    category: "sales",
+    provider: "shopify",
+    providerConfigKey: shopifyProviderConfigKey,
+    status: salesStatus,
+    metrics: {
+      revenue: salesStatus === "ok" ? salesMeta.currentRevenue ?? null : null,
+      orderCount: salesStatus === "ok" ? salesMeta.orderCount ?? null : null,
+      currency: salesStatus === "ok" ? salesMeta.currency ?? null : null,
+    },
+  },
+  {
+    category: "sales",
+    provider: "stripe",
+    providerConfigKey: stripeProviderConfigKey,
+    status: stripeSalesStatus,
+    metrics: {
+      gross: stripeSalesStatus === "ok" ? stripeSalesMeta.currentRevenue ?? null : null,
+      transactionCount:
+        stripeSalesStatus === "ok" ? stripeSalesMeta.transactionCount ?? null : null,
+      currency: stripeSalesStatus === "ok" ? stripeSalesMeta.currency ?? null : null,
+    },
+  },
+  {
+    category: "finance",
+    provider: "stripe",
+    providerConfigKey: stripeProviderConfigKey,
+    status: accountingStatus,
+    metrics: {
+      totalBalance:
+        accountingStatus === "ok" ? accountingMeta.totalBalance ?? null : null,
+      fees: accountingStatus === "ok" ? accountingMeta.fees ?? null : null,
+      net: accountingStatus === "ok" ? accountingMeta.net ?? null : null,
+      currency: accountingStatus === "ok" ? accountingMeta.currency ?? null : null,
+    },
+  },
+  {
+    category: "marketing",
+    provider: "google-ads",
+    providerConfigKey: googleAdsProviderConfigKey,
+    status: googleAdsConnected ? "warn" : "disabled",
+    metrics: {},
+  },
+  {
+    category: "socialMedia",
+    provider: "meta-marketing-api",
+    providerConfigKey: metaProviderConfigKey,
+    status: metaConnected ? "warn" : "disabled",
+    metrics: {},
+  },
+];
+
   const anyConnected =
     gaConnected || shopifyConnected || metaConnected || stripeConnected ||
   googleAdsConnected;
 
   const hydration: DashboardHydration = {
     range: { from, to },
+    businessSources,
     integrations: [
       {
         key: "google",

@@ -1,9 +1,14 @@
 import type { AIInsightPayload, AIInsightSeverity } from "@/types/ai";
+import type { DashboardHydration } from "@/types/dashboard";
 
 export type DashboardInsightInput = {
+
+  businessSources?: DashboardHydration["businessSources"];
+
   sales?: {
     revenue?: number | null;
     orderCount?: number | null;
+    currency?: string | null;
   };
   analytics?: {
     sessions?: number | null;
@@ -12,23 +17,42 @@ export type DashboardInsightInput = {
     traffic?: number | null;
     delta?: string | null;
   };
+  crm?: {
+    leads?: number | null;
+    opportunities?: number | null;
+  };
+  finance?: {
+    amount?: number | null;
+    currency?: string | null;
+  };
+  socialMedia?: {
+    reach?: number | null;
+    engagement?: number | null;
+  };
+  booking?: {
+    reservations?: number | null;
+    appointments?: number | null;
+  };
   downtime?: {
     minutes?: number | null;
-  };
-  cpu?: {
-    usage?: number | null;
   };
 };
 
 function hasMeaningfulData(input: DashboardInsightInput): boolean {
-  return Boolean(
-    input.sales?.revenue != null ||
-      input.sales?.orderCount != null ||
-      input.analytics?.sessions != null ||
-      input.marketing?.traffic != null ||
-      input.downtime?.minutes != null ||
-      input.cpu?.usage != null
-  );
+  return [
+    input.sales?.revenue,
+    input.sales?.orderCount,
+    input.analytics?.sessions,
+    input.marketing?.traffic,
+    input.crm?.leads,
+    input.crm?.opportunities,
+    input.finance?.amount,
+    input.socialMedia?.reach,
+    input.socialMedia?.engagement,
+    input.booking?.reservations,
+    input.booking?.appointments,
+    input.downtime?.minutes,
+  ].some((value) => value != null);
 }
 
 function buildReadyInsight(
@@ -57,7 +81,7 @@ export function generateDashboardInsight(
   const sessions = input.analytics?.sessions ?? null;
   const traffic = input.marketing?.traffic ?? null;
   const downtime = input.downtime?.minutes ?? null;
-  const cpu = input.cpu?.usage ?? null;
+
 
   if (!hasMeaningfulData(input)) {
     return {
@@ -76,16 +100,6 @@ export function generateDashboardInsight(
       "Review the affected service checks and compare them with recent incidents or infrastructure changes.",
       "Based on downtime metrics captured during the selected date range.",
       "high"
-    );
-  }
-
-  if (cpu !== null && cpu >= 80) {
-    return buildReadyInsight(
-      `CPU usage is elevated at ${cpu}%.`,
-      "Sustained high system load can degrade performance and increase the risk of instability.",
-      "Inspect recent workload spikes and identify which services are driving resource usage.",
-      "Based on CPU utilization trends during the selected period.",
-      "medium"
     );
   }
 

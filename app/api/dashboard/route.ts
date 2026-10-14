@@ -1,99 +1,75 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+
 import { getUserCompanyContext } from "@/lib/data/getUserCompanyContext";
-import { adminAuth } from "@/lib/firebase/admin";
-import { findNangoConnectionId } from "@/lib/nango/findConnectionId";
+import { buildSyncSummaryFromHydrationCards } from "@/lib/ai/buildSyncSummary";
+import { saveSyncSummary } from "@/lib/firestore/saveSyncSummary";
+import { getDashboardHydration } from "@/app/(app)/dashboard/getDashboardHydration";
 
-export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
-type DashboardResponse = {
-  range: { from: string; to: string };
-  integrations: Array<{
-    key: string;
-    providerConfigKey: string;
-    connected: boolean;
-    connectionId?: string;
-  }>;
-  cards: Array<{
-    key: string;
-    title: string;
-    status: "ok" | "warn" | "error" | "disabled";
-    value: string;
-    delta?: string;
-    meta?: Record<string, any>;
-  }>;
-};
-
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const from = searchParams.get("from") ?? "";
-  const to = searchParams.get("to") ?? "";
-
-  const cookieStore = await cookies();
-  const session = cookieStore.get("__Host-sb_auth")?.value;
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export async function POST(req: Request) {
   try {
-    await adminAuth.verifySessionCookie(session, true);
-  } catch (e) {
-    console.error("DASHBOARD_ROUTE_SESSION_REJECTED:", e);
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+    const sessionCookie = (await cookies())
+      .get("__Host-sb_auth")?.value;
 
-  const { user } = await getUserCompanyContext(session);
+    if (!sessionCookie) {
+      return NextResponse.json(
+        { error: "Not authenticated" },
+        { status: 401 }
+      );
+    }
 
-  if (!user?.id) {
-    return NextResponse.json({ error: "Missing user id" }, { status: 401 });
-  }
+    const { user, company } =
+      await getUserCompanyContext(sessionCookie);
 
-  const endUserId = user.id;
-  const providerConfigKey = "google-analytics";
+    if (!user?.id || !company?.id) {
+      return NextResponse.json(
+        { error: "No active workspace" },
+        { status: 403 }
+      );
+    }
 
-  let gaConnected = false;
-  let gaConnectionId: string | undefined;
+    const body = await req.json();
 
-  try {
-    gaConnectionId = await findNangoConnectionId({
-      providerConfigKey,
-      endUserId,
+    const today = new Date().toISOString().slice(0, 10);
+
+    const from =
+      typeof body?.from === "string" ? body.from : today;
+
+    const to =
+      typeof body?.to === "string" ? body.to : today;
+
+    const hydration = await getDashboardHydration({
+      from,
+      to,
+      endUserId: user.id,
     });
-    gaConnected = Boolean(gaConnectionId);
-  } catch {
-    gaConnected = false;
+
+    const summary = buildSyncSummaryFromHydrationCards({
+      workspaceId: company.id,
+      syncSource: "manual_refresh",
+      hydrationCards: hydration.cards ?? [],
+      businessSources: hydration.businessSources,
+      dateWindow: {
+        from: hydration.range.from,
+        to: hydration.range.to,
+      },
+    });
+
+    const savedSummary = await saveSyncSummary(summary);
+
+    return NextResponse.json({
+      ok: true,
+      syncRunId: savedSummary.syncRunId,
+      hydration,
+    });
+  } catch (error) {
+    console.error("Dashboard refresh failed:", error);
+
+    return NextResponse.json(
+      { ok: false, error: "Failed to refresh dashboard data." },
+      { status: 500 }
+    );
   }
-
-  const response: DashboardResponse = {
-    range: { from, to },
-    integrations: [
-      {
-        key: "google",
-        providerConfigKey,
-        connected: gaConnected,
-        connectionId: gaConnectionId,
-      },
-    ],
-    cards: [
-      {
-        key: "integrations",
-        title: "Integrations",
-        status: gaConnected ? "ok" : "disabled",
-        value: gaConnected
-          ? "Google Analytics connected"
-          : "Connect Google Analytics",
-      },
-      {
-        key: "ga_overview",
-        title: "Traffic (GA4)",
-        status: gaConnected ? "warn" : "disabled",
-        value: gaConnected ? "Ready to fetch metrics" : "—",
-        meta: { from, to },
-      },
-    ],
-  };
-
-  return NextResponse.json(response);
 }

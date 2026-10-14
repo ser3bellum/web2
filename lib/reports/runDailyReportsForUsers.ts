@@ -1,7 +1,9 @@
+
 import "server-only";
 
 import { dailyReportExists } from "@/lib/firestore/dailyReportExists";
 import { getDailyReportUsers } from "@/lib/reports/getDailyReportUsers";
+import { getReportingWindow } from "@/lib/reports/getReportingWindow";
 import { runDailyReportCycle } from "@/lib/reports/runDailyReportCycle";
 
 export type DailyReportRunResult = {
@@ -12,33 +14,30 @@ export type DailyReportRunResult = {
   error?: string;
 };
 
-export async function runDailyReportsForUsers(args: {
-  from: string;
-  to: string;
-}): Promise<DailyReportRunResult[]> {
-  const { from, to } = args;
-
+export async function runDailyReportsForUsers(): Promise<
+  DailyReportRunResult[]
+> {
   const users = await getDailyReportUsers();
-
-   console.log(
-    "Daily report users:",
-    users.map((user) => ({
-      uid: user.uid,
-      workspaceId: user.workspaceId,
-    })),
-  );
+  const now = new Date();
 
   const results: DailyReportRunResult[] = [];
 
   for (const user of users) {
     try {
-      // For now, reports use the UID as their operational
-      // workspace namespace.
-      const operationalWorkspaceId = user.uid;
+      const window = getReportingWindow(user.createdAt, now);
+
+      if (!window.isDue) {
+        results.push({
+          uid: user.uid,
+          workspaceId: user.workspaceId,
+          status: "skipped",
+        });
+        continue;
+      }
 
       const exists = await dailyReportExists(
-        operationalWorkspaceId,
-        to,
+        user.workspaceId,
+        window.to,
       );
 
       if (exists) {
@@ -47,14 +46,14 @@ export async function runDailyReportsForUsers(args: {
           workspaceId: user.workspaceId,
           status: "skipped",
         });
-
         continue;
       }
 
       const { report } = await runDailyReportCycle({
-        workspaceId: operationalWorkspaceId,
-        from,
-        to,
+        workspaceId: user.workspaceId,
+        endUserId: user.uid,
+        from: window.from,
+        to: window.to,
       });
 
       results.push({

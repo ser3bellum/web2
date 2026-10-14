@@ -1,59 +1,84 @@
-import { NextResponse } from "next/server";
 
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+
+import { getUserCompanyContext } from "@/lib/data/getUserCompanyContext";
 import { runDailyReportCycle } from "@/lib/reports/runDailyReportCycle";
 
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
-	try {
-		const body = await req.json();
+  try {
+    const sessionCookie = (await cookies())
+      .get("__Host-sb_auth")?.value;
 
-		const workspaceId =
-			typeof body?.workspaceId === "string"
-				? body.workspaceId.trim()
-				: "";
+    if (!sessionCookie) {
+      return NextResponse.json(
+        { ok: false, error: "Not authenticated" },
+        { status: 401 }
+      );
+    }
 
-		const from =
-			typeof body?.from === "string"
-				? body.from
-				: "";
+    const { user, company } =
+      await getUserCompanyContext(sessionCookie);
 
-		const to =
-			typeof body?.to === "string"
-				? body.to
-				: "";
+    if (!user?.id || !company?.id) {
+      return NextResponse.json(
+        { ok: false, error: "No active workspace" },
+        { status: 403 }
+      );
+    }
 
-		if (!workspaceId || !from || !to) {
-			return NextResponse.json(
-				{
-					ok: false,
-					error: "workspaceId, from and to are required.",
-				},
-				{ status: 400 },
-			);
-		}
+    if (user.lastWorkspaceId !== company.id) {
+      return NextResponse.json(
+        { ok: false, error: "Active workspace not verified" },
+        { status: 403 }
+      );
+    }
 
-		const result = await runDailyReportCycle({
-			workspaceId,
-			from,
-			to,
-		});
+    const body = await req.json();
 
-		return NextResponse.json({
-			ok: true,
-			reportId: result.report.reportId,
-			report: result.report,
-		});
-	} catch (error) {
-		console.error("Daily report cycle failed:", error);
+    const from =
+      typeof body?.from === "string"
+        ? body.from.trim()
+        : "";
 
-		return NextResponse.json(
-			{
-				ok: false,
-				error:
-					error instanceof Error
-						? error.message
-						: "Failed to generate daily report.",
-			},
-			{ status: 500 },
-		);
-	}
+    const to =
+      typeof body?.to === "string"
+        ? body.to.trim()
+        : "";
+
+    if (!from || !to) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "from and to are required.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const result = await runDailyReportCycle({
+      workspaceId: company.id,
+      endUserId: user.id,
+      from,
+      to,
+    });
+
+    return NextResponse.json({
+      ok: true,
+      reportId: result.report.reportId,
+      report: result.report,
+    });
+  } catch (error) {
+    console.error("Daily report cycle failed:", error);
+
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Failed to generate daily report.",
+      },
+      { status: 500 }
+    );
+  }
 }
