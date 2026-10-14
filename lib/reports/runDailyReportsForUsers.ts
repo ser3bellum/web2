@@ -35,10 +35,8 @@ export async function runDailyReportsForUsers(): Promise<
         continue;
       }
 
-      const operationalWorkspaceId = user.uid;
-
       const exists = await dailyReportExists(
-        operationalWorkspaceId,
+        user.workspaceId,
         window.to,
       );
 
@@ -52,7 +50,8 @@ export async function runDailyReportsForUsers(): Promise<
       }
 
       const { report } = await runDailyReportCycle({
-        workspaceId: operationalWorkspaceId,
+        workspaceId: user.workspaceId,
+        endUserId: user.uid,
         from: window.from,
         to: window.to,
       });

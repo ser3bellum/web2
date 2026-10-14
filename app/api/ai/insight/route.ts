@@ -1,49 +1,147 @@
+
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+
+import { getUserCompanyContext } from "@/lib/data/getUserCompanyContext";
+
 import {
   generateDashboardInsight,
   type DashboardInsightInput,
 } from "@/lib/ai/generateDashboardInsight";
+
 import { generateGeminiDashboardInsight } from "@/lib/ai/generateGeminiDashboardInsight";
+import { generateADKDashboardInsight } from "@/lib/ai/generateADKDashboardInsight";
 import { buildDashboardInsightInput } from "@/lib/ai/buildDashboardInsightInput";
 import { getLatestSyncSummary } from "@/lib/firestore/getLatestSyncSummary";
-import { saveAIInsight } from "@/lib/firestore/saveAIInsight";
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
+import {
+  getLatestAIInsight,
+  saveAIInsight,
+} from "@/lib/firestore/saveAIInsight";
 
-  const workspaceId =
-    searchParams.get("workspaceId")?.trim() || "demo-end-user";
+export const runtime = "nodejs";
 
-  const latestSummary = await getLatestSyncSummary(workspaceId);
+const INSIGHT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
-  if (!latestSummary) {
-    const emptyPayload = generateDashboardInsight(
-      {} satisfies DashboardInsightInput
-    );
-
-    return NextResponse.json(emptyPayload);
-  }
-
-  const input: DashboardInsightInput =
-    buildDashboardInsightInput(latestSummary);
-
+export async function GET() {
   try {
-    const payload = await generateGeminiDashboardInsight(input);
+    const sessionCookie = (await cookies())
+      .get("__Host-sb_auth")?.value;
 
-    await saveAIInsight({
-      workspaceId,
-      syncRunId: latestSummary.syncRunId,
-      source: "gemini",
-      payload,
-    });
+    if (!sessionCookie) {
+      return NextResponse.json(
+        { error: "Not authenticated" },
+        { status: 401 }
+      );
+    }
 
-    return NextResponse.json(payload);
-  } catch (error) {
-    console.error(
-      "Gemini insight failed, falling back to rule-based insight:",
-      error
-    );
+    const { user, company } =
+      await getUserCompanyContext(sessionCookie);
 
+    if (!user?.id || !company?.id) {
+      return NextResponse.json(
+        { error: "No active workspace" },
+        { status: 403 }
+      );
+    }
+
+    if (user.lastWorkspaceId !== company.id) {
+      return NextResponse.json(
+        { error: "Active workspace not verified" },
+        { status: 403 }
+      );
+    }
+
+    const workspaceId = company.id;
+
+    // Reuse an insight generated within the last 24 hours.
+    const existingInsight =
+      await getLatestAIInsight(workspaceId);
+
+    if (existingInsight) {
+      const createdAt = Date.parse(
+        existingInsight.createdAtIso
+      );
+
+      const age = Date.now() - createdAt;
+
+      if (
+        Number.isFinite(age) &&
+        age >= 0 &&
+        age < INSIGHT_WINDOW_MS
+      ) {
+        const {
+          workspaceId: _workspaceId,
+          insightId: _insightId,
+          syncRunId: _syncRunId,
+          source: _source,
+          createdAtIso: _createdAtIso,
+          expiresAt: _expiresAt,
+          createdAt: _createdAt,
+          ...payload
+        } = existingInsight as typeof existingInsight & {
+          createdAt?: unknown;
+        };
+
+        return NextResponse.json(payload);
+      }
+    }
+
+    const latestSummary =
+      await getLatestSyncSummary(workspaceId);
+
+    if (!latestSummary) {
+      return NextResponse.json(
+        generateDashboardInsight(
+          {} satisfies DashboardInsightInput
+        )
+      );
+    }
+
+    const input: DashboardInsightInput =
+      buildDashboardInsightInput(latestSummary);
+
+    // Primary: ADK + Gemini.
+    try {
+      const payload =
+        await generateADKDashboardInsight(input);
+
+      await saveAIInsight({
+        workspaceId,
+        syncRunId: latestSummary.syncRunId,
+        source: "adk",
+        payload,
+      });
+
+      return NextResponse.json(payload);
+    } catch (adkError) {
+      console.error(
+        "ADK insight failed, trying Gemini:",
+        adkError
+      );
+    }
+
+    // Secondary: existing Gemini implementation.
+    try {
+      const payload =
+        await generateGeminiDashboardInsight(input);
+
+      await saveAIInsight({
+        workspaceId,
+        syncRunId: latestSummary.syncRunId,
+        source: "gemini",
+        payload,
+      });
+
+      return NextResponse.json(payload);
+    } catch (geminiError) {
+      console.error(
+        "Gemini insight failed, using rule-based fallback:",
+        geminiError
+      );
+    }
+
+    // Final fallback: rule-based insight.
     const fallback = generateDashboardInsight(input);
 
     await saveAIInsight({
@@ -54,5 +152,12 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json(fallback);
+  } catch (error) {
+    console.error("AI insight endpoint failed:", error);
+
+    return NextResponse.json(
+      { error: "Failed to generate AI insight" },
+      { status: 500 }
+    );
   }
 }
