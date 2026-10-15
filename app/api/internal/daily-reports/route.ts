@@ -53,6 +53,14 @@ export async function POST(req: Request) {
       },
       results,
     });
+console.info("Daily report job summary:", {
+  total: results.length,
+  created,
+  skipped,
+  failed,
+  results,
+});
+
   } catch (error) {
     console.error("Daily report job failed:", error);
 
