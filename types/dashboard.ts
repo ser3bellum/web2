@@ -21,10 +21,27 @@ export type DashboardIntegration = {
 };
 
 export type DashboardHydration = {
+  businessSources?: {
+    category:
+      | "analytics"
+      | "sales"
+      | "marketing"
+      | "crm"
+      | "finance"
+      | "socialMedia"
+      | "booking"
+      | "downtime";
+    provider: string;
+    providerConfigKey: string;
+    status: DashboardHydrationStatus;
+    metrics: Record<string, number | string | null>;
+  }[];
+
   range: {
     from: string;
     to: string;
   };
+
   integrations: DashboardIntegration[];
   cards: DashboardHydrationCard[];
 };

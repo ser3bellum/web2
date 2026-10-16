@@ -85,6 +85,7 @@ export type Dictionary = {
     dashboard: string;
     logout: string;
     loggingOut: string;
+    history: string;
   };
 
   integrations: {

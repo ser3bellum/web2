@@ -7,7 +7,7 @@ export type SavedAIInsightDoc = AIInsightPayload & {
   workspaceId: string;
   insightId: string;
   syncRunId: string | null;
-  source: "gemini" | "fallback";
+  source: "adk" | "gemini" | "fallback";
   createdAtIso: string;
   expiresAt: string;
 };
@@ -62,7 +62,7 @@ function stripUndefinedDeep<T>(value: T): T {
 export async function saveAIInsight(args: {
   workspaceId: string;
   syncRunId?: string | null;
-  source: "gemini" | "fallback";
+  source: "adk" | "gemini" | "fallback";
   payload: AIInsightPayload;
 }) {
   const db = getAdminDb();
@@ -95,4 +95,25 @@ export async function saveAIInsight(args: {
   );
 
   return doc;
+
+}
+
+export async function getLatestAIInsight(
+  workspaceId: string
+): Promise<SavedAIInsightDoc | null> {
+  const db = getAdminDb();
+
+  const snapshot = await db
+    .collection("workspaces")
+    .doc(workspaceId)
+    .collection("aiInsights")
+    .orderBy("createdAtIso", "desc")
+    .limit(1)
+    .get();
+
+  if (snapshot.empty) {
+    return null;
+  }
+
+  return snapshot.docs[0].data() as SavedAIInsightDoc;
 }

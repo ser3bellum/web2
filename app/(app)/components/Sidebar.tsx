@@ -179,13 +179,29 @@ export function Sidebar({
 	(connector) => connector.status !== "disconnected",
 	).length;
 
-	const appLinks: NavItem[] = useMemo(
-		() => [
-			{ label: t.analytics, href: "/analytics", icon: <AnalyticsIcon /> },
-			{ label: t.siteHealth, href: "/site-health", icon: <ShieldIcon /> },
-		],
-		[t],
-	);
+	
+
+	const primaryLinks: NavItem[] = useMemo(
+	() => [
+		{
+			label: t.history,
+			href: "/history",
+			icon: <HistoryIcon />,
+		},
+	],
+	[t],
+);
+
+const appLinks: NavItem[] = useMemo(
+	() => [
+		{
+			label: t.siteHealth,
+			href: "/site-health",
+			icon: <ShieldIcon />,
+		},
+	],
+	[t],
+);
 
 	const settingsLinks: NavItem[] = useMemo(
 		() => [
@@ -484,40 +500,54 @@ const handleRefresh = async () => {
 </div>
 					</div>
 </div>
-					<ActionRow
-	label={isRefreshing ? "Actualisation..." : t.refreshData}
-	icon={
-		<RefreshIcon
-			className={isRefreshing ? "animate-spin" : ""}
-		/>
-	}
-	onClick={handleRefresh}
-	disabled={isRefreshing}
-/>
-					<nav className="mt-2 flex flex-col gap-2">
-						{appLinks.map((item) => (
-							<NavRow
-								key={item.href}
-								item={item}
-								active={pathname === item.href}
-							/>
-						))}
-					</nav>
+					{/* History */}
+<nav className="mt-2 flex flex-col gap-2">
+    {primaryLinks.map((item) => (
+        <NavRow
+            key={item.href}
+            item={item}
+            active={pathname === item.href}
+        />
+    ))}
+</nav>
 
-					<div className="pt-2">
-						<DropdownHeader
-							label={t.settings}
-							open={settingsOpen}
-							onToggle={() => {
-								setSettingsOpen((v) => {
-									const next = !v;
-									if (next) setAppsOpen(false);
-									if (next) setCompanyOpen(false);
-									return next;
-								});
-							}}
-							icon={<SettingsIcon />}
-						/>
+<div className="pt-2">
+	<ActionRow
+		label={isRefreshing ? "Actualisation..." : t.refreshData}
+		icon={
+			<RefreshIcon
+				className={isRefreshing ? "animate-spin" : ""}
+			/>
+		}
+		onClick={handleRefresh}
+		disabled={isRefreshing}
+	/>
+</div>
+{/* Site Health */}
+<nav className="mt-2 flex flex-col gap-2">
+    {appLinks.map((item) => (
+        <NavRow
+            key={item.href}
+            item={item}
+            active={pathname === item.href}
+        />
+    ))}
+</nav>
+
+<div className="pt-2">
+	<DropdownHeader
+		label={t.settings}
+		open={settingsOpen}
+		onToggle={() => {
+			setSettingsOpen((v) => {
+				const next = !v;
+				if (next) setAppsOpen(false);
+				if (next) setCompanyOpen(false);
+				return next;
+			});
+		}}
+		icon={<SettingsIcon />}
+	/>
 
 						<div
 							className={cn(
@@ -824,7 +854,41 @@ export function SettingsIcon({ className = "" }: { className?: string }) {
 		</svg>
 	);
 }
+function HistoryIcon() {
+    return (
+        <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+        >
+            <path
+                d="M3 12a9 9 0 1 0 3-6.7L3 8"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
 
+            <path
+                d="M3 3v5h5"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+
+            <path
+                d="M12 7v5l3 2"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
+}
 function RefreshIcon({ className = "" }: { className?: string }) {
 	return (
 		<svg

@@ -86,6 +86,7 @@ export const fr: Dictionary = {
     dashboard: "Tableau de bord",
     logout: "Se déconnecter",
     loggingOut: "Déconnexion...",
+    history: "Historique",
   },
 
   integrations: {

@@ -51,12 +51,74 @@ export async function generateGeminiDashboardInsight(
 
   const ai = new GoogleGenAI({ apiKey });
 
-  const prompt = `
-You are generating one operational insight for a SaaS dashboard.
+ const prompt = `
+You are Ser3bellum's operational intelligence assistant.
 
-Use only the provided dashboard input.
-Do not invent missing values.
-Return exactly one valid JSON object and nothing else.
+Your task is to identify ONE useful, evidence-based business
+observation from the provided dashboard data.
+
+Ser3bellum organizes information into business categories:
+Analytics, Sales, Marketing, Downtime, CRM/Pipeline,
+Finance, Social Media, and Booking.
+
+IMPORTANT DATA ARCHITECTURE:
+- Business categories are NOT individual integrations.
+- One category may contain evidence from multiple providers.
+- One provider may contribute evidence to multiple categories.
+- businessSources contains provider-specific evidence.
+- signals contains simplified category-level values.
+- When both are available, use businessSources to establish
+  provenance and clarify the meaning of metrics.
+- Do not assume a flattened signal represents every provider
+  within its category.
+
+SOURCE INTERPRETATION:
+- Always distinguish providers and their metric definitions.
+- Never automatically add revenue from Shopify and Stripe.
+  They may represent overlapping transactions.
+- Do not treat Stripe gross payments as identical to Shopify
+  order revenue.
+- Do not treat Stripe account balances as period revenue.
+- Do not treat users, sessions, and page views as interchangeable.
+- Never combine different currencies without explicit conversion
+  information.
+- Do not compare figures covering different reporting periods
+  as though they were directly comparable.
+- A provider with status "warn" may be connected but still
+  awaiting usable metrics.
+- A provider with status "disabled" must not be assumed
+  to have reported zero activity.
+- Do not infer connection health solely from metric values.
+
+DATA RELIABILITY:
+- Use ONLY the supplied dashboard input.
+- Never invent values, trends, causes, or missing metrics.
+- Zero is a valid observed value when explicitly reported.
+- Null, absent, or unavailable metrics are NOT zero.
+- An empty metrics object contains no performance evidence.
+- If a provider has no usable metrics, do not make performance
+  claims about that provider.
+- Treat category-level signals without explicit provenance
+  cautiously.
+- Do not claim that business activity is stable unless
+  comparative evidence supports that conclusion.
+
+INSIGHT SELECTION:
+- Identify the most meaningful operational observation
+  supported by the available evidence.
+- Prefer a specific, actionable finding over a generic summary.
+- You may compare metrics across providers only when their
+  meanings, time periods, and units make the comparison valid.
+- Distinguish an observed fact from a possible explanation.
+- Never present a hypothesis as a confirmed cause.
+- If evidence supports only a limited observation, say so.
+- Do not return "empty" merely because observed activity
+  is low, zero, or unchanged.
+- Return "empty" when insufficient usable evidence exists
+  to make a responsible operational observation.
+
+OUTPUT:
+Return exactly ONE valid JSON object and nothing else.
 
 Required JSON fields:
 - status
@@ -67,28 +129,37 @@ Required JSON fields:
 - severity
 
 Rules:
-- status must be one of: "ready", "empty", "error"
-- severity must be one of: "low", "medium", "high"
-- Keep the insight concise and operational
-- recommendedAction must be concrete
-- sourceNote must mention the signals used
-- If there is not enough meaningful signal, return:
+- status must be "ready" or "empty".
+- severity must be "low", "medium", or "high".
+- Keep the insight concise and operational.
+- recommendedAction must be concrete and proportional
+  to the available evidence.
+- sourceNote must identify the provider and metrics used.
+- Do not mention a provider as evidence unless it supplied
+  the relevant metric.
+- Do not invent sources or cite metrics absent from the input.
+
+If status is "empty", return:
 {
   "status": "empty",
   "headline": "",
   "whyItMatters": "",
   "recommendedAction": "",
-  "sourceNote": ""
+  "sourceNote": "",
+  "severity": "low"
 }
 
 Dashboard input:
 ${JSON.stringify(input, null, 2)}
 `.trim();
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: prompt,
-  });
+const model =
+  process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash";
+
+const response = await ai.models.generateContent({
+  model,
+  contents: prompt,
+});
 
   const rawText = response.text ?? "";
   const jsonText = extractJsonObject(rawText);
