@@ -26,6 +26,3 @@ env:
 
   - variable: NEXT_PUBLIC_FIRESTORE_DATABASE_ID
     value: ser3bellum
-
-  - variable: CRON_SECRET
-    secret: CRON_SECRET
