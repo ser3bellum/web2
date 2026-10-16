@@ -42,6 +42,14 @@ export async function POST(req: Request) {
       (result) => result.status === "failed",
     ).length;
 
+      console.info("Daily report job summary:", {
+      total: results.length,
+      created,
+      skipped,
+      failed,
+      results,
+      });
+
     return NextResponse.json({
       ok: failed === 0,
       date: new Date().toISOString().slice(0, 10),
@@ -53,13 +61,7 @@ export async function POST(req: Request) {
       },
       results,
     });
-console.info("Daily report job summary:", {
-  total: results.length,
-  created,
-  skipped,
-  failed,
-  results,
-});
+
 
   } catch (error) {
     console.error("Daily report job failed:", error);
