@@ -65,26 +65,24 @@ export async function GET() {
 
       const age = Date.now() - createdAt;
 
-      if (
-        Number.isFinite(age) &&
-        age >= 0 &&
-        age < INSIGHT_WINDOW_MS
-      ) {
-        const {
-          workspaceId: _workspaceId,
-          insightId: _insightId,
-          syncRunId: _syncRunId,
-          source: _source,
-          createdAtIso: _createdAtIso,
-          expiresAt: _expiresAt,
-          createdAt: _createdAt,
-          ...payload
-        } = existingInsight as typeof existingInsight & {
-          createdAt?: unknown;
-        };
+     if (
+  Number.isFinite(age) &&
+  age >= 0 &&
+  age < INSIGHT_WINDOW_MS
+) {
+  console.log("[AI] Returning cached insight", {
+    source: existingInsight.source,
+    ageMinutes: Math.round(age / 60000),
+  });
 
-        return NextResponse.json(payload);
-      }
+  const {
+    workspaceId: _workspaceId,
+    insightId: _insightId,
+    ...publicInsight
+  } = existingInsight;
+
+  return NextResponse.json(publicInsight);
+}
     }
 
     const latestSummary =
@@ -123,8 +121,8 @@ export async function GET() {
 
     // Secondary: existing Gemini implementation.
     try {
-      const payload =
-        await generateGeminiDashboardInsight(input);
+  const payload =
+    await generateGeminiDashboardInsight(input);
 
       await saveAIInsight({
         workspaceId,
