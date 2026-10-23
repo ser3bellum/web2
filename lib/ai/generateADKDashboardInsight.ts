@@ -40,9 +40,12 @@ function isAIInsightPayload(value: unknown): value is AIInsightPayload {
 }
 
 export async function generateADKDashboardInsight(
-  input: DashboardInsightInput
+  input: DashboardInsightInput,
+  workspaceId: string,
 ): Promise<AIInsightPayload> {
-  const rawText = await runBusinessInsightsAgent(input);
+  const rawText = await runBusinessInsightsAgent(
+    input, workspaceId,
+  );
 
   const jsonText = extractJsonObject(rawText);
 

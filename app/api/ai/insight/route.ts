@@ -102,7 +102,7 @@ export async function GET() {
     // Primary: ADK + Gemini.
     try {
       const payload =
-        await generateADKDashboardInsight(input);
+       await generateADKDashboardInsight(input, workspaceId);
 
       await saveAIInsight({
         workspaceId,

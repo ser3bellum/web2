@@ -52,7 +52,10 @@ export async function runDailyReportCycle(args: {
   let savedInsight;
 
   try {
-    const payload = await generateADKDashboardInsight(input);
+   const payload = await generateADKDashboardInsight(
+  input,
+  workspaceId,
+);
 
     savedInsight = await saveAIInsight({
       workspaceId,

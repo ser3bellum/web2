@@ -1,6 +1,6 @@
 import type * as React from "react";
 import { useState } from "react";
-
+import AIInsightLoader from "@/app/(app)/components/AIInsightLoader";
 import { ArrowRight, Sparkles } from "lucide-react";
 import type { AIInsightStatus } from "@/types/ai";
 import {
@@ -75,20 +75,10 @@ export function AIInsightsCard({
 				</div>
 
 				{isLoading ? (
-					<div className="flex flex-1 flex-col">
-						<div className="h-[185px] animate-pulse rounded-2xl border border-white/10 bg-white/10" />
-
-						<div className="mt-5">
-							<div className="h-5 w-[72%] animate-pulse rounded bg-white/20" />
-							<div className="mt-2 h-5 w-[48%] animate-pulse rounded bg-white/20" />
-						</div>
-
-						<div className="mt-auto flex items-center justify-between">
-							<div className="h-3 w-40 animate-pulse rounded bg-white/15" />
-							<div className="h-9 w-44 animate-pulse rounded-xl bg-white/15" />
-						</div>
-					</div>
-				) : isEmpty ? (
+  <div className="flex min-h-0 flex-1 items-center justify-center">
+    <AIInsightLoader />
+  </div>
+) : isEmpty ? (
 					<div className="flex flex-1 flex-col justify-center">
 						<h4 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/75">
 							No insight yet
