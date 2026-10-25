@@ -331,4 +331,23 @@
     background: #fff !important;
   }
 }
+.analytics-content-reveal {
+  animation: analyticsReveal 2s ease-in-out both;
+}
+
+@keyframes analyticsReveal {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analytics-content-reveal {
+    animation: none;
+  }
+}
 }
