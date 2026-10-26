@@ -75,10 +75,11 @@ export function AIInsightsCard({
 				</div>
 
 				{isLoading ? (
-  <div className="flex min-h-0 flex-1 items-center justify-center">
-    <AIInsightLoader />
-  </div>
-) : isEmpty ? (
+
+					<div className="flex min-h-0 flex-1 items-center justify-center">
+						<AIInsightLoader />
+					</div>
+				) : isEmpty ? (
 					<div className="flex flex-1 flex-col justify-center">
 						<h4 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/75">
 							No insight yet

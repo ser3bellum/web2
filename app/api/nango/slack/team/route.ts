@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     const result = await nango.get({
       providerConfigKey: "slack",
       connectionId,
-      endpoint: "/team.info",
+      endpoint: "/auth.test",
     });
 
     return NextResponse.json(result.data);

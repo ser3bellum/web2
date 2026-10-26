@@ -11,6 +11,8 @@ import { HistoricalReport } from "../components/HistoricalReport";
 import { ReportShell } from "../components/ReportShell";
 import { AutoPrint } from "../components/AutoPrint";
 
+import { adminDb } from "@/lib/firebase/admin";
+
 type HistoryPrintSearchParams = {
 	ids?: string;
 	preview?: string;
@@ -85,11 +87,27 @@ export default async function HistoryPrintPage({
 		redirect("/history");
 	}
 
-	const reports = await getDailyReportsByIds(
-		user.id,
-		reportIds,
-	);
+	const workspaceId = user.lastWorkspaceId?.trim();
 
+	if (!workspaceId) {
+	redirect("/history");
+	}
+
+	const membership = await adminDb
+	.collection("workspaces")
+	.doc(workspaceId)
+	.collection("members")
+	.doc(user.id)
+	.get();
+
+	if (!membership.exists) {
+	redirect("/history");
+	}
+
+	const reports = await getDailyReportsByIds(
+	workspaceId,
+	reportIds,
+	);
 	if (reports.length === 0) {
 		redirect("/history");
 	}

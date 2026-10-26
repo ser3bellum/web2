@@ -1,0 +1,38 @@
+/* Keep the loading skeleton and analytics content in the same grid cell. */
+.layers {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.layer {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+
+.skeletonExit {
+  pointer-events: none;
+  animation: analyticsSkeletonFadeOut 2s ease-in-out both;
+}
+
+.contentEnter {
+  animation: analyticsContentFadeIn 2s ease-in-out both;
+}
+
+@keyframes analyticsSkeletonFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes analyticsContentFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeletonExit,
+  .contentEnter {
+    animation-duration: 0.01ms;
+  }
+}

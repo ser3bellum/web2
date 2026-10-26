@@ -204,41 +204,50 @@ function DashboardHomeLink({
 	const [messagesLoading, setMessagesLoading] = useState(false);
 
 	useEffect(() => {
+  if (!mailOpen) return;
+
   let cancelled = false;
 
-  async function loadSlackMessages() {
-    try {
-      const endUserId = auth.currentUser?.uid;
-
-      if (!endUserId) {
-        if (!cancelled) {
-          setMessages([]);
-          setMessagesLoading(false);
-        }
-        return;
+  const unsubscribe = auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+      if (!cancelled) {
+        setMessages([]);
+        setMessagesLoading(false);
       }
+      return;
+    }
 
-      setMessagesLoading(true);
+    setMessagesLoading(true);
 
+    try {
       const res = await fetch("/api/messages/slack", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          endUserId,
+          endUserId: user.uid,
         }),
+        cache: "no-store",
       });
 
       const data = await res.json();
 
-      console.log("SLACK_MESSAGES_API_RESPONSE", data);
+      console.log("SLACK_MESSAGES_API_RESPONSE", {
+        status: res.status,
+        ...data,
+      });
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Slack request failed");
+      }
 
       if (!cancelled) {
         setMessages(Array.isArray(data.messages) ? data.messages : []);
       }
     } catch (error) {
       console.error("SLACK_MESSAGES_FETCH_FAILED", error);
+
       if (!cancelled) {
         setMessages([]);
       }
@@ -247,15 +256,13 @@ function DashboardHomeLink({
         setMessagesLoading(false);
       }
     }
- 	 }
-
- 	 loadSlackMessages();
+  });
 
   return () => {
     cancelled = true;
+    unsubscribe();
   };
-}, []);
-
+}, [mailOpen]);
 	useEffect(() => {
   let cancelled = false;
 
