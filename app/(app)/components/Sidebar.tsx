@@ -31,8 +31,10 @@ type ConnectorItem = {
  */
 const glassBase =
 	"w-full rounded-xl px-3 py-2.5 flex items-center gap-3 " +
-	"border border-white/25 bg-white/10 backdrop-blur-xl " +
-	"ring-1 ring-white/10 shadow-sm transition-colors";
+	"bg-[linear-gradient(180deg,#ffffff2b_0%,#fafafa63_20%)] " +
+	"border border-slate-900/[0.08] " +
+	"shadow-[inset_0_1px_0_rgba(255,255,255,1),inset_0_0_10px_rgba(255,255,255,0.9),0_1px_2px_rgba(15,23,42,0.04),0_6px_16px_-8px_rgba(15,23,42,0.12)] " +
+	"transition-[background-color,border-color,box-shadow] duration-150";
 
 const glassHover = "hover:bg-white/22 hover:border-white/45 hover:shadow-md";
 const glassActive = "bg-white/18 border-blue-400/35 ring-1 ring-blue-500/20";
@@ -300,7 +302,7 @@ const handleRefresh = async () => {
 				aria-label="Open navigation"
 				aria-controls="app-sidebar"
 				aria-expanded={mobileOpen}
-				className="fixed left-3 top-3 z-[90] inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/50 bg-white/90 text-slate-600 shadow-sm backdrop-blur transition hover:bg-white md:hidden"
+				className="fixed left-3 top-3 z-[90] inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/50 bg-white/90 text-slate-700/70 shadow-sm backdrop-blur transition hover:bg-white md:hidden"
 			>
 				<Menu size={20} />
 			</button>
@@ -315,13 +317,15 @@ const handleRefresh = async () => {
 			)}
 
 			<aside
-				id="app-sidebar"
-				className={cn(
-					"fixed inset-y-0 left-0 z-[100] h-dvh w-[min(18rem,calc(100vw-3rem))] border-r border-white/40 bg-white/90 backdrop-blur-xl shadow-[0_2px_12px_rgba(0,0,0,0.12)] transition-transform duration-200 ease-out",
-					"md:static md:z-50 md:h-full md:w-72 md:translate-x-0 md:bg-white/80 md:shadow-[0_2px_4px_rgba(0,0,0,0.08)]",
-					mobileOpen ? "translate-x-0" : "-translate-x-full",
-				)}
-			>
+  id="app-sidebar"
+  className={cn(
+    "fixed inset-y-0 left-0 z-[100] h-dvh w-[min(18rem,calc(100vw-3rem))] border-r border-white/40",
+    "bg-[linear-gradient(180deg,rgba(255,255,255,0.78)_0%,rgba(255,255,255,0.48)_40%,rgba(237,233,254,0.25)_100%)]",
+    "backdrop-blur-xl shadow-[0_2px_12px_rgba(0,0,0,0.12)] transition-transform duration-200 ease-out",
+    "md:static md:z-50 md:h-full md:w-72 md:translate-x-0 md:shadow-[0_2px_4px_rgba(0,0,0,0.08)]",
+    mobileOpen ? "translate-x-0" : "-translate-x-full",
+  )}
+>
 			<div className="relative flex h-dvh flex-col px-6 pb-3 pt-5 md:h-screen">
 				<button
 					type="button"
@@ -393,7 +397,7 @@ const handleRefresh = async () => {
 										}}
 										className={cn(
 											"relative w-full rounded-lg px-3 py-2 text-sm transition-colors",
-											"text-slate-600 hover:bg-slate-100/60",
+											"text-slate-700/70 hover:bg-slate-100/60",
 										)}
 									>
 										<span className="pl-3">{c.name}</span>
@@ -404,50 +408,40 @@ const handleRefresh = async () => {
 				</div>
 
 				<Link
-					href="/user-settings"
-					aria-label={t.openProfileSettings}
-					className={cn(
-						"group mb-5 flex w-full items-center gap-3 rounded-xl px-3 py-2.5",
-						"border border-white/25 bg-white/10 backdrop-blur-xl ring-1 ring-white/10 shadow-sm transition-colors",
-						"hover:bg-white/22 hover:border-white/45 hover:shadow-md",
-						"focus:outline-none focus:ring-2 focus:ring-blue-500/30",
-					)}
-				>
-					<div className="relative grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-zinc-200">
-						{avatarUrl ? (
-							<img
-								src={avatarUrl}
-								alt=""
-								className="h-full w-full object-cover"
-								referrerPolicy="no-referrer"
-							/>
-						) : (
-							<span className="text-xs font-semibold text-slate-600">
-								{(userEmail?.[0] ?? "U").toUpperCase()}
-							</span>
-						)}
+  href="/user-settings"
+  aria-label={t.openProfileSettings}
+  className={cn(
+    "group mb-5 flex w-full items-center gap-3 rounded-xl px-3 py-2.5",
+    "border border-white/25 bg-white/10 backdrop-blur-xl ring-1 ring-white/10 shadow-sm transition-colors",
+    "hover:bg-white/22 hover:border-white/45 hover:shadow-md",
+    "focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+  )}
+>
+  <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-zinc-200">
+    {avatarUrl ? (
+      <img
+        src={avatarUrl}
+        alt=""
+        className="h-full w-full object-cover"
+        referrerPolicy="no-referrer"
+      />
+    ) : (
+      <span className="text-xs font-semibold text-slate-600">
+        {(userEmail?.[0] ?? "U").toUpperCase()}
+      </span>
+    )}
 
-						<span className="pointer-events-none absolute inset-0 grid place-items-center bg-black/40 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
-							{t.edit}
-						</span>
-					</div>
+    <span className="pointer-events-none absolute inset-0 grid place-items-center bg-black/40 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
+      {t.edit}
+    </span>
+  </div>
 
-					<div className="min-w-0 flex-1">
-						<div className="truncate text-sm font-semibold text-slate-800">
-							{userName || t.userFallback}
-						</div>
-
-						<div className="flex items-center gap-2">
-							<span className="text-xs text-slate-400 opacity-0 transition group-hover:opacity-100">
-								• {t.editProfile}
-							</span>
-						</div>
-					</div>
-
-					<span className="ml-auto text-slate-400 opacity-0 transition group-hover:opacity-100">
-						<ChevronIcon />
-					</span>
-				</Link>
+  <div className="flex min-w-0 flex-1 items-center">
+    <span className="truncate text-sm font-semibold text-slate-800">
+      {userName || t.userFallback}
+    </span>
+  </div>
+</Link>
 
 				<div className="mt-3 flex min-h-0 flex-1 flex-col gap-1 px-1">
 					<DropdownHeader
@@ -631,7 +625,7 @@ const handleRefresh = async () => {
 			onClick={onToggle}
 			className={cn(glassBase, glassHover, open && glassActive)}
 		>
-			<span className="inline-flex items-center gap-2 text-sm text-slate-600">
+			<span className="inline-flex items-center gap-2 text-sm text-slate-700/70">
 				<span
 					className={cn(
 						"inline-flex h-8 w-8 items-center justify-center rounded-lg",
@@ -680,36 +674,35 @@ function RowShell({
 }
 
 function ActionRow({
-	label,
-	icon,
-	onClick,
-	disabled = false,
+  label,
+  icon,
+  onClick,
+  disabled = false,
 }: {
-	label: string;
-	icon: React.ReactNode;
-	onClick: () => void;
-	disabled?: boolean;
+  label: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
 }) {
-	return (
-		<button
-			type="button"
-			onClick={onClick}
-			disabled={disabled}
-			className={[
-				"flex w-full items-center gap-3 rounded-xl bg-white px-5 py-4 text-left text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-100 transition",
-				"hover:bg-slate-50 hover:text-slate-900",
-				disabled && "cursor-not-allowed opacity-60",
-			]
-				.filter(Boolean)
-				.join(" ")}
-		>
-			<span className="flex h-5 w-5 items-center justify-center text-slate-500">
-				{icon}
-			</span>
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        glassBase,
+        glassHover,
+        "text-left text-sm font-normal text-slate-700/70",
+        disabled && "cursor-not-allowed opacity-60"
+      )}
+    >
+      <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 border border-white/20">
+        {icon}
+      </span>
 
-			<span>{label}</span>
-		</button>
-	);
+      <span>{label}</span>
+    </button>
+  );
 }
 
 function NavRow({ item, active }: { item: NavItem; active: boolean }) {
@@ -734,7 +727,7 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
 					{item.icon}
 				</span>
 
-				<span className="text-sm text-slate-600">{item.label}</span>
+				<span className="text-sm text-slate-700/70">{item.label}</span>
 			</Link>
 		</RowShell>
 	);

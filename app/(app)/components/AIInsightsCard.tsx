@@ -50,7 +50,7 @@ export function AIInsightsCard({
 			className={[
 				"relative h-[408px] overflow-hidden rounded-2xl",
 				"shadow-[0_8px_24px_rgba(0,0,0,0.08)] ring-1 ring-black/5",
-				"text-white",
+				"text-[#7c3aed]",
 				className,
 			].join(" ")}
 			style={{
@@ -69,7 +69,7 @@ export function AIInsightsCard({
 						<Sparkles className="h-5 w-5" />
 					</div>
 
-					<h3 className="text-[1.125rem] font-semibold tracking-[-0.02em] text-white/95">
+					<h3 className="text-[1.125rem] font-semibold tracking-[-0.02em] text-[#7c3aed]">
 						{title}
 					</h3>
 				</div>
@@ -80,29 +80,29 @@ export function AIInsightsCard({
 	</div>
 				) : isEmpty ? (
 					<div className="flex flex-1 flex-col justify-center">
-						<h4 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/75">
+						<h4 className="text-[11px] font-semibold uppercase tracking-[0.18em] [#7c3aed]">
 							No insight yet
 						</h4>
 
-						<p className="mt-4 max-w-3xl text-base font-semibold leading-7 text-white/90">
+						<p className="mt-4 max-w-3xl text-base font-semibold leading-7 [#7c3aed]">
 							There isn&apos;t enough usable data in this period to generate a meaningful insight.
 						</p>
 
-						<p className="mt-4 max-w-3xl text-sm leading-7 text-white/75">
+						<p className="mt-4 max-w-3xl text-sm leading-7 [#7c3aed]">
 							We&apos;ll keep monitoring your data and surface an insight when enough information is available.
 						</p>
 					</div>
 				) : isError ? (
 					<div className="flex flex-1 flex-col justify-center">
-						<h4 className="text-xs font-semibold uppercase tracking-[0.14em] text-white/75">
+						<h4 className="text-xs font-semibold uppercase tracking-[0.14em] [#7c3aed]">
 							Insight temporarily unavailable
 						</h4>
 
-						<p className="mt-4 max-w-2xl text-[1.05rem] font-semibold leading-snug text-white">
+						<p className="mt-4 max-w-2xl text-[1.05rem] font-semibold leading-snug [#7c3aed]">
 							We could not generate an AI insight right now.
 						</p>
 
-						<p className="mt-4 max-w-2xl text-sm leading-7 text-white/75">
+						<p className="mt-4 max-w-2xl text-sm leading-7 [#7c3aed]">
 							Your dashboard data is still available. Please try again shortly.
 						</p>
 					</div>
@@ -113,12 +113,12 @@ export function AIInsightsCard({
 							data={trend}
 						/>
 
-						<p className="mt-4 max-w-3xl text-[1rem] font-semibold leading-snug text-white">
+						<p className="mt-4 max-w-3xl text-[1rem] font-semibold leading-snug text-[#6d4bd1]">
 							{headline}
 						</p>
 
 						<div className="mt-auto flex items-end justify-between gap-4 pt-4">
-							<p className="max-w-[50%] text-xs leading-5 text-white/65">
+							<p className="max-w-[50%] text-xs leading-5 text-[#7c3aed]">
 								{sourceNote}
 							</p>
 

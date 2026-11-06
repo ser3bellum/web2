@@ -2,6 +2,7 @@
 
 import { LogoutButton } from "app/(app)/components/LogoutButton";
 import { BaseModal } from "app/(app)/components/ui/Modal";
+import { MailModal, type MailMessage } from "./MailModal";
 import { auth } from "@/lib/firebase/clients";
 import { cn } from "app/(app)/lib/cn";
 import Link from "next/link";
@@ -626,26 +627,28 @@ const mailCount = messages.filter((item) => item.unread).length;
 					</div>
 				</div>
 			</header>
+		
 			{mailOpen && (
-	<MailModal
-		onClose={() => setMailOpen(false)}
-		messages={messages}
-		closeLabel={t.close}
-		connections={{
-			slack: true,
-			gmail: false,
-			outlook: false,
-			imap: false,
-		}}
-	/>
-)}
+			<MailModal
+				onClose={() => setMailOpen(false)}
+				messages={messages}
+				loading={messagesLoading}
+				closeLabel={t.close}
+				connections={{
+				slack: true,
+				gmail: false,
+				outlook: false,
+				imap: false,
+				}}
+				/>
+			)}
 			{notifOpen && (
 			<NotificationModal
 			onClose={() => setNotifOpen(false)}
 			notifications={notifications}
 			closeLabel={t.close}
-	/>
-)}
+			/>
+			)}
 			
 		</>
 		
@@ -870,17 +873,7 @@ function MailIcon() {
 	);
 }
 
-type Provider = "slack" | "gmail" | "outlook" | "imap";
 
-type MailMessage = {
-  id: string;
-  provider: Provider;
-  sender: string;
-  preview: string;
-  timeLabel: string;
-  unread?: boolean;
-  
-};
 type NotificationItem = {
 	id: string;
 	kind: "summary" | "analytics" | "alert" | "system" | "integration";
@@ -891,196 +884,7 @@ type NotificationItem = {
 };
 
 
-function MailModal({
-	onClose,
-	messages,
-	connections,
-	closeLabel,
-}: {
-	onClose: () => void;
-	messages: MailMessage[];
-	connections: Record<Provider, boolean>;
-	closeLabel: string;
-}) {
-	const [selectedProvider, setSelectedProvider] = useState<Provider>("slack");
 
-	useEffect(() => {
-		const onKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") onClose();
-		};
-		document.addEventListener("keydown", onKey);
-
-		console.log("messages passed to MailModal", messages);
-
-		return () => document.removeEventListener("keydown", onKey);
-	}, [onClose]);
-
-	const providerOrder: Provider[] = ["slack", "gmail", "outlook", "imap"];
-
-	const providerLabel = (provider: Provider) => {
-		switch (provider) {
-			case "slack":
-				return "Slack";
-			case "gmail":
-				return "Gmail";
-			case "outlook":
-				return "Outlook";
-			case "imap":
-				return "IMAP";
-		}
-	};
-
-	const messageCountByProvider = providerOrder.reduce(
-		(acc, provider) => {
-			acc[provider] = messages.filter(
-				(message) => message.provider === provider,
-			).length;
-			return acc;
-		},
-		{} as Record<Provider, number>,
-	);
-
-	const visibleMessages = messages.filter(
-		(message) => message.provider === selectedProvider,
-	);
-
-	const selectedConnected = connections[selectedProvider];
-	const slackConnected = connections.slack;
-
-	return (
-		<BaseModal
-			title="Messages"
-			onClose={onClose}
-			size="lg"
-			footer={
-				<button
-					type="button"
-					onClick={onClose}
-					className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
-				>
-					Close
-				</button>
-			}
-		>
-			<div className="space-y-4">
-				<div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-					<div className="flex items-center justify-between gap-3">
-						<div>
-							<div className="text-sm font-medium text-slate-900">
-								Message sources
-							</div>
-							<div className="mt-1 text-sm text-slate-600">
-								Slack is connected. Add another provider to expand your inbox.
-							</div>
-						</div>
-
-						{slackConnected && (
-							<span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-								Slack connected
-							</span>
-						)}
-					</div>
-
-					<div className="mt-3 flex flex-wrap gap-2">
-						{providerOrder.map((provider) => {
-							const count = messageCountByProvider[provider];
-							const active = selectedProvider === provider;
-							const connected = connections[provider];
-
-							return (
-								<button
-									key={provider}
-									type="button"
-									onClick={() => setSelectedProvider(provider)}
-									className={cn(
-										"inline-flex h-9 items-center gap-2 rounded-full border px-3 text-sm transition-colors",
-										active && connected
-											? "border-emerald-200 bg-emerald-50 text-emerald-700"
-											: active
-												? "border-slate-300 bg-slate-100 text-slate-900"
-												: "border-slate-200 bg-white text-slate-900 hover:bg-slate-50",
-									)}
-								>
-									<span>{providerLabel(provider)}</span>
-
-									{count > 0 && (
-										<span
-											className={cn(
-												"inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 text-[11px] font-medium leading-5",
-												active && connected
-													? "bg-emerald-100 text-emerald-700"
-													: "bg-slate-100 text-slate-700",
-											)}
-										>
-											{count}
-										</span>
-									)}
-								</button>
-							);
-						})}
-					</div>
-				</div>
-
-				<div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-					<div className="flex items-center justify-between gap-3">
-						<div className="text-sm font-medium text-slate-900">
-							Recent messages
-						</div>
-						<div className="text-xs text-slate-500">
-							{selectedConnected
-								? `Showing ${providerLabel(selectedProvider)} activity`
-								: "No provider connected"}
-						</div>
-					</div>
-
-					{selectedConnected ? (
-						visibleMessages.length > 0 ? (
-							<ul className="mt-2 space-y-2 text-sm">
-								{visibleMessages.map((message) => (
-									<li
-										key={message.id}
-										className={cn(
-											"rounded-lg border bg-white p-3",
-											message.unread ? "border-blue-200" : "border-slate-200",
-										)}
-									>
-										<div className="flex items-start justify-between gap-3">
-											<div className="min-w-0">
-												<div className="flex items-center gap-2">
-													<div className="font-medium text-slate-900">
-														{message.sender}
-													</div>
-													{message.unread && (
-														<span className="inline-block h-2 w-2 rounded-full bg-blue-500" />
-													)}
-												</div>
-												<div className="mt-1 text-slate-600">
-													{message.preview}
-												</div>
-											</div>
-
-											<div className="shrink-0 text-xs text-slate-500">
-												{message.timeLabel}
-											</div>
-										</div>
-									</li>
-								))}
-							</ul>
-						) : (
-							<div className="mt-2 rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-600">
-								No messages yet for {providerLabel(selectedProvider)}.
-							</div>
-						)
-					) : (
-						<div className="mt-2 rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-600">
-							{providerLabel(selectedProvider)} is not connected yet.
-						</div>
-					)}
-				</div>
-			</div>
-		</BaseModal>
-	);
-}
 function NotificationModal({
 	onClose,
 	notifications,
