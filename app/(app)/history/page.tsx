@@ -14,13 +14,15 @@ export default async function HistoryPage() {
 		redirect("/login");
 	}
 
-	const { user } = await getUserCompanyContext(session);
+	const { user, company } = await getUserCompanyContext(session);
 
 	if (!user?.id) {
 		redirect("/login");
 	}
 
-	const reports = await getDailyReports(user.id);
+	const reports = company?.id
+    ? await getDailyReports(company.id)
+    : [];
 
 	return (
 		<main className="flex min-h-full flex-1 flex-col">

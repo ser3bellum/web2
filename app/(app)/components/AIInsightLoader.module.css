@@ -1,0 +1,133 @@
+.loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 360px;
+  padding: 24px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.orb {
+  width: min(280px, 100%);
+  height: auto;
+  overflow: visible;
+}
+
+.halo,
+.core {
+  transform-origin: 160px 140px;
+  animation: breathe 4s ease-in-out infinite;
+}
+
+.core {
+  animation-delay: -1s;
+}
+
+.field,
+.particles {
+  transform-origin: 160px 140px;
+  animation: orbit 28s linear infinite;
+}
+
+.particles {
+  animation-duration: 45s;
+  animation-direction: reverse;
+}
+
+.filament {
+  opacity: 0.65;
+  stroke-dasharray: 180 50 80 35;
+  animation: flow 9s linear infinite;
+}
+
+.particle {
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+.copy {
+  position: relative;
+  margin-top: -8px;
+}
+
+.title {
+  margin: 0;
+  color: #312e81;
+  font-size: clamp(16px, 1.5vw, 20px);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  color: #6d4bd1;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.dots {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #7c3aed;
+  animation: dotPulse 1.5s ease-in-out infinite;
+}
+
+.dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(0.92);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+}
+
+@keyframes orbit {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes flow {
+  to { stroke-dashoffset: -345; }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.9; }
+}
+
+@keyframes dotPulse {
+  0%, 100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader *,
+  .loader *::before,
+  .loader *::after {
+    animation: none !important;
+  }
+}

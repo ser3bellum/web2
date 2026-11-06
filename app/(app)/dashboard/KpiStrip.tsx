@@ -11,7 +11,8 @@ import { AccountingBalanceBreakdown } from "app/(app)/components/AccountingBalan
 import { DowntimeActivityChart } from "app/(app)/components/DowntimeActivityChart";
 import { BookingActivityChart } from "app/(app)/components/BookingActivityChart";
 import type { DashboardKpi } from "@/types/dashboard";
-
+import transitionStyles from "app/(app)/dashboard/kpiAnalyticsTransition.module.css";
+import { AnalyticsLoader } from "@/app/(app)/components/AnalyticsLoader";
 function toneClass(tone?: "up" | "down" | "neutral") {
   if (tone === "down") return "text-red-600";
   if (tone === "up") return "text-emerald-600";
@@ -280,6 +281,7 @@ export function KpiStrip({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [analyticsData, setAnalyticsData] =
     useState<AnalyticsModalPayload | null>(null);
+  const [showAnalyticsSkeleton, setShowAnalyticsSkeleton] = useState(true);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState<string | null>(null);
 
@@ -287,6 +289,19 @@ export function KpiStrip({
     () => kpis.find((k) => k.id === activeId) ?? null,
     [activeId, kpis]
   );
+
+useEffect(() => {
+  if (activeId !== "kpi-analytics" || analyticsLoading || !analyticsData) {
+    setShowAnalyticsSkeleton(true);
+    return;
+  }
+
+  const timeout = window.setTimeout(() => {
+    setShowAnalyticsSkeleton(false);
+  }, 2000);
+
+  return () => window.clearTimeout(timeout);
+}, [activeId, analyticsLoading, analyticsData]);
 
   useEffect(() => {
     if (activeId !== "kpi-analytics") return;
@@ -361,6 +376,7 @@ export function KpiStrip({
   }, [activeId]);
 
   function handleClose() {
+    setShowAnalyticsSkeleton(true);
     setActiveId(null);
     setAnalyticsData(null);
     setAnalyticsError(null);
@@ -445,16 +461,78 @@ export function KpiStrip({
                 {labels.modal.detailsDescription}
               </p>
 
-              {analyticsLoading ? (
-                <div className="flex h-64 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-500">
-                  Loading analytics…
-                </div>
-              ) : analyticsError ? (
+              {analyticsError && !analyticsLoading ? (
                 <div className="flex h-64 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-sm text-red-600">
                   {analyticsError}
                 </div>
-           ) : analyticsData ? (
-  <>
+              ) : (
+                <div className={transitionStyles.layers}>
+                  {showAnalyticsSkeleton && (
+                    <div
+                      className={`${transitionStyles.layer} ${
+                        analyticsData && !analyticsLoading
+                          ? transitionStyles.skeletonExit
+                          : ""
+                      }`}
+                      aria-hidden={Boolean(analyticsData && !analyticsLoading)}
+                    >
+  <div className="relative min-h-[460px]">
+  {/* Faded skeleton cards */}
+  <div className="opacity-30" aria-hidden="true">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+        >
+          <div className="h-3 w-20 rounded bg-slate-200/60" />
+          <div className="mt-3 h-7 w-16 rounded bg-slate-200/50" />
+        </div>
+      ))}
+    </div>
+
+    <div className="mt-4 grid min-w-0 gap-4 xl:grid-cols-[0.8fr_1.2fr]">
+      <div className="min-h-[300px] rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="h-4 w-32 rounded bg-slate-100" />
+
+        <div className="mt-6 space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-10 rounded-xl bg-slate-50"
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-4">
+        {[0, 1].map((i) => (
+          <div
+            key={i}
+            className="rounded-2xl border border-slate-200 bg-white p-4"
+          >
+            <div className="h-4 w-36 rounded bg-slate-100" />
+
+            <div className="mt-5 space-y-4">
+              <div className="h-3 w-full rounded bg-slate-100" />
+              <div className="h-3 w-4/5 rounded bg-slate-100" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  {/* Text and dots retain full opacity */}
+  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+    <AnalyticsLoader tone="muted" />
+  </div>
+</div>
+                    </div>
+                  )}
+                  {analyticsData && !analyticsLoading && (
+                    <div className={`${transitionStyles.layer} ${transitionStyles.contentEnter}`}>
+  <div className="grid gap-4">
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
         <div className="text-xs text-slate-500">Users</div>
@@ -585,10 +663,9 @@ export function KpiStrip({
         </div>
       </div>
     </div>
-  </>
-              ) : (
-                <div className="flex h-64 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-500">
-                  No analytics data available.
+  </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -52,10 +52,9 @@ export function Card({
 	return (
 		<section
 			className={[
-				"rounded-2xl bg-white shadow-[0_8px_24px_rgba(0,0,0,0.08)] ring-1 ring-black/5",
-				"p-5",
-				className,
-			].join(" ")}
+		"soft-card p-5",
+		className,
+		].join(" ")}
 			{...props}
 		>
 			{(title || subtitle || rightSlot || updatedLabel || sources?.length) && (

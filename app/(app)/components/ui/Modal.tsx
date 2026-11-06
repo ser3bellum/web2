@@ -11,6 +11,7 @@ export function BaseModal({
 	footer,
 	onClose,
 	size = "lg",
+	bodyClassName,
 }: {
 	title: string;
 	subtitle?: string;
@@ -18,6 +19,7 @@ export function BaseModal({
 	footer?: React.ReactNode;
 	onClose: () => void;
 	size?: ModalSize;
+	bodyClassName?: string;
 }) {
 	const maxW =
 		size === "sm"
@@ -30,7 +32,6 @@ export function BaseModal({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center">
-			{/* Overlay (matches your Uptime modal) */}
 			<button
 				type="button"
 				aria-label="Close modal"
@@ -38,22 +39,25 @@ export function BaseModal({
 				className="absolute inset-0 bg-white/35 backdrop-blur-md backdrop-brightness-90"
 			/>
 
-			{/* Modal card */}
 			<div
 				className={[
-					"relative w-[calc(100%-2rem)]",
+					"relative flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] flex-col overflow-hidden",
 					maxW,
 					"rounded-2xl border border-slate-200 bg-white shadow-2xl",
 				].join(" ")}
 				role="dialog"
 				aria-modal="true"
+				aria-label={title}
 			>
-				{/* Header */}
-				<div className="flex items-start justify-between gap-4 px-6 pt-6">
+				<div className="flex shrink-0 items-start justify-between gap-4 px-6 pt-6">
 					<div>
-						<h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+						<h2 className="text-lg font-semibold text-slate-900">
+							{title}
+						</h2>
 						{subtitle ? (
-							<p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+							<p className="mt-1 text-sm text-slate-500">
+								{subtitle}
+							</p>
 						) : null}
 					</div>
 
@@ -61,18 +65,23 @@ export function BaseModal({
 						type="button"
 						onClick={onClose}
 						aria-label="Close"
-						className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+						className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
 					>
 						✕
 					</button>
 				</div>
 
-				{/* Body */}
-				<div className="px-6 pb-6 pt-4">{children}</div>
+				<div
+					className={[
+						"min-h-0 px-6 pb-6 pt-4",
+						bodyClassName ?? "overflow-y-auto",
+					].join(" ")}
+				>
+					{children}
+				</div>
 
-				{/* Footer (optional) */}
 				{footer ? (
-					<div className="flex items-center justify-end gap-2 border-t border-slate-200 px-6 py-4">
+					<div className="flex shrink-0 items-center justify-end gap-2 border-t border-slate-200 px-6 py-4">
 						{footer}
 					</div>
 				) : null}

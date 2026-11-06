@@ -183,7 +183,32 @@
   background: rgba(255, 255, 255, 0.22);
   border-radius: 9999px;
 }
+@layer components {
+	.soft-card {
+		border-radius: 1.25rem; /* ~20px, plus doux */
+		background: linear-gradient(180deg, #ffffff64 0%, #fafafa 15%);
+		border: 1px solid rgba(15, 23, 42, 0.08);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 1),
+			inset 0 0 14px rgba(255, 255, 255, 0.9),
+			0 1px 2px rgba(15, 23, 42, 0.04),
+			0 10px 28px -10px rgba(15, 23, 42, 0.12);
+	}
 
+	/* Variante cliquable : léger retour au survol */
+	.soft-card-interactive {
+		cursor: pointer;
+		transition: transform 0.15s ease, box-shadow 0.15s ease;
+	}
+	.soft-card-interactive:hover {
+		transform: translateY(-1px);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 1),
+			inset 0 0 14px rgba(255, 255, 255, 0.9),
+			0 2px 4px rgba(15, 23, 42, 0.05),
+			0 14px 32px -10px rgba(15, 23, 42, 0.16);
+	}
+}
 @page {
 	size: A4 portrait;
 	margin: 12mm;
@@ -329,6 +354,25 @@
     min-height: 0 !important;
     overflow: visible !important;
     background: #fff !important;
+  }
+}
+.analytics-content-reveal {
+  animation: analyticsReveal 2s ease-in-out both;
+}
+
+@keyframes analyticsReveal {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analytics-content-reveal {
+    animation: none;
   }
 }
 }
