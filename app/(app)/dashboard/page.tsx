@@ -128,9 +128,8 @@ const kpis = await getDashboardKpis({
 });
 
    return (
-  <div className="flex flex-col">
-    <div className="flex flex-col gap-6 px-4 pb-8 pt-6 lg:px-8">
-
+  <div className="flex w-full flex-col">
+  <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-4 pb-8 pt-6 lg:px-8">
      <TrialBanner
   billingStatus={user.billingStatus ?? user.subscriptionStatus ?? ""}
   trialEnd={user.trialEnd ?? user.accessUntil ?? null}

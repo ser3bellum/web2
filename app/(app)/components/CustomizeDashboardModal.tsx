@@ -33,10 +33,8 @@ type Props = {
   }) => void;
 };
 
-const ROW_CLASS = "min-h-[42px] rounded-lg px-2 py-1.5";
-
-const HEADER_CLASS =
-  "min-h-[40px] flex items-center justify-between";
+const FOCUS_RING =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2";
 
 export function CustomizeDashboardModal({
   open,
@@ -144,6 +142,7 @@ export function CustomizeDashboardModal({
   }, [open, onClose]);
 
   const enabledCount = enabled.length;
+  const mvpComplete = mvp.length >= 5;
 
   const toggleMvp = (id: DashboardKpiId) => {
     setMvp((previous) => {
@@ -175,6 +174,11 @@ export function CustomizeDashboardModal({
 
       return [...previous, id];
     });
+  };
+
+  const reset = () => {
+    setMvp(defaultMvp);
+    setEnabled(defaultEnabled9);
   };
 
   const done = () => {
@@ -210,41 +214,57 @@ export function CustomizeDashboardModal({
       size="lg"
     >
       <div className="px-6 pb-6 pt-1">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+        <p className="mb-6 text-sm text-slate-500">
+          Pin what matters most, then decide which cards
+          live on your dashboard.
+        </p>
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {/* LEFT: KPI / MVP selection */}
-          <div className="space-y-1">
-            <div className={HEADER_CLASS}>
-              <div className="text-sm font-semibold text-blue-700">
-                Select your 5 MVP
-              </div>
+          <section className="flex flex-col gap-5 rounded-2xl bg-slate-50 p-6">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between gap-4">
+                <h3 className="text-[17px] font-bold text-blue-700">
+                  Select your 5 MVP
+                </h3>
 
-              <div
-                className="flex items-center gap-2"
-                aria-label="MVP selection progress"
-                role="progressbar"
-                aria-valuemin={0}
-                aria-valuemax={5}
-                aria-valuenow={mvp.length}
-              >
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <span
-                    key={`mvp-dot-${index}`}
-                    className={cn(
-                      "h-3 w-3 rounded-full transition-colors",
-                      index < mvp.length
-                        ? "bg-indigo-600"
-                        : "bg-slate-300",
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className="flex gap-1"
+                    aria-label="MVP selection progress"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={5}
+                    aria-valuenow={mvp.length}
+                  >
+                    {Array.from({ length: 5 }).map(
+                      (_, index) => (
+                        <span
+                          key={`mvp-seg-${index}`}
+                          className={cn(
+                            "h-1.5 w-5 rounded-full transition-colors",
+                            index < mvp.length
+                              ? "bg-blue-700"
+                              : "bg-slate-300",
+                          )}
+                        />
+                      ),
                     )}
-                  />
-                ))}
+                  </div>
+
+                  <span className="min-w-[28px] text-right text-[13px] font-bold text-slate-900">
+                    {mvp.length}/5
+                  </span>
+                </div>
               </div>
+
+              <p className="text-[13px] text-slate-500">
+                Choose the 5 KPIs you want to monitor at a
+                glance.
+              </p>
             </div>
 
-            <div className="text-[11px] text-zinc-400">
-              Choose the 5 KPIs you want to monitor at a glance.
-            </div>
-
-            <div className="mt-2 space-y-1">
+            <div className="space-y-2">
               {kpis.map((kpi) => {
                 const selected = mvp.includes(kpi.id);
 
@@ -257,60 +277,86 @@ export function CustomizeDashboardModal({
                     key={kpi.id}
                     onClick={() => toggleMvp(kpi.id)}
                     disabled={disabled}
+                    aria-pressed={selected}
                     className={cn(
-                      "flex w-full items-center gap-3 text-left transition",
-                      ROW_CLASS,
-                      "hover:bg-zinc-50",
+                      "flex w-full items-center gap-3.5 rounded-2xl border-[1.5px] px-3 py-2.5 text-left transition",
+                      FOCUS_RING,
+                      selected
+                      ? " bg-white shadow-sm"
+                      : "border-slate-300 bg-transparent hover:bg-white",
                       disabled &&
-                        "cursor-not-allowed opacity-50 hover:bg-transparent",
+                        "cursor-not-allowed opacity-55 hover:bg-transparent",
                     )}
                   >
-                    <div className="flex h-5 w-5 shrink-0 items-center justify-center">
-                      <RadioDot checked={selected} />
-                    </div>
+                    <span
+                     className={cn(
+                     "flex h-10 w-10 shrink-0 items-center justify-center",
+                     selected ? "text-slate-700" : "text-slate-500",
+                     )}
+                      >
+                    <KpiIcon id={String(kpi.id)} />
+                  </span>
 
-                    <div className="min-w-0">
-                      <div className="text-[13px] text-zinc-900">
-                        {kpi.title}
-                      </div>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[15px] font-normal leading-5 text-black/70">
+                      {kpi.title}
+                      </span>
 
-                      <div className="text-[11px] text-zinc-400">
+                      <span className="block text-[13px] leading-[18px] text-slate-500">
                         {kpi.subtitle}
-                      </div>
-                    </div>
+                      </span>
+                    </span>
+
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors",
+                        selected
+                          ? "bg-blue-700"
+                          : "border-[1.5px] border-slate-400",
+                      )}
+                    >
+                      {selected && <CheckIcon />}
+                    </span>
                   </button>
                 );
               })}
             </div>
 
-            <div className="mt-3 text-xs text-zinc-500">
-              {mvp.length < 5
-                ? `Pick ${5 - mvp.length} more.`
-                : "MVP complete."}
+            <div
+              className={cn(
+                "inline-flex items-center gap-2 self-start rounded-full px-4 py-2 text-sm font-semibold",
+                mvpComplete
+                  ? "bg-emerald-100 text-emerald-800"
+                  : "border border-slate-200 bg-white text-slate-500",
+              )}
+            >
+              {mvpComplete && <CheckIcon size={16} />}
+              {mvpComplete
+                ? "MVP complete"
+                : `${5 - mvp.length} more to pick`}
             </div>
-          </div>
+          </section>
 
           {/* RIGHT: dashboard card selection */}
-          <div className="relative">
-            <div className="absolute -left-4 top-0 hidden h-full w-px bg-zinc-200 md:block" />
-
-            <div className="space-y-1">
-              <div className={HEADER_CLASS}>
-                <div className="text-sm font-semibold text-blue-700">
+          <section className="flex flex-col gap-5 rounded-2xl border-[1.5px] border-slate-200 bg-white p-6">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between gap-4">
+                <h3 className="text-[17px] font-bold text-blue-700">
                   Choose your 9 cards
-                </div>
+                </h3>
 
-                <div className="text-xs text-zinc-500">
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-[13px] font-semibold text-blue-700">
                   {enabledCount}/9 selected
-                </div>
+                </span>
               </div>
 
-              <div className="text-[11px] text-zinc-400">
+              <p className="text-[13px] text-slate-500">
                 You can change this anytime.
-              </div>
+              </p>
             </div>
 
-            <div className="mt-2 space-y-1">
+            <div className="flex flex-col">
               {cards.map((card) => {
                 const selected = enabled.includes(card.id);
 
@@ -321,103 +367,204 @@ export function CustomizeDashboardModal({
                   <div
                     key={card.id}
                     className={cn(
-                      "flex items-center justify-between gap-4",
-                      ROW_CLASS,
+                      "flex h-[52px] items-center justify-between gap-4 border-b border-slate-100 last:border-b-0",
                       disabled && "opacity-50",
                     )}
                   >
-                    <div className="min-w-0 text-[13px] text-zinc-900">
+                    <span className="min-w-0 text-[15px] font-normal text-black/70">
                       {card.title}
-                    </div>
+                    </span>
 
-                    <div className="flex h-7 w-12 shrink-0 items-center justify-center">
-                      <Toggle
-                        checked={selected}
-                        disabled={disabled}
-                        onChange={() =>
-                          toggleEnabled(card.id)
-                        }
-                      />
-                    </div>
+                    <Toggle
+                      checked={selected}
+                      disabled={disabled}
+                      label={card.title}
+                      onChange={() => toggleEnabled(card.id)}
+                    />
                   </div>
                 );
               })}
             </div>
+          </section>
+        </div>
 
-            <div className="mt-6 flex justify-end">
-              <button
-                type="button"
-                onClick={done}
-                className="h-10 rounded-lg bg-blue-700 px-6 text-[13px] font-medium text-white transition hover:bg-blue-800"
-              >
-                Done
-              </button>
-            </div>
-          </div>
+        <div className="mt-6 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={reset}
+            className={cn(
+              "h-12 rounded-[14px] border-[1.5px] border-slate-200 bg-white px-6 text-[15px] font-semibold text-slate-900 transition hover:bg-slate-50",
+              FOCUS_RING,
+            )}
+          >
+            Reset
+          </button>
+
+          <button
+            type="button"
+            onClick={done}
+            className={cn(
+              "h-12 rounded-[14px] bg-blue-700 px-9 text-[15px] font-bold text-white shadow-lg shadow-blue-700/30 transition hover:bg-blue-800",
+              FOCUS_RING,
+            )}
+          >
+            Done
+          </button>
         </div>
       </div>
     </Modal>
   );
 }
 
-function RadioDot({
-  checked,
-}: {
-  checked: boolean;
-}) {
-  return (
-    <span
-      className={cn(
-        "grid h-5 w-5 place-items-center rounded-full border transition-colors",
-        checked
-          ? "border-blue-700"
-          : "border-zinc-300",
-      )}
-      aria-hidden
-    >
-      <span
-        className={cn(
-          "h-2.5 w-2.5 rounded-full transition-colors",
-          checked
-            ? "bg-blue-700"
-            : "bg-transparent",
-        )}
-      />
-    </span>
-  );
-}
-
 function Toggle({
   checked,
   disabled,
+  label,
   onChange,
 }: {
   checked: boolean;
   disabled?: boolean;
+  label: string;
   onChange: () => void;
 }) {
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
       onClick={onChange}
       disabled={disabled}
-      aria-pressed={checked}
       className={cn(
-        "relative inline-flex h-7 w-12 items-center rounded-full border transition-colors",
-        checked
-          ? "border-blue-700 bg-blue-700"
-          : "border-zinc-200 bg-zinc-200",
+        "relative inline-flex h-[26px] w-[46px] shrink-0 items-center rounded-full p-0.5 transition-colors",
+        FOCUS_RING,
+        checked ? "bg-blue-700" : "bg-slate-400",
         disabled && "cursor-not-allowed",
       )}
     >
       <span
         className={cn(
-          "inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
-          checked
-            ? "translate-x-6"
-            : "translate-x-1",
+          "inline-block h-[22px] w-[22px] rounded-full bg-white shadow transition-transform",
+          checked ? "translate-x-5" : "translate-x-0",
         )}
       />
     </button>
+  );
+}
+
+function CheckIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={3.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-white"
+      aria-hidden
+    >
+      <path d="M5 12.5l4.5 4.5L19 7.5" />
+    </svg>
+  );
+}
+
+/**
+ * Icônes déduites de l'id du KPI (sans dépendance externe).
+ * Si l'id ne correspond à rien, on affiche une icône générique.
+ */
+function KpiIcon({ id }: { id: string }) {
+  const key = id.toLowerCase();
+
+  const common = {
+    width: 20,
+    height: 20,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.9,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+
+  if (key.includes("analytic") || key.includes("traffic")) {
+    return (
+      <svg {...common}>
+        <path d="M3 17l6-6 4 4 8-8" />
+        <path d="M15 7h6v6" />
+      </svg>
+    );
+  }
+
+  if (key.includes("sale")) {
+    return (
+      <svg {...common}>
+        <path d="M6 8h12l1 12H5L6 8z" />
+        <path d="M9 8a3 3 0 0 1 6 0" />
+      </svg>
+    );
+  }
+
+  if (key.includes("market")) {
+    return (
+      <svg {...common}>
+        <path d="M3 11v2a1 1 0 0 0 1 1h3l7 4V6L7 10H4a1 1 0 0 0-1 1z" />
+        <path d="M18 9a4 4 0 0 1 0 6" />
+      </svg>
+    );
+  }
+
+  if (key.includes("down") || key.includes("uptime")) {
+    return (
+      <svg {...common}>
+        <path d="M3 12h4l3-8 4 16 3-8h4" />
+      </svg>
+    );
+  }
+
+  if (key.includes("crm") || key.includes("pipeline")) {
+    return (
+      <svg {...common}>
+        <path d="M3 4h18l-7 8v7l-4 2v-9L3 4z" />
+      </svg>
+    );
+  }
+
+  if (key.includes("financ") || key.includes("payment")) {
+    return (
+      <svg {...common}>
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="M3 10h18" />
+      </svg>
+    );
+  }
+
+  if (key.includes("social")) {
+    return (
+      <svg {...common}>
+        <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />
+      </svg>
+    );
+  }
+
+  if (key.includes("book") || key.includes("reserv")) {
+    return (
+      <svg {...common}>
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M3 10h18M8 3v4M16 3v4" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <rect x="4" y="4" width="7" height="7" rx="1.5" />
+      <rect x="13" y="4" width="7" height="7" rx="1.5" />
+      <rect x="4" y="13" width="7" height="7" rx="1.5" />
+      <rect x="13" y="13" width="7" height="7" rx="1.5" />
+    </svg>
   );
 }

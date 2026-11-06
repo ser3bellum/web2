@@ -41,7 +41,7 @@ export function AIInsightChart({
 					{metric}
 				</p>
 
-				<p className="text-[11px] text-white/55">
+				<p className="text-[11px] text-[#9158eeb3]">
 					Selected period
 				</p>
 			</div>
@@ -91,7 +91,7 @@ export function AIInsightChart({
 
 						<Tooltip
 							cursor={{
-								stroke: "rgba(255,255,255,0.18)",
+								stroke: "rgba(111, 50, 243, 0.18)",
 								strokeDasharray: "4 4",
 							}}
 							contentStyle={{

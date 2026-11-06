@@ -102,7 +102,7 @@ function IntegrationCard({
   t: Dictionary["integrations"];
 }) {
   return (
-    <div className="rounded-3xl border border-white/60 bg-white/70 p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur">
+    <div className="soft-card p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-4">
          <div className="shrink-0">
@@ -154,7 +154,7 @@ function IntegrationCard({
         <button
           type="button"
           onClick={() => onEdit(integration.key)}
-          className="rounded-2xl bg-gradient-to-r from-sky-200 to-indigo-200 px-6 py-2.5 text-sm font-medium text-white shadow hover:brightness-95 active:brightness-90"
+          className="rounded-2xl bg-gradient-to-r from-sky-200 to-[#7b5be4c9] px-6 py-2.5 text-sm font-medium text-white shadow hover:brightness-95 active:brightness-90"
         >
           {t.edit}
         </button>
