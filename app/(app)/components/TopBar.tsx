@@ -23,6 +23,9 @@ type UiDateRange = {
 type TopBarProps = {
 	companyName?: string;
 	workspaceId?: string | null;
+	userName?: string | null;
+	userEmail?: string | null;
+	avatarUrl?: string | null;
 	rightSlot?: ReactNode;
 	dictionary: Dictionary;
 };
@@ -98,11 +101,48 @@ function DashboardHomeLink({
 		</Link>
 	);
 }
-	export function TopBar({ companyName, workspaceId, rightSlot, dictionary }: TopBarProps) {
+	export function TopBar({
+  companyName,
+  workspaceId,
+  userName,
+  userEmail,
+  avatarUrl,
+  rightSlot,
+  dictionary,
+}: TopBarProps) {
 		 const t = dictionary.topbar;
 		const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
+
+  const [authProfile, setAuthProfile] = useState<{
+    name: string | null;
+    email: string | null;
+    avatar: string | null;
+  } | null>(null);
+  const [avatarFailed, setAvatarFailed] = useState(false);
+
+  useEffect(() => {
+    return auth.onAuthStateChanged((user) => {
+      setAuthProfile(user ? {
+        name: user.displayName,
+        email: user.email,
+        avatar: user.photoURL,
+      } : null);
+    });
+  }, []);
+
+  // The layout can pass the saved app profile; Firebase is the fallback.
+  const profileName = userName ?? authProfile?.name;
+  const profileEmail = userEmail ?? authProfile?.email;
+  const profileAvatar = avatarUrl || authProfile?.avatar || null;
+  const profileLabel = profileName || profileEmail || dictionary.navigation.userFallback;
+  const profileInitial = (profileName?.trim()[0] || profileEmail?.[0] || "U").toUpperCase();
+
+  useEffect(() => {
+    setAvatarFailed(false);
+  }, [profileAvatar]);
+
 
 	const presets = useMemo(
 		() => [
@@ -615,13 +655,38 @@ const mailCount = messages.filter((item) => item.unread).length;
   							</span>
 						</Link>
 
-						{/* Avatar */}
-						<div className="ml-1 hidden lg:block">
-							<LogoutButton
-  							label={dictionary.navigation.logout}
-  							loadingLabel={dictionary.navigation.loggingOut}
-							/>
-						</div>
+            {/* Account: clickable avatar and logout share one compact block. */}
+            <div
+              className="no-print ml-1 inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-slate-200/80 bg-white/70 px-1.5 shadow-[0_2px_4px_rgba(0,0,0,0.06)]"
+            >
+              <Link
+                href="/user-settings"
+                aria-label={dictionary.navigation.openProfileSettings}
+                title={profileLabel}
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-xs font-normal text-slate-600 ring-1 ring-slate-200 transition hover:ring-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+              >
+                {profileAvatar && !avatarFailed ? (
+                  <img
+                    src={profileAvatar}
+                    alt=""
+                    referrerPolicy="no-referrer"
+                    onError={() => setAvatarFailed(true)}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span aria-hidden="true">{profileInitial}</span>
+                )}
+              </Link>
+
+              <span aria-hidden="true" className="hidden h-5 w-px bg-slate-200 lg:block" />
+
+              <div className="hidden items-center lg:inline-flex [&_button]:h-8 [&_button]:rounded-lg [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-2 [&_button]:py-0 [&_button]:text-sm [&_button]:font-normal [&_button]:shadow-none [&_button]:whitespace-nowrap [&_button:hover]:bg-slate-100">
+                <LogoutButton
+                  label={dictionary.navigation.logout}
+                  loadingLabel={dictionary.navigation.loggingOut}
+                />
+              </div>
+            </div>
 
 						{rightSlot}
 					</div>

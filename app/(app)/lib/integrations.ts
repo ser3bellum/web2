@@ -32,3 +32,29 @@ export const NANGO_INTEGRATION_ID: Record<IntegrationKey, string> = {
   woocommerce: "woocommerce",
   github: "github-app",
 };
+
+export const INTEGRATION_LABELS: Record<IntegrationKey, string> = {
+  brevo: "Brevo",
+  calendly: "Calendly",
+  google: "Google Analytics",
+  googleAds: "Google Ads",
+  googleCalendar: "Google Calendar",
+  hubspot: "HubSpot",
+  meta: "Meta Ads",
+  notion: "Notion",
+  quickbooks: "QuickBooks",
+  salesforce: "Salesforce",
+  shopify: "Shopify",
+  slack: "Slack",
+  stripe: "Stripe",
+  woocommerce: "WooCommerce",
+  github: "GitHub",
+};
+
+export const INTEGRATION_DEFINITIONS = (
+  Object.keys(NANGO_INTEGRATION_ID) as IntegrationKey[]
+).map((key) => ({
+  key,
+  label: INTEGRATION_LABELS[key],
+  providerConfigKey: NANGO_INTEGRATION_ID[key],
+}));

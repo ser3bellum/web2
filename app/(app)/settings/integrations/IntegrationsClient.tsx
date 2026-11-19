@@ -474,20 +474,7 @@ export default function IntegrationsClient({ dictionary }: Props) {
       connectionId: null,
     },
 
-    // Developer utility
-    {
-      key: "github",
-      name: "GitHub",
-      subtitle: t.autoTrackOn,
-      primaryLabel: t.organization,
-      primaryValue: null,
-      secondaryLabel: t.orgId,
-      secondaryValue: null,
-      lastUpdate: null,
-      createdOn: null,
-      connected: false,
-      connectionId: null,
-    },
+
   ],
   [t]
 );

@@ -5,7 +5,7 @@ import { DASHBOARD_CARDS } from "app/(app)/components/DashboardCards";
 import { LogoutButton } from "app/(app)/components/LogoutButton";
 import { cn } from "app/(app)/lib/cn";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Menu, X } from "lucide-react";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
@@ -13,8 +13,13 @@ import {
   DASHBOARD_KPI_DEFINITIONS,
 } from "app/(app)/dashboard/DashboardKpiDefinitions";
 
+import {
+  INTEGRATION_DEFINITIONS,
+  type IntegrationKey,
+} from "app/(app)/lib/integrations";
+
 type NavItem = { label: string; href: string; icon: ReactNode };
-type AppId = "slack" | "google-analytics" | "shopify" | "stripe" | "meta-ads";
+type AppId = IntegrationKey;
 
 type ConnectorStatus = "active" | "awaiting-data" | "failed" | "disconnected";
 
@@ -22,6 +27,7 @@ type ConnectorItem = {
 	id: AppId;
 	label: string;
 	status: ConnectorStatus;
+	connected: boolean;
 };
 
 /**
@@ -48,140 +54,143 @@ type SidebarProps = {
 	dictionary: Dictionary;
 };
 
-type ConnectionState = {
-	slack: ConnectorStatus;
-	googleAnalytics: ConnectorStatus;
-	shopify: ConnectorStatus;
-	stripe: ConnectorStatus;
-	metaAds: ConnectorStatus;
+type ConnectionState = Partial<
+  Record<IntegrationKey, { status: ConnectorStatus; connected: boolean }>
+>;
+
+type ConnectionStatusResult = {
+  providerConfigKey: string;
+  connected?: boolean;
+  status?: ConnectorStatus;
 };
+
+function normalizeConnection(result?: ConnectionStatusResult) {
+  const validStatus =
+    result?.status === "active" ||
+    result?.status === "awaiting-data" ||
+    result?.status === "failed" ||
+    result?.status === "disconnected"
+      ? result.status
+      : undefined;
+
+  const connected =
+    typeof result?.connected === "boolean"
+      ? result.connected
+      : validStatus === "active" || validStatus === "awaiting-data";
+
+  // OAuth alone confirms the connection, not that metrics have synced.
+  const status: ConnectorStatus =
+    result?.connected === false
+      ? validStatus === "failed" ? "failed" : "disconnected"
+      : validStatus ?? (connected ? "awaiting-data" : "disconnected");
+
+  return { status, connected };
+}
 
 export function Sidebar({
 	companyName,
-	userEmail,
-	userName,
-	avatarUrl,
 	endUserId,
 	dictionary,
 }: SidebarProps) {
 	const t = dictionary.navigation;
 	const pathname = usePathname();
+	const router = useRouter();
 	const searchParams = useSearchParams();
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
 	const [appsOpen, setAppsOpen] = useState(false);
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [companyOpen, setCompanyOpen] = useState(false);
-	const [connections, setConnections] = useState<ConnectionState>({
-	slack: "disconnected",
-	googleAnalytics: "disconnected",
-	shopify: "disconnected",
-	stripe: "disconnected",
-	metaAds: "disconnected",
-	});
+  const [connections, setConnections] = useState<ConnectionState>({});
+  const [connectionRevision, setConnectionRevision] = useState(0);
 
-	useEffect(() => {
-		let cancelled = false;
+  useEffect(() => {
+    if (!endUserId) {
+      setConnections({});
+      return;
+    }
 
-		async function loadConnections() {
-			try {
-				const slackKey =
-					process.env.NEXT_PUBLIC_NANGO_SLACK_PROVIDER_CONFIG_KEY || "slack";
-				const gaKey =
-					process.env.NEXT_PUBLIC_NANGO_GOOGLE_ANALYTICS_PROVIDER_CONFIG_KEY ||
-					"google-analytics";
-				const metaKey =
-					process.env.NEXT_PUBLIC_NANGO_META_PROVIDER_CONFIG_KEY ||
-					"meta-marketing-api";
-				const shopifyKey =
-					process.env.NEXT_PUBLIC_NANGO_SHOPIFY_PROVIDER_CONFIG_KEY || "shopify";
-				const stripeKey =
-				process.env.NEXT_PUBLIC_NANGO_STRIPE_PROVIDER_CONFIG_KEY || "stripe-api-key";
-				
-				const res = await fetch("/api/nango/connection-status", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({
-						endUserId,
-						providerConfigKeys: [slackKey, gaKey, shopifyKey, stripeKey, metaKey],
-					}),
-				});
+    let cancelled = false;
+    let latestRequest = 0;
+    const controller = new AbortController();
+    setConnections({});
 
-				const data = await res.json();
+    async function loadConnections() {
+      const requestId = ++latestRequest;
+      try {
+        const res = await fetch("/api/nango/connection-status", {
+          method: "POST",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            endUserId,
+            providerConfigKeys: [
+              ...new Set(
+                INTEGRATION_DEFINITIONS.map((item) => item.providerConfigKey),
+              ),
+            ],
+          }),
+        });
 
-				if (cancelled || !Array.isArray(data?.results)) return;
+        if (!res.ok) {
+          throw new Error(`Connection status request failed (${res.status})`);
+        }
 
-				const getStatus = (providerConfigKey: string): ConnectorStatus => {
-				const result = data.results.find(
-				(item: { providerConfigKey: string; status?: ConnectorStatus }) =>
-				item.providerConfigKey === providerConfigKey,
-				);
+        const data = await res.json();
+        if (!Array.isArray(data?.results)) {
+          throw new Error("Invalid connection status response");
+        }
+        if (cancelled || requestId !== latestRequest) return;
 
-				return result?.status ?? "disconnected";
-				};
+        const results = new Map<string, ConnectionStatusResult>();
+        for (const result of data.results) {
+          if (result && typeof result.providerConfigKey === "string") {
+            results.set(result.providerConfigKey, result);
+          }
+        }
 
-			setConnections({
-				slack: getStatus(slackKey),
-				googleAnalytics: getStatus(gaKey),
-				shopify: getStatus(shopifyKey),
-				stripe: getStatus(stripeKey),
-				metaAds: getStatus(metaKey),
-			});
-			} catch (error) {
-				console.error("SIDEBAR_CONNECTION_STATUS_FAILED", error);
-				
-			}
-		}
+        const next: ConnectionState = {};
+        for (const integration of INTEGRATION_DEFINITIONS) {
+          next[integration.key] = normalizeConnection(
+            results.get(integration.providerConfigKey),
+          );
+        }
+        setConnections(next);
+      } catch (error) {
+        if (!cancelled && requestId === latestRequest) {
+          console.error("SIDEBAR_CONNECTION_STATUS_FAILED", error);
+        }
+      }
+    }
 
-		if (endUserId) {
-			loadConnections();
-		}
+    void loadConnections();
+    const onFocus = () => { void loadConnections(); };
+    window.addEventListener("focus", onFocus);
 
-		return () => {
-			cancelled = true;
-		};
-	}, [endUserId]);
+    return () => {
+      cancelled = true;
+      controller.abort();
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [endUserId, pathname, appsOpen, connectionRevision]);
 
+  const [activeApp, setActiveApp] = useState<AppId | null>(null);
 
-	const [activeApp, setActiveApp] = useState<AppId | null>(null);
+  const connectors = useMemo<ConnectorItem[]>(
+    () => INTEGRATION_DEFINITIONS.map((integration) => ({
+      id: integration.key,
+      label: integration.label,
+      status: connections[integration.key]?.status ?? "disconnected",
+      connected: connections[integration.key]?.connected ?? false,
+    })),
+    [connections],
+  );
 
-	const connectors = useMemo<ConnectorItem[]>(() => {
-	return [
-		{
-			id: "google-analytics",
-			label: "Google Analytics",
-			status: connections.googleAnalytics,
-		},
-		{
-			id: "shopify",
-			label: "Shopify",
-			status: connections.shopify,
-		},
-		{
-			id: "stripe",
-			label: "Stripe",
-			status: connections.stripe,
-		},
-		{
-			id: "slack",
-			label: "Slack",
-			status: connections.slack,
-		},
-		{
-			id: "meta-ads",
-			label: "Meta Ads",
-			status: connections.metaAds,
-		},
-	];
-}, [connections]);
+  const connectedAppsCount = connectors.filter(
+    (connector) => connector.connected,
+  ).length;
 
-	const connectedAppsCount = connectors.filter(
-	(connector) => connector.status !== "disconnected",
-	).length;
-
-	
 
 	const primaryLinks: NavItem[] = useMemo(
 	() => [
@@ -271,7 +280,8 @@ const handleRefresh = async () => {
 			throw new Error(data?.error || "Refresh failed");
 		}
 
-		console.log("Dashboard refreshed:", data);
+		setConnectionRevision((value) => value + 1);
+		router.refresh();
 	} catch (error) {
 		console.error("Refresh failed:", error);
 	} finally {
@@ -407,44 +417,10 @@ const handleRefresh = async () => {
 					</div>
 				</div>
 
-				<Link
-  href="/user-settings"
-  aria-label={t.openProfileSettings}
-  className={cn(
-    "group mb-5 flex w-full items-center gap-3 rounded-xl px-3 py-2.5",
-    "border border-white/25 bg-white/10 backdrop-blur-xl ring-1 ring-white/10 shadow-sm transition-colors",
-    "hover:bg-white/22 hover:border-white/45 hover:shadow-md",
-    "focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-  )}
->
-  <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-zinc-200">
-    {avatarUrl ? (
-      <img
-        src={avatarUrl}
-        alt=""
-        className="h-full w-full object-cover"
-        referrerPolicy="no-referrer"
-      />
-    ) : (
-      <span className="text-xs font-semibold text-slate-600">
-        {(userEmail?.[0] ?? "U").toUpperCase()}
-      </span>
-    )}
-
-    <span className="pointer-events-none absolute inset-0 grid place-items-center bg-black/40 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
-      {t.edit}
-    </span>
-  </div>
-
-  <div className="flex min-w-0 flex-1 items-center">
-    <span className="truncate text-sm font-semibold text-slate-800">
-      {userName || t.userFallback}
-    </span>
-  </div>
-</Link>
 
 				<div className="mt-3 flex min-h-0 flex-1 flex-col gap-1 px-1">
 					<DropdownHeader
+						controls="sidebar-apps-list"
 						label={t.apps}
 						open={appsOpen}
 						badge={`${connectedAppsCount}/${connectors.length}`}
@@ -468,7 +444,7 @@ const handleRefresh = async () => {
 						)}
 					>
 						<div className="overflow-hidden">
-							<div className="mt-2 mb-2 max-h-48 overflow-y-auto pr-1">
+							<div id="sidebar-apps-list" inert={!appsOpen} className="mt-2 mb-2 max-h-48 overflow-y-auto overscroll-contain pr-1">
 	<div className="flex flex-col gap-1">
 		{connectors.map((connector) => (
 			<button
@@ -612,17 +588,21 @@ const handleRefresh = async () => {
 	onToggle,
 	icon,
 	badge,
+	controls,
 	}: {
 	label: string;
 	open: boolean;
 	onToggle: () => void;
 	icon: ReactNode;
 	badge?: string;
+	controls?: string;
 	}) {
 	return (
 		<button
 			type="button"
 			onClick={onToggle}
+			aria-expanded={open}
+			aria-controls={controls}
 			className={cn(glassBase, glassHover, open && glassActive)}
 		>
 			<span className="inline-flex items-center gap-2 text-sm text-slate-700/70">

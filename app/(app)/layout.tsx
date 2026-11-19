@@ -93,8 +93,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
         <TopBar
           companyName={company?.name ?? user?.companyName ?? "Ser3bellum"}
+          userName={user?.name ?? ""}
+          userEmail={user?.email ?? ""}
+          avatarUrl={user?.avatarUrl ?? null}
           dictionary={dictionary}
-        />
+          />
 
         <main className="-mt-16 min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-transparent pt-16 md:-mt-[72px] md:pt-[72px]">
           <div className="px-4 pt-6 lg:px-8">
