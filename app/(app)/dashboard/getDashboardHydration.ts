@@ -1,7 +1,11 @@
 import { findNangoConnectionId } from "@/lib/nango/findConnectionId";
 import { getNango } from "@/lib/nango/server";
 import type { DashboardHydration } from "@/types/dashboard";
-
+import {
+  INTEGRATION_DEFINITIONS,
+  NANGO_INTEGRATION_ID,
+  type IntegrationKey,
+} from "app/(app)/lib/integrations";
 
 type BusinessCategory =
   | "analytics"
@@ -430,76 +434,59 @@ export async function getDashboardHydration(params: {
   const to = toYyyyMmDd(params.to);
   const endUserId = params.endUserId;
 
-  const gaProviderConfigKey = "google-analytics";
-  const shopifyProviderConfigKey = "shopify";
-  const metaProviderConfigKey = "meta-marketing-api";
-  const stripeProviderConfigKey = "stripe-api-key";
-  const googleAdsProviderConfigKey = "google-ads";
+const integrationConnections = await Promise.all(
+  INTEGRATION_DEFINITIONS.map(async (integration) => {
+    try {
+      const connectionId = await findNangoConnectionId({
+        providerConfigKey: integration.providerConfigKey,
+        endUserId,
+      });
 
-  let gaConnected = false;
-  let gaConnectionId: string | undefined;
+      return {
+        ...integration,
+        connected: Boolean(connectionId),
+        connectionId,
+        lookupFailed: false,
+      };
+    } catch (error) {
+      console.error("DASHBOARD_CONNECTION_LOOKUP_FAILED", {
+        providerConfigKey: integration.providerConfigKey,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
 
-  try {
-    gaConnectionId = await findNangoConnectionId({
-      providerConfigKey: gaProviderConfigKey,
-      endUserId,
-    });
-    gaConnected = Boolean(gaConnectionId);
-  } catch {
-    gaConnected = false;
-  }
+      return {
+        ...integration,
+        connected: false,
+        connectionId: undefined,
+        lookupFailed: true,
+      };
+    }
+  }),
+);
 
-  let googleAdsConnected = false;
-  let googleAdsConnectionId: string | undefined;
+const connectionFor = (key: IntegrationKey) =>
+  integrationConnections.find((integration) => integration.key === key);
 
-  try {
-  googleAdsConnectionId = await findNangoConnectionId({
-    providerConfigKey: googleAdsProviderConfigKey,
-    endUserId,
-  });
-  googleAdsConnected = Boolean(googleAdsConnectionId);
-} catch {
-  googleAdsConnected = false;
-}
+const gaProviderConfigKey = NANGO_INTEGRATION_ID.google;
+const shopifyProviderConfigKey = NANGO_INTEGRATION_ID.shopify;
+const metaProviderConfigKey = NANGO_INTEGRATION_ID.meta;
+const stripeProviderConfigKey = NANGO_INTEGRATION_ID.stripe;
+const googleAdsProviderConfigKey = NANGO_INTEGRATION_ID.googleAds;
 
-  let shopifyConnected = false;
-  let shopifyConnectionId: string | undefined;
+const gaConnectionId = connectionFor("google")?.connectionId;
+const gaConnected = Boolean(gaConnectionId);
 
-  try {
-    shopifyConnectionId = await findNangoConnectionId({
-      providerConfigKey: shopifyProviderConfigKey,
-      endUserId,
-    });
-    shopifyConnected = Boolean(shopifyConnectionId);
-  } catch {
-    shopifyConnected = false;
-  }
+const shopifyConnectionId = connectionFor("shopify")?.connectionId;
+const shopifyConnected = Boolean(shopifyConnectionId);
 
-  let metaConnected = false;
-  let metaConnectionId: string | undefined;
+const metaConnectionId = connectionFor("meta")?.connectionId;
+const metaConnected = Boolean(metaConnectionId);
 
-  try {
-    metaConnectionId = await findNangoConnectionId({
-      providerConfigKey: metaProviderConfigKey,
-      endUserId,
-    });
-    metaConnected = Boolean(metaConnectionId);
-  } catch {
-    metaConnected = false;
-  }
+const stripeConnectionId = connectionFor("stripe")?.connectionId;
+const stripeConnected = Boolean(stripeConnectionId);
 
-  let stripeConnected = false;
-  let stripeConnectionId: string | undefined;
-
-  try {
-    stripeConnectionId = await findNangoConnectionId({
-      providerConfigKey: stripeProviderConfigKey,
-      endUserId,
-    });
-    stripeConnected = Boolean(stripeConnectionId);
-  } catch {
-    stripeConnected = false;
-  }
+const googleAdsConnectionId = connectionFor("googleAds")?.connectionId;
+const googleAdsConnected = Boolean(googleAdsConnectionId);
 
   let gaStatus: CardStatus = gaConnected ? "warn" : "disabled";
   let gaValue = gaConnected ? "Ready to fetch metrics" : "—";
@@ -857,89 +844,52 @@ export async function getDashboardHydration(params: {
   },
 ];
 
-  const anyConnected =
-    gaConnected || shopifyConnected || metaConnected || stripeConnected ||
-  googleAdsConnected;
+  const anyConnected = integrationConnections.some(
+  (integration) => integration.connected,
+  );
+
+const anyConnectionLookupFailed = integrationConnections.some(
+  (integration) => integration.lookupFailed,
+);
 
   const hydration: DashboardHydration = {
     range: { from, to },
     businessSources,
-    integrations: [
-      {
-        key: "google",
-        providerConfigKey: gaProviderConfigKey,
-        connected: gaConnected,
-        connectionId: gaConnectionId,
-      },
-      {
-      key: "googleAds",
-      providerConfigKey: googleAdsProviderConfigKey,
-      connected: googleAdsConnected,
-      connectionId: googleAdsConnectionId,
-      },
-      {
-        key: "shopify",
-        providerConfigKey: shopifyProviderConfigKey,
-        connected: shopifyConnected,
-        connectionId: shopifyConnectionId,
-      },
-      {
-        key: "meta",
-        providerConfigKey: metaProviderConfigKey,
-        connected: metaConnected,
-        connectionId: metaConnectionId,
-      },
-      {
-        key: "stripe",
-        providerConfigKey: stripeProviderConfigKey,
-        connected: stripeConnected,
-        connectionId: stripeConnectionId,
-      },
-    ],
+    integrations: integrationConnections.map(
+  ({ key, providerConfigKey, connected, connectionId }) => ({
+    key,
+    providerConfigKey,
+    connected,
+    connectionId,
+  }),
+),
     cards: [
-      {
+    {
   key: "integrations",
   title: "Integrations",
-  status: anyConnected ? "ok" : "disabled",
-  value: anyConnected ? "Providers connected" : "Connect a provider",
+  status: anyConnectionLookupFailed
+    ? "warn"
+    : anyConnected
+      ? "ok"
+      : "disabled",
+  value: anyConnectionLookupFailed
+    ? "Some connection checks failed"
+    : anyConnected
+      ? "Providers connected"
+      : "Connect a provider",
   meta: {
-    connectedIntegrations: [
-      {
-        key: "google",
-        label: "Google Analytics",
-        providerConfigKey: gaProviderConfigKey,
-        connected: gaConnected,
-        connectionId: gaConnectionId,
-      },
-      {
-        key: "googleAds",
-        label: "Google Ads",
-        providerConfigKey: googleAdsProviderConfigKey,
-        connected: googleAdsConnected,
-        connectionId: googleAdsConnectionId,
-      },
-      {
-        key: "shopify",
-        label: "Shopify",
-        providerConfigKey: shopifyProviderConfigKey,
-        connected: shopifyConnected,
-        connectionId: shopifyConnectionId,
-      },
-      {
-        key: "meta",
-        label: "Meta Marketing API",
-        providerConfigKey: metaProviderConfigKey,
-        connected: metaConnected,
-        connectionId: metaConnectionId,
-      },
-      {
-        key: "stripe",
-        label: "Stripe",
-        providerConfigKey: stripeProviderConfigKey,
-        connected: stripeConnected,
-        connectionId: stripeConnectionId,
-      },
-    ].filter((integration) => integration.connected),
+    connectedIntegrations: integrationConnections
+      .filter((integration) => integration.connected)
+      .map(({ key, label, providerConfigKey, connected, connectionId }) => ({
+        key,
+        label,
+        providerConfigKey,
+        connected,
+        connectionId,
+      })),
+    failedConnectionChecks: integrationConnections
+      .filter((integration) => integration.lookupFailed)
+      .map(({ key }) => key),
   },
 },
       {

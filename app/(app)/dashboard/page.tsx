@@ -14,6 +14,7 @@ import { getDashboardHydration } from "app/(app)/dashboard/getDashboardHydration
 import { DashboardOnboardingEmptyState } from "./DashboardOnboardingEmptyState";
 import { findNangoConnectionId } from "@/lib/nango/findConnectionId";
 import { TrialBanner } from "../components/billing/trialBanner";
+import { NANGO_INTEGRATION_ID } from "app/(app)/lib/integrations";
 
 type DashboardSearchParams = { from?: string; to?: string };
 
@@ -62,7 +63,9 @@ export default async function DashboardPage({
    
     const endUserId = user.id;
 
-    const providerConfigKeys = ["google-analytics", "slack"];
+    const providerConfigKeys = [
+  ...new Set(Object.values(NANGO_INTEGRATION_ID)),
+];
 
     const connectionResults = await Promise.all(
       providerConfigKeys.map(async (providerConfigKey) => {
