@@ -20,7 +20,7 @@ const INTEGRATIONS: Record<IntegrationKey, { name: string }> = {
   slack: { name: "Slack" },
   stripe: { name: "Stripe" },
   woocommerce: { name: "WooCommerce" },
-  github: { name: "GitHub" },
+
 };
 
 export function ConnectIntegrationModal({
