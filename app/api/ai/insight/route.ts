@@ -56,7 +56,7 @@ export async function GET() {
 
     // Existing generation order and persistence are preserved.
     try {
-      const payload = await generateADKDashboardInsight(input);
+      const payload = await generateADKDashboardInsight(input, workspaceId);
       await saveAIInsight({
         workspaceId, syncRunId: latestSummary.syncRunId, source: "adk", payload,
       });
