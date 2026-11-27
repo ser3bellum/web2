@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { cert, getApps, initializeApp } from "firebase-admin/app";
-import { FieldValue, getFirestore } from "firebase-admin/firestore";
+import { FieldValue } from "firebase-admin/firestore";
+import { adminDb } from "@/lib/firebase/admin";
 
 export type SyncSummaryDoc = {
   workspaceId: string;
@@ -57,20 +57,20 @@ export type SyncSummaryDoc = {
   };
 
   businessSources?: {
-  category:
-    | "analytics"
-    | "sales"
-    | "marketing"
-    | "crm"
-    | "finance"
-    | "socialMedia"
-    | "booking"
-    | "downtime";
-  provider: string;
-  providerConfigKey: string;
-  status: "ok" | "warn" | "error" | "disabled";
-  metrics: Record<string, number | string | null>;
-}[];
+    category:
+      | "analytics"
+      | "sales"
+      | "marketing"
+      | "crm"
+      | "finance"
+      | "socialMedia"
+      | "booking"
+      | "downtime";
+    provider: string;
+    providerConfigKey: string;
+    status: "ok" | "warn" | "error" | "disabled";
+    metrics: Record<string, number | string | null>;
+  }[];
 
   connectorStatus: Record<
     string,
@@ -82,32 +82,10 @@ export type SyncSummaryDoc = {
   >;
 };
 
-
-function getAdminDb() {
-  const appName = "ser3bellum-admin";
-
-  const existingApp = getApps().find((app) => app.name === appName);
-
-  const app =
-    existingApp ??
-    initializeApp(
-      {
-        credential: cert({
-          projectId: process.env.FIREBASE_PROJECT_ID!,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, "\n"),
-        }),
-      },
-      appName
-    );
-
-  return getFirestore(app, "ser3bellum");
-}
-
 function isoDaysFromNow(days: number): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString();
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString();
 }
 
 function stripUndefinedDeep<T>(value: T): T {
@@ -131,10 +109,11 @@ function stripUndefinedDeep<T>(value: T): T {
 }
 
 export async function saveSyncSummary(
-  input: Omit<SyncSummaryDoc, "syncRunId" | "generatedAt" | "expiresAt">
+  input: Omit<
+    SyncSummaryDoc,
+    "syncRunId" | "generatedAt" | "expiresAt"
+  >,
 ) {
-  const db = getAdminDb();
-
   const syncRunId = randomUUID();
   const generatedAt = new Date().toISOString();
   const expiresAt = isoDaysFromNow(30);
@@ -146,18 +125,16 @@ export async function saveSyncSummary(
     expiresAt,
   };
 
-  const ref = db
+  const ref = adminDb
     .collection("workspaces")
     .doc(input.workspaceId)
     .collection("syncSummaries")
     .doc(syncRunId);
 
-  await ref.set(
-    stripUndefinedDeep({
-      ...doc,
-      createdAt: FieldValue.serverTimestamp(),
-    })
-  );
+  await ref.set({
+    ...stripUndefinedDeep(doc),
+    createdAt: FieldValue.serverTimestamp(),
+  });
 
   return doc;
 }
