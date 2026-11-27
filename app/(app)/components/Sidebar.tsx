@@ -47,6 +47,10 @@ const glassActive = "bg-white/18 border-blue-400/35 ring-1 ring-blue-500/20";
 
 type SidebarProps = {
 	companyName: string;
+	companySwitcher?: {
+		activeCompanyId: string;
+		companies: readonly { id: string; name: string; href: string }[];
+	};
 	userEmail: string;
 	userName?: string;
 	avatarUrl?: string | null;
@@ -89,6 +93,7 @@ function normalizeConnection(result?: ConnectionStatusResult) {
 
 export function Sidebar({
 	companyName,
+	companySwitcher,
 	endUserId,
 	dictionary,
 }: SidebarProps) {
@@ -225,15 +230,6 @@ const appLinks: NavItem[] = useMemo(
 		[t],
 	);
 
-	const companies = useMemo(
-  () => [{ name: "Home", href: "/dashboard?company=a" }],
-  [],
-	);
-
-const hasMultipleCompanies = companies.length > 1;
-
-	const [_activeCompany, setActiveCompany] = useState(companies[0]);
-
 	const toggleCompany = () => {
 		setCompanyOpen((v) => {
 			const next = !v;
@@ -354,68 +350,76 @@ const handleRefresh = async () => {
 					/>
 				</div>
 
-				<button
-					type="button"
-					onClick={toggleCompany}
-					className={cn(
-						"mb-2 mt-4 flex w-full items-center justify-between rounded-lg px-3 py-2.5",
-						"bg-gradient-to-br from-violet-50 via-indigo-50 to-blue-100",
-						"border border-indigo-300/40",
-						"transition-all duration-200",
-						"hover:border-indigo-400/50",
-						"hover:shadow-md hover:shadow-indigo-200/40",
-					)}
-				>
-					<span className="inline-flex items-center gap-3">
-						<span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-[inset_0_0_0_1px_rgba(99,102,241,0.25)]">
-							<GridIcon />
-						</span>
-						<span className="text-sm font-semibold text-slate-700">
-							{companyName}
-						</span>
-					</span>
-
-					<span className="ml-auto text-slate-700 opacity-70">
-						<ChevronIcon
+				{companySwitcher && companySwitcher.companies.length > 1 && (
+					<>
+						<button
+							type="button"
+							onClick={toggleCompany}
+							aria-expanded={companyOpen}
+							aria-controls="sidebar-company-list"
 							className={cn(
-								"opacity-80 transition-transform duration-200",
-								companyOpen && "rotate-180",
+								"mb-2 mt-4 flex w-full items-center justify-between rounded-lg px-3 py-2.5",
+								"bg-gradient-to-br from-violet-50 via-indigo-50 to-blue-100",
+								"border border-indigo-300/40",
+								"transition-all duration-200",
+								"hover:border-indigo-400/50",
+								"hover:shadow-md hover:shadow-indigo-200/40",
 							)}
-						/>
-					</span>
-				</button>
+						>
+							<span className="inline-flex items-center gap-3">
+								<span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-[inset_0_0_0_1px_rgba(99,102,241,0.25)]">
+									<GridIcon />
+								</span>
+								<span className="text-sm font-semibold text-slate-700">
+									{companyName}
+								</span>
+							</span>
 
-				<div
-					className={cn(
-						"mb-3 grid transition-[grid-template-rows,opacity] duration-200 ease-out",
-						companyOpen
-							? "grid-rows-[1fr] opacity-100"
-							: "grid-rows-[0fr] opacity-0 pointer-events-none",
-					)}
-				>
-					<div className="overflow-hidden">
-						<div className="mt-2 flex flex-col gap-1">
-							{companies
-								.filter((c) => c.name !== companyName)
-								.map((c) => (
-									<Link
-										key={c.name}
-										href={c.href}
-										onClick={() => {
-											setActiveCompany(c);
-											setCompanyOpen(false);
-										}}
-										className={cn(
-											"relative w-full rounded-lg px-3 py-2 text-sm transition-colors",
-											"text-slate-700/70 hover:bg-slate-100/60",
-										)}
-									>
-										<span className="pl-3">{c.name}</span>
-									</Link>
-								))}
+							<span className="ml-auto text-slate-700 opacity-70">
+								<ChevronIcon
+									className={cn(
+										"opacity-80 transition-transform duration-200",
+										companyOpen && "rotate-180",
+									)}
+								/>
+							</span>
+						</button>
+
+						<div
+							id="sidebar-company-list"
+							inert={!companyOpen}
+							className={cn(
+								"mb-3 grid transition-[grid-template-rows,opacity] duration-200 ease-out",
+								companyOpen
+									? "grid-rows-[1fr] opacity-100"
+									: "grid-rows-[0fr] opacity-0 pointer-events-none",
+							)}
+						>
+							<div className="overflow-hidden">
+								<div className="mt-2 flex flex-col gap-1">
+									{companySwitcher.companies
+										.filter((company) => company.id !== companySwitcher.activeCompanyId)
+										.map((company) => (
+											<Link
+												key={company.id}
+												href={company.href}
+												onClick={() => {
+													setCompanyOpen(false);
+													setMobileOpen(false);
+												}}
+												className={cn(
+													"relative w-full rounded-lg px-3 py-2 text-sm transition-colors",
+													"text-slate-700/70 hover:bg-slate-100/60",
+												)}
+											>
+												<span className="pl-3">{company.name}</span>
+											</Link>
+										))}
+								</div>
+							</div>
 						</div>
-					</div>
-				</div>
+					</>
+				)}
 
 
 				<div className="mt-3 flex min-h-0 flex-1 flex-col gap-1 px-1">

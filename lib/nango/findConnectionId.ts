@@ -61,5 +61,5 @@ export async function findNangoConnectionId(params: {
     );
   }
 
-  return match.connection_id;
+    return match?.connection_id ?? "";
 }

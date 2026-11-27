@@ -83,7 +83,7 @@ export const DASHBOARD_CARDS: DashboardCardDef[] = [
     title: "CRM / Pipeline",
     subtitle: "Leads, opportunities and pipeline activity",
     defaultEnabled: true,
-    size: "medium",
+    size: "large",
     sources: [
       { label: "HubSpot" },
       { label: "Salesforce" },

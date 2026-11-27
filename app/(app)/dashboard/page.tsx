@@ -15,159 +15,83 @@ import { DashboardOnboardingEmptyState } from "./DashboardOnboardingEmptyState";
 import { findNangoConnectionId } from "@/lib/nango/findConnectionId";
 import { TrialBanner } from "../components/billing/trialBanner";
 import { NANGO_INTEGRATION_ID } from "app/(app)/lib/integrations";
+import { buildSyncSummaryFromHydrationCards } from "@/lib/ai/buildSyncSummary";
+import { saveSyncSummary } from "@/lib/firestore/saveSyncSummary";
 
 type DashboardSearchParams = { from?: string; to?: string };
-
 const isDev = process.env.NODE_ENV === "development";
 
-export default async function DashboardPage({
-  searchParams,
-}: {
+export default async function DashboardPage({ searchParams }: {
   searchParams?: DashboardSearchParams | Promise<DashboardSearchParams>;
 }) {
-  try {
-    const sp = searchParams ? await Promise.resolve(searchParams) : {};
-    const range = parseDashboardRange(sp);
+  const sp = searchParams ? await Promise.resolve(searchParams) : {};
+  const range = parseDashboardRange(sp);
+  const session = (await cookies()).get("__Host-sb_auth")?.value;
+  if (!session) redirect("/login");
+  const { user, company } = await getUserCompanyContext(session);
+  const dictionary = await getDictionary(user?.initialLanguage ?? "en");
 
-    const session = (await cookies()).get("__Host-sb_auth")?.value;
-    if (!session) redirect("/login");
-
-    const { user, company } = await getUserCompanyContext(session);
-    const dictionary = await getDictionary(user?.initialLanguage ?? "en");
-    
-    if (!company?.id) { 
-      return (
-        <div className="px-4 pb-8 pt-6 lg:px-8">
-          <DashboardOnboardingEmptyState
-            hasCompany={false}
-            hasIntegration={false}
-            labels={dictionary.dashboard.onboarding}
-          />
-        </div>
-      );
-    }
-
-    if (!user?.id) {
-      return (
-        <div className="px-4 pb-8 pt-6 lg:px-8">
-          
-          <DashboardOnboardingEmptyState
-            hasCompany={true}
-            hasIntegration={false}
-            labels={dictionary.dashboard.onboarding}
-          />
-        </div>
-      );
-    }
-
-   
-    const endUserId = user.id;
-
-    const providerConfigKeys = [
-  ...new Set(Object.values(NANGO_INTEGRATION_ID)),
-];
-
-    const connectionResults = await Promise.all(
-      providerConfigKeys.map(async (providerConfigKey) => {
-        try {
-          const connectionId = await findNangoConnectionId({
-            providerConfigKey,
-            endUserId,
-          });
-
-          return {
-            providerConfigKey,
-            connected: Boolean(connectionId),
-            connectionId,
-          };
-        } catch {
-          return {
-            providerConfigKey,
-            connected: false,
-            connectionId: undefined,
-          };
-        }
-      })
-    );
-
-    const connectionCount = connectionResults.filter(
-      (item) => item.connected
-    ).length;
-
-    const hasIntegration = connectionCount > 0;
-
-    console.log("DEBUG DASHBOARD:", {
-      hasCompany: !!company?.id,
-      companyId: company.id,
-      userId: user.id,
-      endUserId,
-      connectionCount,
-      connectionResults,
-      hasIntegration,
-    });
-
-    if (!hasIntegration) {
-      return (
-        <div className="px-4 pb-8 pt-6 lg:px-8">
-          <DashboardOnboardingEmptyState
-            hasCompany={true}
-            hasIntegration={false}
-            labels={dictionary.dashboard.onboarding}
-          />
-        </div>
-      );
-    }
-
-    const hydration = await getDashboardHydration({
-  from: range.from,
-  to: range.to,
-  endUserId,
-});
-
-const kpis = await getDashboardKpis({
-  range,
-  companyId: company.id,
-  hydration,
-});
-
-   return (
-  <div className="flex w-full flex-col">
-  <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-4 pb-8 pt-6 lg:px-8">
-     <TrialBanner
-  billingStatus={user.billingStatus ?? user.subscriptionStatus ?? ""}
-  trialEnd={user.trialEnd ?? user.accessUntil ?? null}
-  cancelAtPeriodEnd={user.cancelAtPeriodEnd ?? false}
-/>
-
-    <SelectableKpiStrip
-  kpis={kpis}
-  labels={dictionary.dashboard.kpis}
-/>
-
-      <section>
-        <DashboardCardsGrid
-          hydrationCards={hydration?.cards ?? []}
-          labels={dictionary.dashboard}
-          endUserId={endUserId}
-          workspaceId={endUserId}
-        />
-      </section>
-
-          {isDev && (
-            <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-              <div className="text-sm font-semibold text-slate-800">
-                Hydration (debug)
-              </div>
-              <pre className="mt-2 overflow-auto text-xs text-slate-700">
-                {JSON.stringify(hydration, null, 2)}
-              </pre>
-            </section>
-          )}
-        </div>
+  if (!company?.id || !user?.id) {
+    return (
+      <div className="px-4 pb-8 pt-6 lg:px-8">
+        <DashboardOnboardingEmptyState hasCompany={Boolean(company?.id)} hasIntegration={false} labels={dictionary.dashboard.onboarding} />
       </div>
     );
-  } catch (e: any) {
-    console.error("DASHBOARD_SSR_CRASH:", e?.message, e?.stack, e);
-    throw e;
   }
+  const endUserId = user.id;
+  const providerConfigKeys = [...new Set(Object.values(NANGO_INTEGRATION_ID))];
+  const connectionResults = await Promise.all(providerConfigKeys.map(async (providerConfigKey) => {
+    try {
+      const connectionId = await findNangoConnectionId({ providerConfigKey, endUserId });
+      return { providerConfigKey, connected: Boolean(connectionId) };
+    } catch { return { providerConfigKey, connected: false }; }
+  }));
+  if (!connectionResults.some((item) => item.connected)) {
+    return (
+      <div className="px-4 pb-8 pt-6 lg:px-8">
+        <DashboardOnboardingEmptyState hasCompany={true} hasIntegration={false} labels={dictionary.dashboard.onboarding} />
+      </div>
+    );
+  }
+  const hydration = await getDashboardHydration({ from: range.from, to: range.to, endUserId });
+  const kpis = await getDashboardKpis({ range, companyId: company.id, hydration });
+
+  // Persist the SAME real hydration that feeds cards/KPIs. No second provider fetch for AI.
+  let aiSyncRunId: string | null = null;
+  if (user.lastWorkspaceId === company.id) {
+    try {
+      const summary = buildSyncSummaryFromHydrationCards({
+        workspaceId: company.id, syncSource: "login_refresh",
+        hydrationCards: hydration.cards ?? [], businessSources: hydration.businessSources,
+        dateWindow: { from: hydration.range.from, to: hydration.range.to },
+      });
+      const saved = await saveSyncSummary(summary);
+      aiSyncRunId = saved.syncRunId;
+    } catch { console.error("DASHBOARD_AI_SUMMARY_SAVE_FAILED"); }
+  }
+
+  return (
+    <div className="flex w-full flex-col">
+      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-4 pb-8 pt-6 lg:px-8">
+        <TrialBanner
+          billingStatus={user.billingStatus ?? user.subscriptionStatus ?? ""}
+          trialEnd={user.trialEnd ?? user.accessUntil ?? null}
+          cancelAtPeriodEnd={user.cancelAtPeriodEnd ?? false}
+        />
+        <SelectableKpiStrip kpis={kpis} labels={dictionary.dashboard.kpis} />
+        <section>
+          <DashboardCardsGrid
+            hydrationCards={hydration?.cards ?? []} labels={dictionary.dashboard}
+            endUserId={endUserId} workspaceId={endUserId} aiSyncRunId={aiSyncRunId}
+          />
+        </section>
+        {isDev && (
+          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <div className="text-sm font-semibold text-slate-800">Hydration (debug)</div>
+            <pre className="mt-2 overflow-auto text-xs text-slate-700">{JSON.stringify(hydration, null, 2)}</pre>
+          </section>
+        )}
+      </div>
+    </div>
+  );
 }

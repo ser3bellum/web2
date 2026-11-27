@@ -81,6 +81,19 @@ function formatMetricValue(
   return value.toLocaleString("fr-FR");
 }
 
+function formatFinanceMetricValue(
+  value: number,
+  format: "number" | "percent" | "currency" = "number",
+  currency = "EUR",
+) {
+  if (format !== "currency") return formatMetricValue(value, format, currency);
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 0,
+  }).format(value);
+}
+
 function ComparisonPanel({
   title,
   currentLabel,
@@ -221,6 +234,11 @@ function CrmSalesTargetsPanel({
       </div>
 
       <div className="space-y-5">
+        {targets.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            No sales targets configured.
+          </p>
+        ) : null}
         {targets.map((target) => {
           const percentage =
             target.target > 0
@@ -423,7 +441,7 @@ useEffect(() => {
               >
                <div
                 className={[
-                "text-2xl font-semibold leading-none",
+                "text-xl font-semibold leading-none",
                  kpi.isPlaceholder
                  ? "text-slate-400"
                : "text-slate-900",
@@ -455,7 +473,11 @@ useEffect(() => {
             </button>
           }
         >
-          {activeKpi.id === "kpi-analytics" ? (
+          {activeKpi.isPlaceholder && activeKpi.id !== "kpi-booking" ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
+              No data yet.
+            </div>
+          ) : activeKpi.id === "kpi-analytics" ? (
             <div className="grid gap-4">
               <p className="text-sm text-slate-600">
                 {labels.modal.detailsDescription}
@@ -890,23 +912,7 @@ useEffect(() => {
         Array.isArray(activeKpi.meta?.salesTargets) &&
         activeKpi.meta.salesTargets.length > 0
           ? activeKpi.meta.salesTargets
-          : [
-              {
-                label: "Product family A",
-                current: 0,
-                target: 0,
-              },
-              {
-                label: "Product family B",
-                current: 0,
-                target: 0,
-              },
-              {
-                label: "Product family C",
-                current: 0,
-                target: 0,
-              },
-            ]
+          : []
       }
          />
      </div>
@@ -1457,7 +1463,9 @@ useEffect(() => {
   ) : activeKpi.id === "kpi-finance" ? (
   <div className="grid gap-4">
     <p className="text-sm text-slate-600">
-      {labels.modal.detailsDescription}
+      Payments and refunds for the selected period. Balances are current.
+      {typeof activeKpi.meta?.from === "string" && typeof activeKpi.meta?.to === "string"
+        ? ` ${activeKpi.meta.from} – ${activeKpi.meta.to} (UTC).` : ""}
     </p>
 
     {/* KPI summary */}
@@ -1468,9 +1476,9 @@ useEffect(() => {
         </div>
 
         <div className="mt-1 text-2xl font-semibold text-slate-900">
-          {formatMetricValue(
-            typeof activeKpi.meta?.net === "number"
-              ? activeKpi.meta.net
+          {formatFinanceMetricValue(
+            typeof activeKpi.meta?.totalBalance === "number"
+              ? activeKpi.meta.totalBalance
               : 0,
             "currency",
             typeof activeKpi.meta?.currency === "string"
@@ -1486,7 +1494,7 @@ useEffect(() => {
         </div>
 
         <div className="mt-1 text-2xl font-semibold text-slate-900">
-          {formatMetricValue(
+          {formatFinanceMetricValue(
             typeof activeKpi.meta?.paymentsReceived === "number"
               ? activeKpi.meta.paymentsReceived
               : 0,
@@ -1504,7 +1512,7 @@ useEffect(() => {
         </div>
 
         <div className="mt-1 text-2xl font-semibold text-slate-900">
-          {formatMetricValue(
+          {formatFinanceMetricValue(
             typeof activeKpi.meta?.refunds === "number"
               ? activeKpi.meta.refunds
               : 0,
@@ -1522,7 +1530,7 @@ useEffect(() => {
         </div>
 
         <div className="mt-1 text-2xl font-semibold text-slate-900">
-          {formatMetricValue(
+          {formatFinanceMetricValue(
             typeof activeKpi.meta?.fees === "number"
               ? activeKpi.meta.fees
               : 0,
@@ -1586,7 +1594,7 @@ useEffect(() => {
           </div>
 
           <div className="text-xs text-slate-500">
-            Money movement for the selected period
+            Stripe balance movements for the selected period
           </div>
         </div>
 
@@ -1598,7 +1606,7 @@ useEffect(() => {
               </span>
 
               <span className="text-sm font-semibold text-slate-900">
-                {formatMetricValue(
+                {formatFinanceMetricValue(
                   typeof activeKpi.meta?.paymentsReceived === "number"
                     ? activeKpi.meta.paymentsReceived
                     : 0,
@@ -1634,7 +1642,7 @@ useEffect(() => {
               </span>
 
               <span className="text-sm font-semibold text-slate-900">
-                {formatMetricValue(
+                {formatFinanceMetricValue(
                   typeof activeKpi.meta?.refunds === "number"
                     ? activeKpi.meta.refunds
                     : 0,
@@ -1670,7 +1678,7 @@ useEffect(() => {
               </span>
 
               <span className="text-sm font-semibold text-slate-900">
-                {formatMetricValue(
+                {formatFinanceMetricValue(
                   typeof activeKpi.meta?.fees === "number"
                     ? activeKpi.meta.fees
                     : 0,
@@ -1705,7 +1713,7 @@ useEffect(() => {
             </div>
 
             <div className="mt-1 text-lg font-semibold text-slate-900">
-              {formatMetricValue(
+              {formatFinanceMetricValue(
                 typeof activeKpi.meta?.netCashFlow === "number"
                   ? activeKpi.meta.netCashFlow
                   : 0,
@@ -1724,7 +1732,7 @@ useEffect(() => {
 ) : activeKpi.id === "kpi-booking" ? (
   <div className="grid gap-4">
     <p className="text-sm text-slate-600">
-      {labels.modal.detailsDescription}
+      {activeKpi.isPlaceholder ? "No data yet." : labels.modal.detailsDescription}
     </p>
 
     {/* KPI summary */}
