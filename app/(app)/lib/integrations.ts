@@ -13,7 +13,7 @@ export type IntegrationKey =
   | "slack"
   | "stripe"
   | "woocommerce"
-  | "github";
+  
 
 export const NANGO_INTEGRATION_ID: Record<IntegrationKey, string> = {
   brevo: "brevo-api-key",
@@ -30,7 +30,7 @@ export const NANGO_INTEGRATION_ID: Record<IntegrationKey, string> = {
   slack: "slack",
   stripe: "stripe-api-key",
   woocommerce: "woocommerce",
-  github: "github-app",
+
 };
 
 export const INTEGRATION_LABELS: Record<IntegrationKey, string> = {
@@ -48,7 +48,7 @@ export const INTEGRATION_LABELS: Record<IntegrationKey, string> = {
   slack: "Slack",
   stripe: "Stripe",
   woocommerce: "WooCommerce",
-  github: "GitHub",
+  
 };
 
 export const INTEGRATION_DEFINITIONS = (

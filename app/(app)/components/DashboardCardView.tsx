@@ -30,6 +30,31 @@ type DashboardCardViewProps = {
   aiInsight: AIInsightPayload;
   variant?: DashboardCardVariant;
 };
+type CrmContactPreview = {
+  id: string;
+  name: string;
+  company: string | null;
+  leadStatus: string | null;
+};
+
+function formatLeadStatus(status: string | null) {
+  if (!status) return "Not recorded";
+
+  const labels: Record<string, string> = {
+    NEW: "New",
+    OPEN: "Open",
+    IN_PROGRESS: "In progress",
+    OPEN_DEAL: "Open deal",
+    UNQUALIFIED: "Unqualified",
+    ATTEMPTED_TO_CONTACT: "Attempted to contact",
+    CONNECTED: "Connected",
+    BAD_TIMING: "Bad timing",
+  };
+
+  return Object.hasOwn(labels, status)
+    ? labels[status]
+    : status.replaceAll("_", " ");
+}
 
 function formatUpdatedLabel(updatedAt: string) {
   const updatedTime = new Date(updatedAt).getTime();
@@ -336,8 +361,48 @@ export function DashboardCardView({
   const subtitle = localized?.subtitle ?? definition.subtitle;
 
   if (definition.id === "aiInsights") {
+    const chart = aiInsight as AIInsightPayload & {
+      metric?: string;
+      trend?: { label: string; value: number }[];
+    };
+    const readTrend = (value: unknown): { label: string; value: number }[] => {
+      if (!Array.isArray(value)) return [];
+      return value.flatMap((point: unknown) => {
+        if (!point || typeof point !== "object") return [];
+        const item = point as { label?: unknown; value?: unknown };
+        const value = toNumber(item.value);
+        return typeof item.label === "string" && item.label.trim() && value !== null
+          ? [{ label: item.label, value }]
+          : [];
+      });
+    };
+    let trend = readTrend(chart.trend);
+    let metric = chart.metric?.trim() || "Trend";
+
+    // Display the real daily series already used by the dashboard cards.
+    // This fallback is for the live AI card only; historical report rendering
+    // continues to use the chart supplied with the saved insight.
+    if (!isReport && trend.length === 0) {
+      for (const key of ["sales", "ga_overview"]) {
+        const source = hydrationCards?.find((card) => card.key === key);
+        if (!source || (source.status !== "ok" && source.status !== "warn")) continue;
+        const series = readTrend(source.meta?.series);
+        if (series.length === 0) continue;
+        trend = series;
+        const currency = typeof source.meta?.currency === "string" &&
+          /^[a-z]{3}$/i.test(source.meta.currency.trim())
+          ? source.meta.currency.trim().toUpperCase() : null;
+        metric = key === "sales"
+          ? `Sales${currency ? ` (${currency})` : ""}`
+          : "Page views";
+        break;
+      }
+    }
+
     const insightProps = {
       title,
+      metric,
+      trend,
       status: aiInsight.status,
       headline: aiInsight.headline,
       whyItMatters: aiInsight.whyItMatters,
@@ -368,11 +433,13 @@ export function DashboardCardView({
       ? hydration.meta.currency.toUpperCase()
       : "EUR";
 
-  const hasHydratedData =
+   const hasHydratedData =
     definition.id === "sales"
       ? salesRevenue !== null || salesOrderCount !== null
-      : typeof hydration?.value === "string" &&
-        hydration.value.trim().length > 0;
+      : definition.id === "crm"
+        ? hydration?.status === "ok"
+        : typeof hydration?.value === "string" &&
+          hydration.value.trim().length > 0;
 
   const headerValue =
     definition.id === "sales" && salesRevenue !== null
@@ -395,6 +462,19 @@ export function DashboardCardView({
     hydrationCards,
   );
 
+    const crmContacts = Array.isArray(hydration?.meta?.contacts)
+    ? (hydration.meta.contacts as CrmContactPreview[])
+    : null;
+
+  const hasCrmPipelineData = [
+    hydration?.meta?.pipelineValue,
+    hydration?.meta?.opportunities,
+    hydration?.meta?.qualifiedLeads,
+    hydration?.meta?.winRate,
+  ].some((value) => toNumber(value) !== null) ||
+    (Array.isArray(hydration?.meta?.stages) &&
+      hydration.meta.stages.length > 0);
+
   return (
     <Card
       title={title}
@@ -408,7 +488,7 @@ export function DashboardCardView({
           : "min-h-[408px] md:h-[408px]"
       }
     >
-      {hydration ? (
+      {hydration && definition.id !== "crm" ? (
         <div className="mb-3 flex items-center justify-between">
           <div className="text-sm font-semibold text-slate-900">
             {headerValue}
@@ -512,42 +592,110 @@ export function DashboardCardView({
     </div>
 
 ) : definition.id === "crm" ? (
-  <div className="space-y-4">
-    <CrmPipelineChart
-      pipelineValue={
-        toNumber(hydration?.meta?.pipelineValue) ?? 0
-      }
-      opportunities={
-        toNumber(hydration?.meta?.opportunities) ?? 0
-      }
-      qualifiedLeads={
-        toNumber(hydration?.meta?.qualifiedLeads) ?? 0
-      }
-      winRate={
-        toNumber(hydration?.meta?.winRate) ?? 0
-      }
-     
-      stages={
-        Array.isArray(hydration?.meta?.stages)
-          ? hydration.meta.stages
-          : []
-      }
-      currency={
-        typeof hydration?.meta?.currency === "string"
-          ? hydration.meta.currency
-          : "EUR"
-      }
-      preview={!hasHydratedData}
-      animate={!isReport}
-    />
+  <div
+    className={
+      isReport
+        ? "space-y-4"
+        : "grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2"
+    }
+  >
+    {!isReport ? (
+      <div className="min-w-0 md:border-r md:border-slate-200 md:pr-5">
+        <p className="mb-2 text-xs font-bold text-slate-700">
+          Recent contacts
+        </p>
 
-    {!hasHydratedData && !isReport ? (
-      <div className="text-xs text-slate-400">
-        CRM performance data will appear here once available.
+        {hydration?.status === "error" ? (
+          <p className="text-xs text-slate-500">
+            HubSpot contacts could not be loaded.
+          </p>
+        ) : crmContacts !== null ? (
+          crmContacts.length === 0 ? (
+            <p className="text-xs text-slate-500">
+              No contacts in HubSpot yet.
+            </p>
+          ) : (
+            <div className="relative">
+  <ul
+    aria-label="Recent HubSpot contacts"
+    tabIndex={0}
+    className="max-h-[180px] divide-y divide-slate-200 overflow-y-auto pb-6 pr-2"
+  >
+    {crmContacts.slice(0, 5).map((contact) => (
+      <li
+        key={contact.id}
+        className="flex items-center justify-between gap-3 py-1.5"
+      >
+        <div className="min-w-0">
+          <p className="truncate text-sm text-slate-900">
+            {contact.name ||
+              contact.company ||
+              "Unnamed contact"}
+          </p>
+
+          {contact.name && contact.company ? (
+            <p className="truncate text-xs text-slate-500">
+              {contact.company}
+            </p>
+          ) : null}
+        </div>
+
+        <span className="max-w-[40%] shrink-0 text-right text-xs text-slate-600">
+          {formatLeadStatus(contact.leadStatus)}
+        </span>
+      </li>
+    ))}
+  </ul>
+
+  {crmContacts.length > 3 ? (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-gradient-to-t from-white via-white/70 to-transparent"/>
+  ) : null}
+</div>
+          )
+        ) : (
+          <p className="text-xs text-slate-500">
+            Contacts will appear here once available.
+          </p>
+        )}
       </div>
     ) : null}
-  </div>
 
+    <div className="min-w-0">
+      {!isReport ? (
+        <p className="mb-2 text-xs font-bold text-slate-700">
+          Pipeline performance
+        </p>
+      ) : null}
+
+      <CrmPipelineChart
+        pipelineValue={
+          toNumber(hydration?.meta?.pipelineValue) ?? 0
+        }
+        opportunities={
+          toNumber(hydration?.meta?.opportunities) ?? 0
+        }
+        qualifiedLeads={
+          toNumber(hydration?.meta?.qualifiedLeads) ?? 0
+        }
+        winRate={toNumber(hydration?.meta?.winRate) ?? 0}
+        stages={
+          Array.isArray(hydration?.meta?.stages)
+            ? hydration.meta.stages
+            : []
+        }
+        currency={
+          typeof hydration?.meta?.currency === "string"
+            ? hydration.meta.currency
+            : "EUR"
+        }
+        preview={!hasCrmPipelineData}
+        animate={!isReport}
+      />
+    </div>
+  </div>
+  
   ) : definition.id === "downtime" ? (
   <div className="space-y-4">
     <DowntimeActivityChart
@@ -579,8 +727,9 @@ export function DashboardCardView({
         Monitoring data will appear here once available.
       </div>
     ) : null}
+  
   </div>
-
+  
 ) : definition.id === "booking" ? (
   <div className="space-y-4">
     <BookingActivityChart

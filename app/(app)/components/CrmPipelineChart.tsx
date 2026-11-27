@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import {
   Bar,
   BarChart,
-  CartesianGrid,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -17,7 +16,6 @@ type PipelineStage = {
   label: string;
   value: number;
 };
-
 
 type CrmPipelineChartProps = {
   pipelineValue?: number;
@@ -39,11 +37,7 @@ const EMPTY_STAGES: PipelineStage[] = [
   { label: "Won", value: 0 },
 ];
 
-
-function formatCurrency(
-  value: number,
-  currency = "EUR",
-) {
+function formatCurrency(value: number, currency = "EUR") {
   return new Intl.NumberFormat("fr-FR", {
     style: "currency",
     currency,
@@ -58,13 +52,40 @@ function compact(value: number) {
   }).format(value);
 }
 
+type StageTickProps = {
+  x?: number | string;
+  y?: number | string;
+  payload?: {
+    value?: string | number;
+  };
+};
+
+function StageTick({ x = 0, y = 0, payload }: StageTickProps) {
+  const label = String(payload?.value ?? "");
+  const displayLabel =
+    label.length > 22 ? `${label.slice(0, 21)}…` : label;
+
+  return (
+    <text
+      x={Number(x) - 8}
+      y={Number(y)}
+      dy={3}
+      textAnchor="end"
+      fill="#64748b"
+      fontSize={10}
+    >
+      <title>{label}</title>
+      {displayLabel}
+    </text>
+  );
+}
+
 export function CrmPipelineChart({
   pipelineValue = 0,
   opportunities = 0,
   qualifiedLeads = 0,
   winRate = 0,
   stages = [],
-
   currency = "EUR",
   preview = false,
   animate = true,
@@ -75,16 +96,16 @@ export function CrmPipelineChart({
     [stages],
   );
 
+  const chartHeight = Math.max(120, stageData.length * 17);
 
   return (
     <div
       className={cn(
-        "flex h-full min-w-0 flex-col gap-4",
-        preview && "text-slate-400",
+        "flex min-w-0 flex-col gap-3",
         className,
       )}
     >
-      <div className="grid grid-cols-2 gap-x-5 gap-y-3">
+      <div className="grid grid-cols-2 gap-x-5 gap-y-2">
         <Metric
           label="Pipeline"
           value={formatCurrency(pipelineValue, currency)}
@@ -110,56 +131,69 @@ export function CrmPipelineChart({
         />
       </div>
 
-      <div className="h-[145px] min-w-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={stageData}
-            layout="vertical"
-            margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
-          >
-            <CartesianGrid
-              strokeDasharray="3 3"
-              horizontal={false}
-              stroke="#e2e8f0"
-            />
-
-            <XAxis
-              type="number"
-              hide
-              domain={[0, "dataMax + 1"]}
-            />
-
-            <YAxis
-              type="category"
-              dataKey="label"
-              width={78}
-              tickLine={false}
-              axisLine={false}
-              tick={{
-                fontSize: 11,
-                fill: preview ? "#cbd5e1" : "#64748b",
+      <div
+        className="max-h-[120px] min-w-0 overflow-y-auto"
+        tabIndex={0}
+        role="region"
+        aria-label="Pipeline stages"
+      >
+        <div
+          className="min-w-0"
+          style={{ height: chartHeight }}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={stageData}
+              layout="vertical"
+              barCategoryGap="35%"
+              margin={{
+                top: 0,
+                right: 12,
+                left: 0,
+                bottom: 0,
               }}
-            />
-
-            {!preview ? (
-              <Tooltip
-                content={<CrmTooltip />}
-                cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
+            >
+              <XAxis
+                type="number"
+                hide
+                allowDecimals={false}
+                domain={[
+                  0,
+                  (maximum: number) => Math.max(1, maximum),
+                ]}
               />
-            ) : null}
 
-            <Bar
-              dataKey="value"
-              radius={[0, 8, 8, 0]}
-              fill={preview ? "#e2e8f0" : "#416bd7"}
-              isAnimationActive={!preview && animate}
-            />
-          </BarChart>
-        </ResponsiveContainer>
+              <YAxis
+                type="category"
+                dataKey="label"
+                width={125}
+                interval={0}
+                tickLine={false}
+                axisLine={false}
+                tick={<StageTick />}
+              />
+
+              {!preview ? (
+                <Tooltip
+                  content={<CrmTooltip />}
+                  cursor={{
+                    fill: "rgba(148, 163, 184, 0.06)",
+                  }}
+                />
+              ) : null}
+
+              <Bar
+                dataKey="value"
+                radius={[0, 5, 5, 0]}
+                maxBarSize={10}
+                fill={preview ? "#e2e8f0" : "#416bd7"}
+                isAnimationActive={!preview && animate}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
-  
-      </div>
-   
+    </div>
   );
 }
 
@@ -174,19 +208,14 @@ function Metric({
 }) {
   return (
     <div>
-      <div
-        className={cn(
-          "text-[11px]",
-          preview ? "text-slate-300" : "text-slate-400",
-        )}
-      >
+      <div className="text-[11px] text-slate-500">
         {label}
       </div>
 
       <div
         className={cn(
-          "mt-0.5 text-lg font-semibold",
-          preview ? "text-slate-300" : "text-slate-900",
+          "mt-0.5 text-base font-semibold",
+          preview ? "text-slate-500" : "text-slate-900",
         )}
       >
         {value}

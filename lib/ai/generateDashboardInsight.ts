@@ -38,6 +38,30 @@ export type DashboardInsightInput = {
   };
 };
 
+export function hasDashboardInsightData(
+  input: DashboardInsightInput,
+): boolean {
+  const hasNumber = (value: unknown): boolean =>
+    typeof value === "number" && Number.isFinite(value);
+
+  const { businessSources, ...signals } = input;
+
+  const hasCategoryData = Object.values(signals).some(
+    (signal) =>
+      signal !== null &&
+      typeof signal === "object" &&
+      Object.values(signal).some(hasNumber),
+  );
+
+  const hasProviderData = (businessSources ?? []).some(
+    (source) =>
+      (source.status === "ok" || source.status === "warn") &&
+      Object.values(source.metrics).some(hasNumber),
+  );
+
+  return hasCategoryData || hasProviderData;
+}
+
 function hasMeaningfulData(input: DashboardInsightInput): boolean {
   return [
     input.sales?.revenue,
